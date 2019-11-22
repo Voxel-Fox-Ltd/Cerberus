@@ -3,7 +3,7 @@ from datetime import datetime as dt, timedelta
 import collections
 
 import discord
-from discord.ext import tasks
+from discord.ext import tasks, commands
 
 from cogs import utils
 
@@ -76,6 +76,14 @@ class UserMessageHandler(utils.Cog):
             guild_id=message.guild.id,
             message_id=message.id
         )
+
+    @commands.command()
+    async def getpoints(self, ctx:utils.Context, user:typing.Optional[discord.User], *attrs):
+
+        attributes = {i.split('=')[0]: int(i.split('=')[1]) for i in attrs}
+        user = user or ctx.author
+        data = utils.CachedMessage.get_messages(user, ctx.guild, **attributes)
+        await ctx.send(len(data))
 
 
 def setup(bot:utils.CustomBot):

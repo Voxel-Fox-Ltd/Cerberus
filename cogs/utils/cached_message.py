@@ -28,7 +28,7 @@ class CachedMessage(object):
         self.timestamp = discord.Object(message_id).created_at
         self.all_messages[(self.user_id, self.guild_id)].append(self)
 
-    def message_posted_after(**kwargs) -> bool:
+    def message_posted_after(self, **kwargs) -> bool:
         """Returns whether or not the message was posted after a given time
         kwargs are passed directly into a timedelta"""
 
