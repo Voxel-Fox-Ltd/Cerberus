@@ -11,6 +11,7 @@ import discord
 from discord.ext import commands
 
 from cogs.utils.database import DatabaseConnection
+from cogs.utils.cached_message import CachedMessage
 
 
 def get_prefix(bot, message:discord.Message):
@@ -63,6 +64,15 @@ class CustomBot(commands.AutoShardedBot):
 
         # Get database connection
         db = await self.database.get_connection()
+
+        # Get cached messages
+        try:
+            data = await db("SELECT * FROM user_messages")
+        except Exception as e:
+            self.logger.critical(f"Failed to get data from user_messages")
+            raise e
+        for row in data:
+            CachedMessage(**row)
 
         # Wait for the bot to cache users before continuing
         self.logger.debug("Waiting until ready before completing startup method.")
@@ -141,12 +151,6 @@ class CustomBot(commands.AutoShardedBot):
                 self.config = toml.load(a)
         except Exception as e:
             self.logger.critical("Couldn't read config file")
-            raise e
-
-    def run(self):
-        """Runs the bot wew"""
-
-        super().run(self.config['token'])
 
     async def start(self, token:str=None):
         """Start the bot with the given token, create the startup method task"""
