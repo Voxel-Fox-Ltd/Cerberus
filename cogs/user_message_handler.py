@@ -28,6 +28,7 @@ class UserMessageHandler(utils.Cog):
 
         # Only save messages if there _were_ any
         if len(self.cached_for_saving) == 0:
+            self.log_handler.info(f"Storing 0 cached messages in database")
             return
 
         # Get the messages we want to save
@@ -42,6 +43,7 @@ class UserMessageHandler(utils.Cog):
         records = [(i.id, i.author.id, i.guild.id) for i in currently_saving if i.author.bot is False]
 
         # Copy the records into the db
+        self.log_handler.info(f"Storing {len(records)} cached messages in database")
         async with self.bot.database() as db:
             await db.conn.copy_records_to_table(
                 'user_messages',
