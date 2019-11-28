@@ -15,3 +15,7 @@ class Misc(utils.cog):
       '''
 
       await ctx.send("<https://github.com/4Kaylum/Cerberus/>")
+      
+  def setup(bot:utils.CustomBot):
+    x = misc(bot)
+    bot.add_cog(x)
