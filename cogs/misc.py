@@ -5,11 +5,11 @@ from cogs import utils
 
 class Misc(utils.cog):
 
-    @commands.command()
+    @commands.command(aliases=['git', 'code'])
     async def github(self, ctx:utils.Context):
         """Sends the GitHub Repository link"""
 
-        await ctx.send("<https://github.com/4Kaylum/Cerberus/>")
+        await ctx.send(f"<{self.bot.config.get('github')}>")
 
 
 def setup(bot:utils.CustomBot):
