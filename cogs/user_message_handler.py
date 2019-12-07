@@ -96,7 +96,7 @@ class UserMessageHandler(utils.Cog):
         for key in all_keys_for_guild:
             all_data_for_guild[key[0]] = len(utils.CachedMessage.get_messages(key[0], ctx.guild, **attributes))
         ordered_user_ids = sorted(all_data_for_guild.keys(), key=lambda k: all_data_for_guild[k], reverse=True)
-        filtered_list = [i for i in ordered_user_ids if ctx.guild.get_member(i)]
+        filtered_list = [i for i in ordered_user_ids if ctx.guild.get_member(i) is not None and self.bot.get_user(i).bot is False]
         await ctx.send('\n'.join([f"**{self.bot.get_user(i)!s}** - {all_data_for_guild[i]}" for i in filtered_list[:10]]))
 
 
