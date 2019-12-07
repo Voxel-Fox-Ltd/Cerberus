@@ -3,7 +3,7 @@ from discord.ext import commands
 from cogs import utils
 
 
-class Misc(utils.cog):
+class Misc(utils.Cog):
 
     @commands.command(aliases=['git', 'code'])
     async def github(self, ctx:utils.Context):
