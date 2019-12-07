@@ -77,28 +77,6 @@ class UserMessageHandler(utils.Cog):
             message_id=message.id
         )
 
-    @commands.command()
-    async def getpoints(self, ctx:utils.Context, user:typing.Optional[discord.User], *attrs):
-
-        attributes = {i.split('=')[0]: int(i.split('=')[1]) for i in attrs}
-        attributes = attributes or {"days": 1}
-        user = user or ctx.author
-        data = utils.CachedMessage.get_messages(user, ctx.guild, **attributes)
-        await ctx.send(len(data))
-
-    @commands.command()
-    async def leaderboard(self, ctx:utils.Context, *attrs):
-
-        attributes = {i.split('=')[0]: int(i.split('=')[1]) for i in attrs}
-        attributes = attributes or {"days": 1}
-        all_keys_for_guild = [i for i in utils.CachedMessage.all_messages.keys() if i[1] == ctx.guild.id]
-        all_data_for_guild = {}
-        for key in all_keys_for_guild:
-            all_data_for_guild[key[0]] = len(utils.CachedMessage.get_messages(key[0], ctx.guild, **attributes))
-        ordered_user_ids = sorted(all_data_for_guild.keys(), key=lambda k: all_data_for_guild[k], reverse=True)
-        filtered_list = [i for i in ordered_user_ids if ctx.guild.get_member(i) is not None and self.bot.get_user(i).bot is False]
-        await ctx.send('\n'.join([f"**{self.bot.get_user(i)!s}** - {all_data_for_guild[i]}" for i in filtered_list[:10]]))
-
 
 def setup(bot:utils.CustomBot):
     x = UserMessageHandler(bot)
