@@ -81,6 +81,12 @@ class CustomBot(commands.AutoShardedBot):
         # Close database connection
         await db.disconnect()
 
+    @property
+    def owners(self) -> list:
+        """Gives you a list of the owner IDs"""
+
+        return self.config['owners']
+
     def get_uptime(self) -> float:
         """Gets the uptime of the bot in seconds
         Uptime is a bit of a misnomer, since it starts when the instance is created, but
