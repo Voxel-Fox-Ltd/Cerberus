@@ -34,6 +34,12 @@ class CachedMessage(object):
 
         return self.timestamp > dt.utcnow() - timedelta(**kwargs)
 
+    def message_posted_before(self, **kwargs) -> bool:
+        """Returns whether or not the message was posted before a given time
+        kwargs are passed directly into a timedelta"""
+
+        return self.timestamp > dt.utcnow() - timedelta(**kwargs)
+
     @classmethod
     def get_messages(cls, user_id:typing.Union[discord.User, int], guild_id:typing.Union[discord.Guild, int], **kwargs) -> typing.List['CachedMessage']:
         """Returns all messages from a given user (via their ID) after a given time
@@ -50,4 +56,19 @@ class CachedMessage(object):
             check = lambda m: m.message_posted_after(**kwargs)
         else:
             check = lambda m: True
+        return [i for i in cls.all_messages[(user_id, guild_id)] if check(i)]
+
+    @classmethod
+    def get_messages_between(cls, user_id:typing.Union[discord.User, int], guild_id:typing.Union[discord.Guild, int], before:dict, after:dict) -> typing.List['CachedMessage']:
+        """Returns all messages from a given user (via their ID) after a given time
+        kwargs are passed directly into a timedelta
+
+        Params:
+            user_id: int
+                The ID of the user you want to get objects for
+        """
+
+        user_id = getattr(user_id, 'id', user_id)
+        guild_id = getattr(guild_id, 'id', guild_id)
+        check = lambda m: m.message_posted_after(**after) and m.message_posted_before(**before)
         return [i for i in cls.all_messages[(user_id, guild_id)] if check(i)]
