@@ -34,7 +34,7 @@ class Information(utils.Cog):
 
         # Work out an average for the time
         working = []
-        for i in range(duration.duration, 0, -1):
+        for i in range(duration.duration - 1, -1, -1):
             after = {duration.period: (2 * duration.duration) - i}
             before = {duration.period: duration.duration - i}
             points = utils.CachedMessage.get_messages_between(user.id, user.guild.id, before=before, after=after)
@@ -44,7 +44,7 @@ class Information(utils.Cog):
         average = sum(working) / len(working)
 
         # Return to user
-        await ctx.send(f"{user.mention} has {average:.2f} average points over {duration.duration} {duration.period} ([{', '.join(working)}]).")
+        await ctx.send(f"{user.mention} has {average:.2f} average points over {duration.duration} {duration.period} ([{', '.join([str(i) for i in working])}]).")
 
 
 def setup(bot:utils.CustomBot):

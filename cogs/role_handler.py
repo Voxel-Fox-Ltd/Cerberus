@@ -38,7 +38,7 @@ class RoleHandler(utils.Cog):
 
             # Work out an average for the time
             working = []
-            for i in range(duration, 0, -1):
+            for i in range(duration - 1, -1, -1):
                 after = {period: (2 * duration) - i}
                 before = {period: duration - i}
                 points = utils.CachedMessage.get_messages_between(user.id, user.guild.id, before=before, after=after)
