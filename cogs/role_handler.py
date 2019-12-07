@@ -38,8 +38,8 @@ class RoleHandler(utils.Cog):
 
             # Work out an average for the time
             working = []
-            for i in range(duration - 1, -1, -1):
-                after = {period: (2 * duration) - i}
+            for i in range(duration, 0, -1):
+                after = {period: duration - i + 1}
                 before = {period: duration - i}
                 points = utils.CachedMessage.get_messages_between(user.id, user.guild.id, before=before, after=after)
                 working.append(len(points))
@@ -48,9 +48,11 @@ class RoleHandler(utils.Cog):
             average = sum(working) / len(working)
             if average >= threshold and role_id not in user._roles:
                 role = user.guild.get_role(role_id)
+                self.log_handler.info(f"Adding role with ID {role.id} to user {user.id}")
                 await user.add_roles(role)
             elif average < threshold and role_id in user._roles:
                 role = user.guild.get_role(role_id)
+                self.log_handler.info(f"Removing role with ID {role.id} from user {user.id}")
                 await user.remove_roles(role)
 
 

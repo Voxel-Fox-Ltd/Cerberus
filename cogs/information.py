@@ -32,10 +32,12 @@ class Information(utils.Cog):
     async def averagepoints(self, ctx:commands.Context, user:typing.Optional[discord.Member], duration:typing.Optional[utils.converters.DurationConverter]=utils.Duration('days', 7)):
         """Gives you the average amount of points that a user has gained over a given period"""
 
+        user = user or ctx.author
+
         # Work out an average for the time
         working = []
-        for i in range(duration.duration - 1, -1, -1):
-            after = {duration.period: (2 * duration.duration) - i}
+        for i in range(duration.duration, 0, -1):
+            after = {duration.period: duration.duration - i + 1}
             before = {duration.period: duration.duration - i}
             points = utils.CachedMessage.get_messages_between(user.id, user.guild.id, before=before, after=after)
             working.append(len(points))

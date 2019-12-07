@@ -38,7 +38,7 @@ class CachedMessage(object):
         """Returns whether or not the message was posted before a given time
         kwargs are passed directly into a timedelta"""
 
-        return self.timestamp > dt.utcnow() - timedelta(**kwargs)
+        return self.timestamp < dt.utcnow() - timedelta(**kwargs)
 
     @classmethod
     def get_messages(cls, user_id:typing.Union[discord.User, int], guild_id:typing.Union[discord.Guild, int], **kwargs) -> typing.List['CachedMessage']:
