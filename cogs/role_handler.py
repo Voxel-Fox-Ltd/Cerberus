@@ -1,7 +1,7 @@
 import collections
 
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 
 from cogs import utils
 
@@ -11,6 +11,10 @@ class RoleHandler(utils.Cog):
     def __init__(self, bot:utils.Bot):
         super().__init__(bot)
         self.role_handles = collections.defaultdict(lambda: None)
+        self.user_role_looper.start()
+
+    def cog_unload(self):
+        self.user_role_looper.cancel()
 
     @commands.command(cls=utils.Command)
     @commands.has_permissions(manage_roles=True)
@@ -46,6 +50,19 @@ class RoleHandler(utils.Cog):
             current = [i for i in current if i['role_id'] != role.id]
             self.role_handles[ctx.guild.id] = current
         await ctx.send(f"Now removed users receiving the **{role.name}** role.")
+
+    @tasks.loop(hours=1)
+    async def user_role_looper(self):
+        self.logger.info("Pinging every guild member with an update")
+        for guild in self.bot.guilds:
+            for member in guild.members:
+                if member.bot:
+                    continue
+                self.bot.dispatch('user_points_receive', member)
+
+    @user_role_looper.before_loop
+    async def before_user_role_looper(self):
+        await self.bot.wait_until_ready()
 
     @utils.Cog.listener("on_user_points_receive")
     async def user_role_handler(self, user:discord.Member):
