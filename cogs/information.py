@@ -22,15 +22,10 @@ class Information(utils.Cog):
 
         # Go through each day and work out how many points it has
         for index in range(window_days):
-
             between = 7 + window_days - index - 1, window_days - index - 1
-            print(between)
-
             points_per_week[index] = len(utils.CachedMessage.get_messages_between(
                 user.id, ctx.guild.id, after=dict(days=between[0]), before=dict(days=between[1])
             ))
-
-        print(points_per_week)
 
         # Get roles
         async with self.bot.database() as db:
