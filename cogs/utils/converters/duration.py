@@ -13,9 +13,7 @@ class Duration(object):
     def __getitem__(self, key):
         return self.duration
 
-
-class DurationConverter(commands.Converter):
-
+    @classmethod
     async def convert(self, ctx, value):
         """Converts the given duration into a dict that can be passed straight into a timedelta"""
 

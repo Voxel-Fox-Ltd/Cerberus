@@ -14,7 +14,7 @@ class RoleHandler(utils.Cog):
 
     @commands.command(cls=utils.Command)
     @commands.guild_only()
-    async def addrole(self, ctx:utils.Context, role:discord.Role, threshold:int, duration:utils.converters.DurationConverter):
+    async def addrole(self, ctx:utils.Context, role:discord.Role, threshold:int, duration:utils.Duration):
         """Adds a role that is given when a threshold is reached"""
 
         async with self.bot.database() as db:

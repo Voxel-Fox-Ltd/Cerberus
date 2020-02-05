@@ -5,7 +5,7 @@ guild_id = 1  # The ID of the main/support guild
 
 # Data that's copied directly over to a command without processing
 [command_data]
-    guild_invite = ""
+    guild_invite = "https://discord.gg/7dMXkNa"
     github = "https://github.com/4Kaylum/Cerberus/"
     patreon = ""
 

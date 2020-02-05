@@ -9,7 +9,7 @@ from cogs import utils
 class Information(utils.Cog):
 
     @commands.command(cls=utils.Command)
-    async def points(self, ctx:utils.Context, user:typing.Optional[discord.Member], duration:typing.Optional[utils.converters.DurationConverter]=utils.Duration('days', 7)):
+    async def points(self, ctx:utils.Context, user:typing.Optional[discord.Member], duration:utils.Duration=utils.Duration('days', 7)):
         """Tells you how many points a given user has"""
 
         user = user or ctx.author
@@ -17,7 +17,7 @@ class Information(utils.Cog):
         await ctx.send(f"{user.mention} has {len(data)} points over {duration.duration} {duration.period}.")
 
     @commands.command(cls=utils.Command)
-    async def leaderboard(self, ctx:utils.Context, duration:typing.Optional[utils.converters.DurationConverter]=utils.Duration('days', 7)):
+    async def leaderboard(self, ctx:utils.Context, duration:utils.Duration=utils.Duration('days', 7)):
         """Gives you the top 10 leaderboard users for the server"""
 
         all_keys_for_guild = [i for i in utils.CachedMessage.all_messages.keys() if i[1] == ctx.guild.id]
@@ -29,7 +29,7 @@ class Information(utils.Cog):
         await ctx.send(f"Points over {duration.duration} {duration.period}:\n\n" + '\n'.join([f"**{self.bot.get_user(i)!s}** - {all_data_for_guild[i]}" for i in filtered_list[:10]]))
 
     @commands.command(cls=utils.Command)
-    async def averagepoints(self, ctx:commands.Context, user:typing.Optional[discord.Member], duration:typing.Optional[utils.converters.DurationConverter]=utils.Duration('days', 7)):
+    async def averagepoints(self, ctx:commands.Context, user:typing.Optional[discord.Member], duration:utils.Duration=utils.Duration('days', 7)):
         """Gives you the average amount of points that a user has gained over a given period"""
 
         user = user or ctx.author
