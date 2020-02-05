@@ -13,6 +13,7 @@ class RoleHandler(utils.Cog):
         self.role_handles = collections.defaultdict(lambda: None)
 
     @commands.command(cls=utils.Command)
+    @commands.has_permissions(manage_roles=True)
     @commands.guild_only()
     async def addrole(self, ctx:utils.Context, threshold:int, *, role:discord.Role):
         """Adds a role that is given when a threshold is reached"""
@@ -33,6 +34,7 @@ class RoleHandler(utils.Cog):
         await ctx.send(f"Now added - at an average of {threshold} points every 7 days, users will receive the **{role.name}** role.")
 
     @commands.command(cls=utils.Command)
+    @commands.has_permissions(manage_roles=True)
     @commands.guild_only()
     async def removerole(self, ctx:utils.Context, *, role:discord.Role):
         """Removes a role that is given"""
