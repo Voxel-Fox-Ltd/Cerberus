@@ -14,7 +14,7 @@ class RoleHandler(utils.Cog):
 
     @commands.command(cls=utils.Command)
     @commands.guild_only()
-    async def addrole(self, ctx:utils.Context, role:discord.Role, threshold:int):
+    async def addrole(self, ctx:utils.Context, threshold:int, *, role:discord.Role):
         """Adds a role that is given when a threshold is reached"""
 
         async with self.bot.database() as db:
@@ -34,7 +34,7 @@ class RoleHandler(utils.Cog):
 
     @commands.command(cls=utils.Command)
     @commands.guild_only()
-    async def removerole(self, ctx:utils.Context, role:discord.Role):
+    async def removerole(self, ctx:utils.Context, *, role:discord.Role):
         """Removes a role that is given"""
 
         async with self.bot.database() as db:
@@ -61,27 +61,23 @@ class RoleHandler(utils.Cog):
                 current.append(dict(i))
             self.role_handles[user.guild.id] = current
 
+        # Work out an average for the time
+        points = utils.CachedMessage.get_messages_between(user.id, user.guild.id, before={'days': 0}, after={'days': 7})
+        points_in_week = len(points)  # Add how many points they got in that week
+
         # Run for each role
         for row in current:
+
             # Shorten variable names
             role_id = row['role_id']
             threshold = row['threshold']
 
-            # Work out an average for the time
-            working = []
-            for i in range(14, 7, -1):
-                after = {'days': i - 7 + 1}
-                before = {'days': i - 7}
-                points = utils.CachedMessage.get_messages_between(user.id, user.guild.id, before=before, after=after)
-                working.append(len(points))  # Add how many points they got in that week
-
             # Are they over the threshold? - role handle
-            average = sum(working) / len(working)
-            if average >= threshold and role_id not in user._roles:
+            if points_in_week >= threshold and role_id not in user._roles:
                 role = user.guild.get_role(role_id)
                 self.logger.info(f"Adding role with ID {role.id} to user {user.id}")
                 await user.add_roles(role)
-            elif average < threshold and role_id in user._roles:
+            elif points_in_week < threshold and role_id in user._roles:
                 role = user.guild.get_role(role_id)
                 self.logger.info(f"Removing role with ID {role.id} from user {user.id}")
                 await user.remove_roles(role)
