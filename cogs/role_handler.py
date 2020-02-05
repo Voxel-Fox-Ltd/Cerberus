@@ -14,25 +14,25 @@ class RoleHandler(utils.Cog):
 
     @commands.command(cls=utils.Command)
     @commands.guild_only()
-    async def addrole(self, ctx:utils.Context, role:discord.Role, threshold:int, duration:utils.Duration):
+    async def addrole(self, ctx:utils.Context, role:discord.Role, threshold:int, duration:typing.Optional[int]=7):
         """Adds a role that is given when a threshold is reached"""
 
         async with self.bot.database() as db:
             await db(
                 "INSERT INTO role_gain (guild_id, role_id, threshold, period, duration) VALUES ($1, $2, $3, $4, $5)",
-                ctx.guild.id, role.id, threshold, duration.period, duration.duration,
+                ctx.guild.id, role.id, threshold, 'days', duration,
             )
         current = self.role_handles[ctx.guild.id]
         if current is None:
             current = list()
         current.append({
             'role_id': role.id,
-            'period': duration.period,
-            'duration': duration.duration,
+            'period': 'days',
+            'duration': duration,
             'threshold': threshold,
         })
         self.role_handles[ctx.guild.id] = current
-        await ctx.send(f"Now added - at an average of {threshold} points every {duration.duration} {duration.period}, users will receive the **{role.name}** role.")
+        await ctx.send(f"Now added - at an average of {threshold} points every {duration} days, users will receive the **{role.name}** role.")
 
     @commands.command(cls=utils.Command)
     @commands.guild_only()
