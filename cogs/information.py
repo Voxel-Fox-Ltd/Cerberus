@@ -46,7 +46,10 @@ class Information(utils.Cog):
 
         # Set size
         MINOR_AXIS_STOP = 50
-        graph_height = max([role_object_data[-1][0] + MINOR_AXIS_STOP, math.ceil((max(points_per_week) + 1) / MINOR_AXIS_STOP) * MINOR_AXIS_STOP])
+        if role_object_data:
+            graph_height = max([role_object_data[-1][0] + MINOR_AXIS_STOP, math.ceil((max(points_per_week) + 1) / MINOR_AXIS_STOP) * MINOR_AXIS_STOP])
+        else:
+            graph_height = math.ceil((max(points_per_week) + 1) / MINOR_AXIS_STOP) * MINOR_AXIS_STOP
         ax.axis([0, window_days, 0, graph_height])
 
         # Fix axies
