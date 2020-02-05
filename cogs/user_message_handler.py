@@ -71,14 +71,14 @@ class UserMessageHandler(utils.Cog):
         self.cached_for_saving.append(message)
 
         # Cache for internal use
-        m = utils.CachedMessage(
+        utils.CachedMessage(
             user_id=message.author.id,
             guild_id=message.guild.id,
             message_id=message.id
         )
 
         # Dispatch event
-        self.bot.dispatch('user_points_receive', message.author, m)
+        self.bot.dispatch('user_points_receive', message.author)
 
 
 def setup(bot:utils.Bot):

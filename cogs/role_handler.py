@@ -46,7 +46,7 @@ class RoleHandler(utils.Cog):
         await ctx.send(f"Now removed users receiving the **{role.name}** role.")
 
     @utils.Cog.listener("on_user_points_receive")
-    async def user_role_handler(self, user:discord.Member, message:utils.CachedMessage):
+    async def user_role_handler(self, user:discord.Member):
         """Looks for when a user passes the threshold of points and then handles their roles accordingly"""
 
         # TODO make this also run daily so people aren't stuck with the role forever
