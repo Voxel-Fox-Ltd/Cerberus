@@ -1,84 +1,118 @@
 import random
+import typing
 
-from discord import Embed
-from discord.ext.commands import Context, Group, command
+import discord
+from discord.ext import commands
 
 from cogs import utils
 
 
-class Help(utils.Cog):
+class CustomHelpCommand(commands.MinimalHelpCommand):
 
-    def __init__(self, bot:utils.CustomBot):
-        super().__init__(bot)
-        self.original_help = bot.get_command('help')
-        bot.remove_command('help')
+    def get_command_signature(self, command:commands.Command):
+        return '{0.clean_prefix}{1.qualified_name} {1.signature}'.format(self, command)
 
-    def cog_unload(self):
-        self.bot.add_comand(self.original_help)
+    async def send_cog_help(self, cog:utils.Cog):
+        """Sends help command for a cog"""
 
-    async def cog_command_error(self, ctx, error):
-        raise error
+        return await self.send_bot_help({
+            cog: cog.get_commands()
+        })
 
-    @command(name='help', aliases=['commands'], hidden=True)
-    async def newhelp(self, ctx:Context, *, command_name:str=None):
-        """Gives you the new help command uwu"""
+    async def send_group_help(self, group:commands.Group):
+        """Sends the help command for a given group"""
 
-        # Get all the cogs
-        if not command_name:
-            cogs = self.bot.cogs.values()
-            cog_commands = [cog.get_commands() for cog in cogs]
-        else:
-            command = self.bot
-            for i in command_name.split():
-                command = command.get_command(i)
-                if not command:
-                    await ctx.send(f"The command `{command_name}` could not be found.")
-                    return
-            base_command = command
-            if isinstance(base_command, Group):
-                cog_commands = [list(set(command.walk_commands()))]
-            else:
-                cog_commands = []
+        return await self.send_bot_help({
+            group: group.commands
+        })
 
-        # See which the user can run
-        runnable_commands = []
-        for cog in cog_commands:
-            runnable_cog = []
-            for command in cog:
-                runnable = command.hidden == False and command.enabled == True
-                if runnable:
-                    runnable_cog.append(command)
-            runnable_cog.sort(key=lambda x: x.name.lower())
-            if len(runnable_cog) > 0:
-                runnable_commands.append(runnable_cog)
-
-        # Sort cogs list based on name
-        runnable_commands.sort(key=lambda x: x[0].cog_name.lower())
+    async def send_command_help(self, command:utils.Command):
+        """Sends the help command for a given command"""
 
         # Make an embed
-        help_embed = Embed()
-        help_embed.set_author(name=self.bot.user, icon_url=self.bot.user.avatar_url)
-        help_embed.colour = random.randint(1, 0xffffff)
+        help_embed = self.get_initial_embed()
 
-        # Add commands to it
-        if command_name:
-            help_embed.add_field(name=f"{ctx.prefix}{base_command.qualified_name} {base_command.signature}", value=f"{base_command.help}")
-        for cog_commands in runnable_commands:
-            value = '\n'.join([f"{ctx.prefix}{command.qualified_name} - *{command.short_doc}*" for command in cog_commands])
+        # Add each command to the embed
+        help_embed.add_field(
+            name=f"{self.clean_prefix}{command.qualified_name} {command.signature}",
+            value=f"{command.help}"
+        )
+
+        # Send it to the destination
+        await self.send_to_destination(embed=help_embed)
+
+    async def send_bot_help(self, mapping:typing.Dict[typing.Optional[utils.Cog], typing.List[commands.Command]]):
+        """Sends all help to the given channel"""
+
+        # Get the visible commands for each of the cogs
+        runnable_commands = {}
+        for cog, cog_commands in mapping.items():
+            available_commands = await self.filter_commands(cog_commands)
+            if len(available_commands) > 0:
+                runnable_commands[cog] = available_commands
+
+        # Make an embed
+        help_embed = self.get_initial_embed()
+
+        # Add each command to the embed
+        command_strings = []
+        for cog, cog_commands in runnable_commands.items():
+            value = '\n'.join([self.get_help_line(command) for command in cog_commands])
+            command_strings.append((getattr(cog, 'get_name', lambda: cog.name)(), value))
+
+        # Order embed by length before embedding
+        command_strings.sort(key=lambda x: len(x[1]), reverse=True)
+        for name, value in command_strings:
             help_embed.add_field(
-                name=cog_commands[0].cog_name,
-                value=value
+                name=name,
+                value=value,
             )
 
-        # Send it to the user
-        try:
-            await ctx.author.send(embed=help_embed)
-            if ctx.guild:
-                await ctx.send('Sent you a DM!')
-        except Exception:
-            await ctx.send("I couldn't send you a DM :c")
+        # Send it to the destination
+        await self.send_to_destination(embed=help_embed)
+
+    async def send_to_destination(self, *args, **kwargs):
+        """Sends content to the given destination"""
+
+        dest = self.get_destination()
+        if isinstance(dest, (discord.User, discord.Member)):
+            try:
+                await dest.send(*args, **kwargs)
+                if self.context.guild:
+                    await self.context.send("Sent you a DM!")
+            except Exception:
+                await self.context.send("I couldn't send you a DM :c")
+            return
+        await dest.send(*args, **kwargs)
+
+    def get_initial_embed(self) -> discord.Embed:
+        """Get the initial embed for that gets sent"""
+
+        embed = discord.Embed()
+        embed.set_author(name=self.context.bot.user, icon_url=self.context.bot.user.avatar_url)
+        embed.colour = random.randint(1, 0xffffff)
+        return embed
+
+    def get_help_line(self, command:utils.Command):
+        """Gets a doc line of help for a given command"""
+
+        if command.short_doc:
+            return f"{self.clean_prefix}{command.qualified_name} - *{command.short_doc}*"
+        return f"{self.clean_prefix}{command.qualified_name}"
 
 
-def setup(bot:utils.CustomBot):
+class Help(utils.Cog):
+
+    def __init__(self, bot:utils.Bot):
+        super().__init__(bot)
+        self._original_help_command = bot.help_command
+        bot.help_command = CustomHelpCommand(dm_help=True)
+        bot.help_command.cog = self
+
+    def cog_unload(self):
+        self.bot.help_command = self._original_help_command
+
+
+def setup(bot:utils.Bot):
     x = Help(bot)
     bot.add_cog(x)

@@ -11,13 +11,15 @@ class ErrorHandler(utils.Cog):
         instead. If it fails that too, it just stays silent."""
 
         try:
-            await ctx.send(text)
+            return await ctx.send(text)
         except discord.Forbidden:
             try:
-                await ctx.author.send(author_text or text)
+                return await ctx.author.send(author_text or text)
             except discord.Forbidden:
                 pass
-        return
+        except discord.NotFound:
+            pass
+        return None
 
     @utils.Cog.listener()
     async def on_command_error(self, ctx:utils.Context, error:commands.CommandError):
@@ -25,7 +27,7 @@ class ErrorHandler(utils.Cog):
 
         # Set up some errors that are just straight up ignored
         ignored_errors = (
-            commands.CommandNotFound,
+            commands.CommandNotFound, utils.errors.InvokedMetaCommand,
         )
         if isinstance(error, ignored_errors):
             return
@@ -35,16 +37,24 @@ class ErrorHandler(utils.Cog):
             commands.MissingAnyRole, commands.MissingPermissions,
             commands.MissingRole, commands.CommandOnCooldown, commands.DisabledCommand,
         )
-        if ctx.author.id in self.bot.owners and isinstance(error, owner_reinvoke_errors):
+        if ctx.original_author.id in self.bot.owner_ids and isinstance(error, owner_reinvoke_errors):
             return await ctx.reinvoke()
+
+        # Missing argument (string)
+        elif isinstance(error, utils.errors.MissingRequiredArgumentString):
+            return await ctx.send(f"You're missing the `{error.param}` argument, which is required for this command to work properly.")
 
         # Missing argument
         elif isinstance(error, commands.MissingRequiredArgument):
-            return await ctx.send("You need to specify a person for this command to work properly.")
+            return await ctx.send(f"You're missing the `{error.param.name}` argument, which is required for this command to work properly.")
 
         # Argument conversion error
         elif isinstance(error, commands.BadArgument):
             return await ctx.send(str(error))
+
+        # Cooldown
+        elif isinstance(error, commands.CommandOnCooldown):
+            return await ctx.send(f"You can't use this command again for another {utils.TimeValue(error.retry_after).clean_spaced}.")
 
         # NSFW channel
         elif isinstance(error, commands.NSFWChannelRequired):
@@ -56,7 +66,7 @@ class ErrorHandler(utils.Cog):
 
         # User is missing a role
         elif isinstance(error, commands.MissingAnyRole):
-            return await ctx.send(f"You need to have the `{error.missing_roles[0]}` role to run this command.")
+            return await ctx.send(f"You need to have one of the {', '.join(['`' + i + '`' for i in error.missing_roles])} roles to run this command.")
 
         # Bot is missing a given permission
         elif isinstance(error, commands.BotMissingPermissions):
@@ -70,6 +80,14 @@ class ErrorHandler(utils.Cog):
         elif isinstance(error, commands.MissingRole):
             return await ctx.send(f"You need to have the `{error.missing_role}` role to run this command.")
 
+        # Guild only
+        elif isinstance(error, commands.NoPrivateMessage):
+            return await ctx.send(f"This command can't be run in DMs.")
+
+        # DMs only
+        elif isinstance(error, commands.PrivateMessageOnly):
+            return await ctx.send(f"This command can only be run in DMs.")
+
         # Not owner
         elif isinstance(error, commands.NotOwner):
             return await ctx.send("You need to be registered as an owner to run this command.")
@@ -82,6 +100,6 @@ class ErrorHandler(utils.Cog):
         raise error
 
 
-def setup(bot:utils.CustomBot):
+def setup(bot:utils.Bot):
     x = ErrorHandler(bot)
     bot.add_cog(x)

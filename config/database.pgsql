@@ -1,3 +1,9 @@
+CREATE TABLE guild_settings(
+    guild_id BIGINT PRIMARY KEY,
+    prefix VARCHAR(30)
+);
+
+
 CREATE TABLE user_messages(
     message_id BIGINT PRIMARY KEY,
     user_id BIGINT,

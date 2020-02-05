@@ -3,14 +3,14 @@ from datetime import datetime as dt, timedelta
 import collections
 
 import discord
-from discord.ext import tasks, commands
+from discord.ext import tasks
 
 from cogs import utils
 
 
 class UserMessageHandler(utils.Cog):
 
-    def __init__(self, bot:utils.CustomBot):
+    def __init__(self, bot:utils.Bot):
         super().__init__(bot)
         the_start_of_time = lambda: dt(2000, 1, 1, 0, 0)
         self.last_message: typing.Dict[discord.Member, dt] = collections.defaultdict(the_start_of_time)
@@ -81,6 +81,6 @@ class UserMessageHandler(utils.Cog):
         self.bot.dispatch('user_points_receive', message.author, m)
 
 
-def setup(bot:utils.CustomBot):
+def setup(bot:utils.Bot):
     x = UserMessageHandler(bot)
     bot.add_cog(x)

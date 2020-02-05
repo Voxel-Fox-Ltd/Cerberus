@@ -8,11 +8,11 @@ from cogs import utils
 
 class RoleHandler(utils.Cog):
 
-    def __init__(self, bot:utils.CustomBot):
+    def __init__(self, bot:utils.Bot):
         super().__init__(bot)
         self.role_handles = collections.defaultdict(lambda: None)
 
-    @commands.command()
+    @commands.command(cls=utils.Command)
     @commands.guild_only()
     async def addrole(self, ctx:utils.Context, role:discord.Role, threshold:int, duration:utils.converters.DurationConverter):
         """Adds a role that is given when a threshold is reached"""
@@ -34,7 +34,7 @@ class RoleHandler(utils.Cog):
         self.role_handles[ctx.guild.id] = current
         await ctx.send(f"Now added - at an average of {threshold} points every {duration.duration} {duration.period}, users will receive the **{role.name}** role.")
 
-    @commands.command()
+    @commands.command(cls=utils.Command)
     @commands.guild_only()
     async def removerole(self, ctx:utils.Context, role:discord.Role):
         """Removes a role that is given"""
@@ -91,6 +91,6 @@ class RoleHandler(utils.Cog):
                 await user.remove_roles(role)
 
 
-def setup(bot:utils.CustomBot):
+def setup(bot:utils.Bot):
     x = RoleHandler(bot)
     bot.add_cog(x)
