@@ -68,7 +68,9 @@ class RoleHandler(utils.Cog):
     async def user_role_handler(self, user:discord.Member):
         """Looks for when a user passes the threshold of points and then handles their roles accordingly"""
 
-        # TODO make this also run daily so people aren't stuck with the role forever
+        # Don't add roles to bots
+        if user.bot:
+            return
 
         # Grab data
         current = self.role_handles[user.guild.id]
@@ -94,12 +96,18 @@ class RoleHandler(utils.Cog):
             # Are they over the threshold? - role handle
             if points_in_week >= threshold and role_id not in user._roles:
                 role = user.guild.get_role(role_id)
-                self.logger.info(f"Adding role with ID {role.id} to user {user.id}")
-                await user.add_roles(role)
+                try:
+                    await user.add_roles(role)
+                    self.logger.info(f"Added role with ID {role.id} to user {user.id}")
+                except Exception as e:
+                    self.logger.info(f"Can't manage {role_id} role for user {user.id} in guild {user.guild.id} - {e}")
             elif points_in_week < threshold and role_id in user._roles:
                 role = user.guild.get_role(role_id)
-                self.logger.info(f"Removing role with ID {role.id} from user {user.id}")
-                await user.remove_roles(role)
+                try:
+                    await user.remove_roles(role)
+                    self.logger.info(f"Removed role with ID {role.id} from user {user.id}")
+                except Exception as e:
+                    self.logger.info(f"Can't manage {role_id} role for user {user.id} in guild {user.guild.id} - {e}")
 
 
 def setup(bot:utils.Bot):
