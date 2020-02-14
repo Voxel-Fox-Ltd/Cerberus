@@ -1,9 +1,13 @@
 import math
 import typing
+import collections
+import random
+from datetime import datetime as dt
 
 import discord
 from discord.ext import commands
 from matplotlib import pyplot as plt
+from labellines import labelLines
 
 from cogs import utils
 
@@ -11,6 +15,7 @@ from cogs import utils
 class Information(utils.Cog):
 
     @commands.command(aliases=['points'], cls=utils.Command)
+    @commands.guild_only()
     async def graph(self, ctx:utils.Context, user:typing.Optional[discord.Member], window_days:typing.Optional[int]=7):
         """Graphs your points over a given time"""
 
@@ -18,9 +23,20 @@ class Information(utils.Cog):
 
         # Set up our most used vars
         user = user or ctx.author
-        points_per_week = [0] * window_days  # A list of the amount of points the user have in each given day (index)
+        original = window_days
+        truncation = None
+        if window_days > 365:
+            window_days = 365
+            truncation = f"shortened from your original request of {original} days for going over the 365 day max"
+        if window_days > (dt.utcnow() - user.joined_at).days:
+            window_days = (dt.utcnow() - user.joined_at).days
+            truncation = f"shortened from your original request of {original} days as the user hasn't been in the guild that long"
+        if window_days > (dt.utcnow() - ctx.guild.me.joined_at).days:
+            window_days = (dt.utcnow() - ctx.guild.me.joined_at).days
+            truncation = f"shortened from your original request of {original} days as I haven't been in the guild that long"
 
         # Go through each day and work out how many points it has
+        points_per_week = [0] * window_days  # A list of the amount of points the user have in each given day (index)
         for index in range(window_days):
             between = 7 + window_days - index - 1, window_days - index - 1
             points_per_week[index] = len(utils.CachedMessage.get_messages_between(
@@ -49,10 +65,12 @@ class Information(utils.Cog):
 
         # Fix axies
         ax.axis('off')
+        ax.grid(True)
 
         # Add background colour
-        for zorder, tier in zip(range(-100, -100 + len(role_object_data)), role_object_data):
+        for zorder, tier in zip(range(-100, -100 + (len(role_object_data) * 2), 2), role_object_data):
             plt.axhspan(tier[0], graph_height, facecolor=f"#{tier[1].colour.value or 0xffffff:0>6X}", zorder=zorder)
+            plt.axhspan(tier[0], tier[0] + 1, facecolor=f"#000000", zorder=zorder + 1)
 
         # Tighten border
         fig.tight_layout()
@@ -61,9 +79,85 @@ class Information(utils.Cog):
         fig.savefig('activity.png', bbox_inches='tight', pad_inches=0)
         with utils.Embed() as embed:
             embed.set_image(url="attachment://activity.png")
-        await ctx.send(f"Activity graph of **{user.nick or user.name}** in a {window_days} window, showing average activity over each 7 day period.", embed=embed, file=discord.File("activity.png"))
+        await ctx.send(f"Activity graph of **{user.nick or user.name}** in a {window_days} day window{(' (' + truncation + ')') if truncation else ''}, showing average activity over each 7 day period.", embed=embed, file=discord.File("activity.png"))
 
     @commands.command(cls=utils.Command)
+    @commands.guild_only()
+    async def multigraph(self, ctx:utils.Context, users:commands.Greedy[discord.Member], window_days:typing.Optional[int]=7):
+        """Graphs your points over a given time"""
+
+        if not len(users):
+            users = [ctx.author]
+
+        await ctx.channel.trigger_typing()
+
+        # Set up our most used vars
+        original = window_days
+        truncation = None
+        if window_days > 365:
+            window_days = 365
+            truncation = f"shortened from your original request of {original} days for going over the 365 day max"
+        if window_days > (dt.utcnow() - min([i.joined_at for i in users])).days:
+            window_days = (dt.utcnow() - min([i.joined_at for i in users])).days
+            truncation = f"shortened from your original request of {original} days as someone you pinged hasn't been in the guild that long"
+        if window_days > (dt.utcnow() - ctx.guild.me.joined_at).days:
+            window_days = (dt.utcnow() - ctx.guild.me.joined_at).days
+            truncation = f"shortened from your original request of {original} days as I haven't been in the guild that long"
+
+        # Go through each day and work out how many points it has
+        points_per_week_base = [0] * window_days  # A list of the amount of points the user have in each given day (index)
+        points_per_week = collections.defaultdict(points_per_week_base.copy)
+        for user in users:
+            for index in range(window_days):
+                between = 7 + window_days - index - 1, window_days - index - 1
+                points_per_week[user][index] = len(utils.CachedMessage.get_messages_between(
+                    user.id, ctx.guild.id, after=dict(days=between[0]), before=dict(days=between[1])
+                ))
+
+        # Get roles
+        async with self.bot.database() as db:
+            role_data = await db("SELECT role_id, threshold FROM role_gain WHERE guild_id=$1", ctx.guild.id)
+        role_object_data = sorted([(row['threshold'], ctx.guild.get_role(row['role_id'])) for row in role_data], key=lambda x: x[0])
+
+        # Build our output graph
+        fig = plt.figure()
+        ax = fig.subplots()
+
+        # Plot data
+        for user, i in points_per_week.items():
+            color = hex(random.randint(0, 0xffffff))[2:]
+            ax.plot(list(range(window_days)), i, 'k-', label=(user.nick or user.name), color=tuple(int(color[i:i+2], 16) / 255 for i in (0, 2, 4)))
+        # labelLines(fig.gca().get_lines())
+        fig.legend()
+
+        # Set size
+        MINOR_AXIS_STOP = 50
+        if role_object_data:
+            graph_height = max([role_object_data[-1][0] + MINOR_AXIS_STOP, math.ceil((max([max(i) for i in points_per_week.values()]) + 1) / MINOR_AXIS_STOP) * MINOR_AXIS_STOP])
+        else:
+            graph_height = math.ceil((max([max(i) for i in points_per_week.values()]) + 1) / MINOR_AXIS_STOP) * MINOR_AXIS_STOP
+        ax.axis([0, window_days, 0, graph_height])
+
+        # Fix axies
+        ax.axis('off')
+        ax.grid(True)
+
+        # Add background colour
+        for zorder, tier in zip(range(-100, -100 + (len(role_object_data) * 2), 2), role_object_data):
+            plt.axhspan(tier[0], graph_height, facecolor=f"#{tier[1].colour.value or 0xffffff:0>6X}", zorder=zorder)
+            plt.axhspan(tier[0], tier[0] + 1, facecolor=f"#000000", zorder=zorder + 1)
+
+        # Tighten border
+        fig.tight_layout()
+
+        # Output to user baybeeee
+        fig.savefig('activity.png', bbox_inches='tight', pad_inches=0)
+        with utils.Embed() as embed:
+            embed.set_image(url="attachment://activity.png")
+        await ctx.send(f"Activity graph in a {window_days} day window{(' (' + truncation + ')') if truncation else ''}, showing average activity over each 7 day period.", embed=embed, file=discord.File("activity.png"))
+
+    @commands.command(cls=utils.Command)
+    @commands.guild_only()
     async def leaderboard(self, ctx:utils.Context):
         """Gives you the top 10 leaderboard users for the server"""
 
