@@ -13,7 +13,7 @@ from cogs import utils
 
 class Information(utils.Cog):
 
-    @commands.command(aliases=['points'], cls=utils.Command)
+    @commands.command(cls=utils.Command)
     @commands.guild_only()
     async def graph(self, ctx:utils.Context, user:typing.Optional[discord.Member], window_days:typing.Optional[int]=7):
         """Graphs your points over a given time"""
@@ -154,7 +154,7 @@ class Information(utils.Cog):
             embed.set_image(url="attachment://activity.png")
         await ctx.send(f"Activity graph in a {window_days} day window{(' (' + truncation + ')') if truncation else ''}, showing average activity over each 7 day period.", embed=embed, file=discord.File("activity.png"))
 
-    @commands.command(cls=utils.Command)
+    @commands.command(aliases=['lb'], cls=utils.Command)
     @commands.guild_only()
     async def leaderboard(self, ctx:utils.Context):
         """Gives you the top 10 leaderboard users for the server"""
@@ -165,7 +165,16 @@ class Information(utils.Cog):
             all_data_for_guild[key[0]] = len(utils.CachedMessage.get_messages(key[0], ctx.guild, days=7))
         ordered_user_ids = sorted(all_data_for_guild.keys(), key=lambda k: all_data_for_guild[k], reverse=True)
         filtered_list = [i for i in ordered_user_ids if ctx.guild.get_member(i) is not None and self.bot.get_user(i).bot is False]
-        await ctx.send(f"Points over 7 days:\n\n" + '\n'.join([f"**{self.bot.get_user(i)!s}** - {all_data_for_guild[i]}" for i in filtered_list[:10]]))
+        await ctx.send(f"__Messages over 7 days:__\n" + '\n'.join([f"**{self.bot.get_user(i)!s}** - {all_data_for_guild[i]}" for i in filtered_list[:10]]))
+
+    @commands.command(aliases=['point', 'level'], cls=utils.Command)
+    @commands.guild_only()
+    async def points(self, ctx:utils.Context, user:typing.Optional[discord.Member]=None):
+        """Shows you your message amount over 7 days"""
+
+        user = user or ctx.author
+        amount = len(utils.CachedMessage.get_messages(user.id, ctx.guild.id, days=7))
+        await ctx.send(f"Over the past 7 days, {user.mention} has sent {amount} messages.")
 
 
 def setup(bot:utils.Bot):
