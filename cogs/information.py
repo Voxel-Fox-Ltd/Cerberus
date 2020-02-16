@@ -7,7 +7,6 @@ from datetime import datetime as dt
 import discord
 from discord.ext import commands
 from matplotlib import pyplot as plt
-from labellines import labelLines
 
 from cogs import utils
 
@@ -127,7 +126,6 @@ class Information(utils.Cog):
         for user, i in points_per_week.items():
             color = hex(random.randint(0, 0xffffff))[2:]
             ax.plot(list(range(window_days)), i, 'k-', label=(user.nick or user.name), color=tuple(int(color[i:i+2], 16) / 255 for i in (0, 2, 4)))
-        # labelLines(fig.gca().get_lines())
         fig.legend()
 
         # Set size

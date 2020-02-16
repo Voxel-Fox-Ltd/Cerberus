@@ -3,7 +3,6 @@ from cogs.utils import checks, converters, errors
 from cogs.utils.cached_message import CachedMessage
 from cogs.utils.checks import cooldown
 from cogs.utils.context_embed import ContextEmbed as Embed
-from cogs.utils.converters.duration import Duration
 from cogs.utils.custom_bot import CustomBot as Bot
 from cogs.utils.custom_cog import CustomCog as Cog
 from cogs.utils.custom_command import CustomCommand as Command
