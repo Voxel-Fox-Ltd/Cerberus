@@ -37,7 +37,7 @@ class ErrorHandler(utils.Cog):
             commands.MissingAnyRole, commands.MissingPermissions,
             commands.MissingRole, commands.CommandOnCooldown, commands.DisabledCommand,
         )
-        if ctx.original_author.id in self.bot.owner_ids and isinstance(error, owner_reinvoke_errors):
+        if ctx.original_author_id in self.bot.owner_ids and isinstance(error, owner_reinvoke_errors):
             return await ctx.reinvoke()
 
         # Missing argument (string)
@@ -47,10 +47,6 @@ class ErrorHandler(utils.Cog):
         # Missing argument
         elif isinstance(error, commands.MissingRequiredArgument):
             return await ctx.send(f"You're missing the `{error.param.name}` argument, which is required for this command to work properly.")
-
-        # Argument conversion error
-        elif isinstance(error, commands.BadArgument):
-            return await ctx.send(str(error))
 
         # Cooldown
         elif isinstance(error, commands.CommandOnCooldown):
@@ -91,6 +87,10 @@ class ErrorHandler(utils.Cog):
         # Not owner
         elif isinstance(error, commands.NotOwner):
             return await ctx.send("You need to be registered as an owner to run this command.")
+
+        # Argument conversion error
+        elif isinstance(error, commands.BadArgument):
+            return await ctx.send(str(error))
 
         # Can't tell what it is? Ah well.
         try:
