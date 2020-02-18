@@ -187,6 +187,24 @@ class Information(utils.Cog):
         amount = len(utils.CachedMessage.get_messages(user.id, ctx.guild.id, days=7))
         await ctx.send(f"Over the past 7 days, {user.mention} has sent {amount} messages.")
 
+    @commands.command(cls=utils.Command)
+    @commands.guild_only()
+    async def roles(self, ctx:utils.Context):
+        """Shows you the roles that have been set up for the guild"""
+
+        # Get roles
+        async with self.bot.database() as db:
+            role_data = await db("SELECT role_id, threshold FROM role_gain WHERE guild_id=$1", ctx.guild.id)
+        if not role_data:
+            return await ctx.send("There are no roles set up for this guild.")
+        role_object_data = sorted([(row['threshold'], ctx.guild.get_role(row['role_id'])) for row in role_data], key=lambda x: x[0], reverse=True)
+
+        # Output nicely
+        output = []
+        for threshold, role in role_object_data:
+            output.append(f"**{role.name}** :: `{threshold}` messages every 7 days")
+        return await ctx.send('\n'.join(output))
+
 
 def setup(bot:utils.Bot):
     x = Information(bot)
