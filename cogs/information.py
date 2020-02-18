@@ -87,6 +87,17 @@ class Information(utils.Cog):
 
         if not len(users):
             users = [ctx.author]
+        await self.make_multigraph(ctx, users, window_days)
+
+    @commands.command(cls=utils.Command)
+    @commands.guild_only()
+    async def multigraphrole(self, ctx:utils.Context, role:discord.Role, window_days:typing.Optional[int]=7):
+        """Graphs the points of a role over a given time"""
+
+        await self.make_multigraph(ctx, role.members, window_days)
+
+    async def make_multigraph(self, ctx, users:typing.List[discord.Member], window_days:int):
+        """Makes the actual graph for the thing innit mate"""
 
         await ctx.channel.trigger_typing()
 
@@ -124,7 +135,7 @@ class Information(utils.Cog):
 
         # Plot data
         for user, i in points_per_week.items():
-            color = hex(random.randint(0, 0xffffff))[2:]
+            color = format(hex(random.randint(0, 0xffffff))[2:], "0>6")
             ax.plot(list(range(window_days)), i, 'k-', label=(user.nick or user.name), color=tuple(int(color[i:i+2], 16) / 255 for i in (0, 2, 4)))
         fig.legend()
 
