@@ -18,87 +18,41 @@ class Information(utils.Cog):
     async def graph(self, ctx:utils.Context, user:typing.Optional[discord.Member], window_days:typing.Optional[int]=7):
         """Graphs your points over a given time"""
 
-        await ctx.channel.trigger_typing()
-
-        # Set up our most used vars
         user = user or ctx.author
-        original = window_days
-        truncation = None
-        if window_days > 365:
-            window_days = 365
-            truncation = f"shortened from your original request of {original} days for going over the 365 day max"
-        if window_days > (dt.utcnow() - user.joined_at).days:
-            window_days = (dt.utcnow() - user.joined_at).days
-            truncation = f"shortened from your original request of {original} days as the user hasn't been in the guild that long"
-        if window_days > (dt.utcnow() - ctx.guild.me.joined_at).days:
-            window_days = (dt.utcnow() - ctx.guild.me.joined_at).days
-            truncation = f"shortened from your original request of {original} days as I haven't been in the guild that long"
-
-        # Go through each day and work out how many points it has
-        points_per_week = [0] * window_days  # A list of the amount of points the user have in each given day (index)
-        for index in range(window_days):
-            between = 7 + window_days - index - 1, window_days - index - 1
-            points_per_week[index] = len(utils.CachedMessage.get_messages_between(
-                user.id, ctx.guild.id, after=dict(days=between[0]), before=dict(days=between[1])
-            ))
-
-        # Get roles
-        async with self.bot.database() as db:
-            role_data = await db("SELECT role_id, threshold FROM role_gain WHERE guild_id=$1", ctx.guild.id)
-        role_object_data = sorted([(row['threshold'], ctx.guild.get_role(row['role_id'])) for row in role_data], key=lambda x: x[0])
-
-        # Build our output graph
-        fig = plt.figure()
-        ax = fig.subplots()
-
-        # Plot data
-        ax.plot(list(range(window_days)), points_per_week, 'k-')
-
-        # Set size
-        MINOR_AXIS_STOP = 50
-        if role_object_data:
-            graph_height = max([role_object_data[-1][0] + MINOR_AXIS_STOP, math.ceil((max(points_per_week) + 1) / MINOR_AXIS_STOP) * MINOR_AXIS_STOP])
-        else:
-            graph_height = math.ceil((max(points_per_week) + 1) / MINOR_AXIS_STOP) * MINOR_AXIS_STOP
-        ax.axis([0, window_days, 0, graph_height])
-
-        # Fix axies
-        ax.axis('off')
-        ax.grid(True)
-
-        # Add background colour
-        for zorder, tier in zip(range(-100, -100 + (len(role_object_data) * 2), 2), role_object_data):
-            plt.axhspan(tier[0], graph_height, facecolor=f"#{tier[1].colour.value or 0xffffff:0>6X}", zorder=zorder)
-            plt.axhspan(tier[0], tier[0] + 1, facecolor=f"#000000", zorder=zorder + 1)
-
-        # Tighten border
-        fig.tight_layout()
-
-        # Output to user baybeeee
-        fig.savefig('activity.png', bbox_inches='tight', pad_inches=0)
-        with utils.Embed() as embed:
-            embed.set_image(url="attachment://activity.png")
-        await ctx.send(f"Activity graph of **{user.nick or user.name}** in a {window_days} day window{(' (' + truncation + ')') if truncation else ''}, showing average activity over each 7 day period.", embed=embed, file=discord.File("activity.png"))
+        return await self.make_graph(ctx, [user], window_days, {user.id: "000000"})
 
     @commands.command(cls=utils.Command)
     @commands.guild_only()
     async def multigraph(self, ctx:utils.Context, users:commands.Greedy[discord.Member], window_days:typing.Optional[int]=7):
         """Graphs your points over a given time"""
 
-        if not len(users):
-            users = [ctx.author]
-        await self.make_multigraph(ctx, users, window_days)
+        if not users:
+            return await ctx.send("You haven't given any users to look at.")
+        if len(users) == 1:
+            users = users + [ctx.author]
+        await self.make_graph(ctx, users, window_days)
 
     @commands.command(cls=utils.Command)
     @commands.guild_only()
     async def multigraphrole(self, ctx:utils.Context, role:discord.Role, window_days:typing.Optional[int]=7):
         """Graphs the points of a role over a given time"""
 
-        await self.make_multigraph(ctx, role.members, window_days)
+        await self.make_graph(ctx, role.members, window_days)
 
-    async def make_multigraph(self, ctx, users:typing.List[discord.Member], window_days:int):
+    async def make_graph(self, ctx, users:typing.List[discord.Member], window_days:int, colours:dict=None):
         """Makes the actual graph for the thing innit mate"""
 
+        # Make sure there's people
+        if not users:
+            return await ctx.send("You can't make a graph of 0 users.")
+        if len(users) > 10:
+            return await ctx.send("There's more than 10 people in that graph - it would take too long for me to generate.")
+
+        # Pick up colours
+        if colours is None:
+            colours = {}
+
+        # This takes a lil bit so let's gooooooo
         await ctx.channel.trigger_typing()
 
         # Set up our most used vars
@@ -109,10 +63,14 @@ class Information(utils.Cog):
             truncation = f"shortened from your original request of {original} days for going over the 365 day max"
         if window_days > (dt.utcnow() - min([i.joined_at for i in users])).days:
             window_days = (dt.utcnow() - min([i.joined_at for i in users])).days
-            truncation = f"shortened from your original request of {original} days as someone you pinged hasn't been in the guild that long"
+            truncation = f"shortened from your original request of {original} days as {'someone you pinged has not' if len(users) > 1 else 'they have not'} been in the guild that long"
         if window_days > (dt.utcnow() - ctx.guild.me.joined_at).days:
             window_days = (dt.utcnow() - ctx.guild.me.joined_at).days
             truncation = f"shortened from your original request of {original} days as I haven't been in the guild that long"
+
+        # Make sure there's actually a day
+        if window_days == 0:
+            window_days = 1
 
         # Go through each day and work out how many points it has
         points_per_week_base = [0] * window_days  # A list of the amount of points the user have in each given day (index)
@@ -123,6 +81,10 @@ class Information(utils.Cog):
                 points_per_week[user][index] = len(utils.CachedMessage.get_messages_between(
                     user.id, ctx.guild.id, after=dict(days=between[0]), before=dict(days=between[1])
                 ))
+
+        # Don't bother uploading if they've not got any data
+        if sum([sum(user_points) for user_points in points_per_week.values()]) == 0:
+            return await ctx.send("They've not sent any messages that I can graph.")
 
         # Get roles
         async with self.bot.database() as db:
@@ -135,8 +97,12 @@ class Information(utils.Cog):
 
         # Plot data
         for user, i in points_per_week.items():
-            color = format(hex(random.randint(0, 0xffffff))[2:], "0>6")
-            ax.plot(list(range(window_days)), i, 'k-', label=(user.nick or user.name), color=tuple(int(color[i:i+2], 16) / 255 for i in (0, 2, 4)))
+            if user.id in colours:
+                colour = colours.get(user.id)
+            else:
+                colour = format(hex(random.randint(0, 0xffffff))[2:], "0>6")
+            rgb_colour = tuple(int(colour[i:i+2], 16) / 255 for i in (0, 2, 4))
+            ax.plot(list(range(window_days)), i, 'k-', label=(user.nick or user.name), color=rgb_colour)
         fig.legend()
 
         # Set size
