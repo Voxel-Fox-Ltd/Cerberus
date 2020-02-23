@@ -41,20 +41,7 @@ class RoleHandler(utils.Cog):
     @commands.command(cls=utils.Command)
     @commands.has_permissions(manage_roles=True)
     @commands.guild_only()
-    async def removelevelrole(self, ctx:utils.Context, *, role:discord.Role):
-        """Removes a level role"""
-
-        async with self.bot.database() as db:
-            await db(
-                "DELETE FROM static_role_gain WHERE role_id=$1", role.id
-                )
-        await ctx.send(f"Now removed users receiving the **{role.name}** role.")
-
-
-    @commands.command(cls=utils.Command)
-    @commands.has_permissions(manage_roles=True)
-    @commands.guild_only()
-    async def addlevelrole(self, ctx:utils.Context, threshold:int, *, role:discord.Role):
+    async def addstaticrole(self, ctx:utils.Context, threshold:int, *, role:discord.Role):
         """Adds a role when a user reaches a certain level"""
 
         async with self.bot.database() as db:
@@ -62,7 +49,7 @@ class RoleHandler(utils.Cog):
                 "INSERT INTO static_role_gain (guild_id, role_id, threshold) VALUES ($1, $2, $3)",
                 ctx.guild.id, role.id, threshold
             )
-        await ctx.send(f"Now added - level {threshold}, users will receive the **{role.name}** role.")
+        await ctx.send(f"Now added - {threshold} messages sent, users will receive the **{role.name}** role.")
 
     @commands.command(cls=utils.Command)
     @commands.has_permissions(manage_roles=True)
@@ -76,6 +63,18 @@ class RoleHandler(utils.Cog):
         if current is not None:
             current = [i for i in current if i['role_id'] != role.id]
             self.role_handles[ctx.guild.id] = current
+        await ctx.send(f"Now removed users receiving the **{role.name}** role.")
+
+    @commands.command(cls=utils.Command)
+    @commands.has_permissions(manage_roles=True)
+    @commands.guild_only()
+    async def removestaticrole(self, ctx:utils.Context, *, role:discord.Role):
+        """Removes a level role"""
+
+        async with self.bot.database() as db:
+            await db(
+                "DELETE FROM static_role_gain WHERE role_id=$1", role.id
+                )
         await ctx.send(f"Now removed users receiving the **{role.name}** role.")
 
     @tasks.loop(hours=1)
@@ -135,6 +134,11 @@ class RoleHandler(utils.Cog):
                     self.logger.info(f"Removed role with ID {role.id} from user {user.id}")
                 except Exception as e:
                     self.logger.info(f"Can't manage {role_id} role for user {user.id} in guild {user.guild.id} - {e}")
+
+
+    @utils.Cog.listener("on_user_points_receive")
+    async def static_user_role_handler(self, user:discord.Member):
+        """Looks for when a user passes the threshold of points and then handles their roles accordingly"""
         
         # Grab static data
         current_static = self.static_role_handles[user.guild.id]
@@ -154,14 +158,14 @@ class RoleHandler(utils.Cog):
             threshold = row['threshold']
 
             # Are they over the message_count threshold? - role handle
-            if self.bot.message_count[(user.id, guild.id)] >= threshold and role_id not in user._roles:
+            if self.bot.message_count[(user.id, user.guild.id)] >= threshold and role_id not in user._roles:
                 role = user.guild.get_role(role_id)
                 try:
                     await user.add_roles(role)
                     self.logger.info(f"Added static role with ID {role.id} to user {user.id}")
                 except Exception as e:
                     self.logger.info(f"Can't manage {role_id} role for user {user.id} in guild {user.guild.id} - {e}")
-            elif self.bot.message_count[(user.id, guild.id)] < threshold and role_id in user._roles:
+            elif self.bot.message_count[(user.id, user.guild.id)] < threshold and role_id in user._roles:
                 role = user.guild.get_role(role_id)
                 try:
                     await user.remove_roles(role)
