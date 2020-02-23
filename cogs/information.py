@@ -163,6 +163,14 @@ class Information(utils.Cog):
 
     @commands.command(cls=utils.Command)
     @commands.guild_only()
+    async def static(self, ctx:utils.Context, user:typing.Optional[discord.Member]=None):
+        """Tells you how many total messages you've sent"""
+
+        user = user or ctx.author
+        await ctx.send(f"{user.mention} has sent {self.bot.message_count[(user.id, ctx.guild.id)]} tracked messages.")
+
+    @commands.command(cls=utils.Command)
+    @commands.guild_only()
     async def roles(self, ctx:utils.Context):
         """Shows you the roles that have been set up for the guild"""
 
@@ -177,6 +185,24 @@ class Information(utils.Cog):
         output = []
         for threshold, role in role_object_data:
             output.append(f"**{role.name}** :: `{threshold}` messages every 7 days")
+        return await ctx.send('\n'.join(output))
+
+    @commands.command(cls=utils.Command)
+    @commands.guild_only()
+    async def staticroles(self, ctx:utils.Context):
+        """Shows you the static roles that have been set up for the guild"""
+
+        # Get roles
+        async with self.bot.database() as db:
+            role_data = await db("SELECT role_id, threshold FROM static_role_gain WHERE guild_id=$1", ctx.guild.id)
+        if not role_data:
+            return await ctx.send("There are no static roles set up for this guild.")
+        role_object_data = sorted([(row['threshold'], ctx.guild.get_role(row['role_id'])) for row in role_data], key=lambda x: x[0], reverse=True)
+
+        # Output nicely
+        output = []
+        for threshold, role in role_object_data:
+            output.append(f"**{role.name}** :: `{threshold}` messages")
         return await ctx.send('\n'.join(output))
 
 
