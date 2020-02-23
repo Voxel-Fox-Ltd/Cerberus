@@ -34,6 +34,7 @@ class Mee6Importer(utils.Cog):
             data = await r.json()
         if str(r.status) == '404':
             return await ctx.send("The leaderboard page for this guild is either not public or not present - Mee6 must be on your server for this to work.")
+        self.logger.info(f"Grabbed Mee6 role data for guild {ctx.guild.id} page {i}")
 
         # Output to user
         role_rewards = sorted(data['role_rewards'], key=lambda r: r['rank'])
@@ -81,15 +82,20 @@ class Mee6Importer(utils.Cog):
             # Get data from the Mee6 API
             base = "https://mee6.xyz/api/plugins/levels/leaderboard/"
             user_data = []
+            i = 0
             while True:
                 async with self.bot.session.get(base + str(ctx.guild.id), params={'page': i, 'limit': 1000}) as r:
                     data = await r.json()
                 if str(r.status) == '404':
                     return await ctx.send("The leaderboard page for this guild is either not public or not present - Mee6 must be on your server for this to work.")
+                elif str(r.status)[0] != '2':
+                    return await ctx.send(data)
+                self.logger.info(f"Grabbed Mee6 leaderboard data for guild {ctx.guild.id} page {i}")
                 if data['players']:
                     user_data.extend(data['players'])
                 else:
                     break
+                i += 1
 
             # Store in database
             async with self.bot.database() as db:
