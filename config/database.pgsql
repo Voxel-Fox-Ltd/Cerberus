@@ -16,8 +16,7 @@ CREATE TABLE role_gain(
     role_id BIGINT PRIMARY KEY,
     threshold INTEGER NOT NULL,
     period VARCHAR(10) NOT NULL,
-    duration INTEGER NOT NULL,
-    PRIMARY KEY (role_id)
+    duration INTEGER NOT NULL
 );
 
 
