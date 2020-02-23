@@ -165,13 +165,13 @@ class RoleHandler(utils.Cog):
                     self.logger.info(f"Added static role with ID {role.id} to user {user.id}")
                 except Exception as e:
                     self.logger.info(f"Can't manage {role_id} role for user {user.id} in guild {user.guild.id} - {e}")
-            elif self.bot.message_count[(user.id, user.guild.id)] < threshold and role_id in user._roles:
-                role = user.guild.get_role(role_id)
-                try:
-                    await user.remove_roles(role)
-                    self.logger.info(f"Removed static role with ID {role.id} from user {user.id}")
-                except Exception as e:
-                    self.logger.info(f"Can't manage {role_id} role for user {user.id} in guild {user.guild.id} - {e}")
+            # elif self.bot.message_count[(user.id, user.guild.id)] < threshold and role_id in user._roles:
+            #     role = user.guild.get_role(role_id)
+            #     try:
+            #         await user.remove_roles(role)
+            #         self.logger.info(f"Removed static role with ID {role.id} from user {user.id}")
+            #     except Exception as e:
+            #         self.logger.info(f"Can't manage {role_id} role for user {user.id} in guild {user.guild.id} - {e}")
 
 
 
