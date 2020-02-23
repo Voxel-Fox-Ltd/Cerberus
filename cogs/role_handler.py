@@ -74,7 +74,7 @@ class RoleHandler(utils.Cog):
         async with self.bot.database() as db:
             await db(
                 "DELETE FROM static_role_gain WHERE role_id=$1", role.id
-                )
+            )
         await ctx.send(f"Now removed users receiving the **{role.name}** role.")
 
     @tasks.loop(hours=1)
