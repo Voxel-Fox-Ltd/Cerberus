@@ -134,6 +134,11 @@ class RoleHandler(utils.Cog):
                     self.logger.info(f"Removed role with ID {role.id} from user {user.id}")
                 except Exception as e:
                     self.logger.info(f"Can't manage {role_id} role for user {user.id} in guild {user.guild.id} - {e}")
+
+
+    @utils.Cog.listener("on_user_points_receive")
+    async def static_user_role_handler(self, user:discord.Member):
+        """Looks for when a user passes the threshold of points and then handles their roles accordingly"""
         
         # Grab static data
         current_static = self.static_role_handles[user.guild.id]
@@ -153,14 +158,14 @@ class RoleHandler(utils.Cog):
             threshold = row['threshold']
 
             # Are they over the message_count threshold? - role handle
-            if self.bot.message_count[(user.id, guild.id)] >= threshold and role_id not in user._roles:
+            if self.bot.message_count[(user.id, user.guild.id)] >= threshold and role_id not in user._roles:
                 role = user.guild.get_role(role_id)
                 try:
                     await user.add_roles(role)
                     self.logger.info(f"Added static role with ID {role.id} to user {user.id}")
                 except Exception as e:
                     self.logger.info(f"Can't manage {role_id} role for user {user.id} in guild {user.guild.id} - {e}")
-            elif self.bot.message_count[(user.id, guild.id)] < threshold and role_id in user._roles:
+            elif self.bot.message_count[(user.id, user.guild.id)] < threshold and role_id in user._roles:
                 role = user.guild.get_role(role_id)
                 try:
                     await user.remove_roles(role)
