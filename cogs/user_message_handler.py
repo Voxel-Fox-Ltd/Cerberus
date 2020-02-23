@@ -76,11 +76,12 @@ class UserMessageHandler(utils.Cog):
         )
 
         # Store for non-dynamic role handles
+        self.logger.info(f"Adding static exp to user {message.author.id} in guild {message.guild.id}")
         self.bot.message_count[(message.author.id, message.guild.id)] += 1
         async with self.bot.database() as db:
             await db(
                 """INSERT INTO static_user_messages (user_id, guild_id, message_count) 
-                VALUES ($1, $2, $3) ON CONFLICT DO UPDATE SET message_count=$3""",
+                VALUES ($1, $2, $3) ON CONFLICT (user_id, guild_id) DO UPDATE SET message_count=$3""",
                 message.author.id, message.guild.id, self.bot.message_count[(message.author.id, message.guild.id)]
             )
 
