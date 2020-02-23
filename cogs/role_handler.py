@@ -11,6 +11,7 @@ class RoleHandler(utils.Cog):
     def __init__(self, bot:utils.Bot):
         super().__init__(bot)
         self.role_handles = collections.defaultdict(lambda: None)
+        self.static_role_handles = collections.defaultdict(lambda: None)
         self.user_role_looper.start()
 
     def cog_unload(self):
@@ -134,6 +135,40 @@ class RoleHandler(utils.Cog):
                     self.logger.info(f"Removed role with ID {role.id} from user {user.id}")
                 except Exception as e:
                     self.logger.info(f"Can't manage {role_id} role for user {user.id} in guild {user.guild.id} - {e}")
+        
+        # Grab static data
+        current_static = self.static_role_handles[user.guild.id]
+        if current_static is None:
+            async with self.bot.database() as db:
+                static_roles = await db("SELECT * FROM static_role_gain WHERE guild_id=$1", user.guild.id)
+            current_static = list()
+            for i in static_roles:
+                current_static.append(dict(i))
+            self.static_role_handles[user.guild.id] = current_static
+        
+        # Run for each static role
+        for row in current_static:
+            
+            # Shorten variable names
+            role_id = row['role_id']
+            threshold = row['threshold']
+
+            # Are they over the message_count threshold? - role handle
+            if self.bot.message_count[(user.id, guild.id)] >= threshold and role_id not in user._roles:
+                role = user.guild.get_role(role_id)
+                try:
+                    await user.add_roles(role)
+                    self.logger.info(f"Added static role with ID {role.id} to user {user.id}")
+                except Exception as e:
+                    self.logger.info(f"Can't manage {role_id} role for user {user.id} in guild {user.guild.id} - {e}")
+            elif self.bot.message_count[(user.id, guild.id)] < threshold and role_id in user._roles:
+                role = user.guild.get_role(role_id)
+                try:
+                    await user.remove_roles(role)
+                    self.logger.info(f"Removed static role with ID {role.id} from user {user.id}")
+                except Exception as e:
+                    self.logger.info(f"Can't manage {role_id} role for user {user.id} in guild {user.guild.id} - {e}")
+
 
 
 def setup(bot:utils.Bot):
