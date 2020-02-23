@@ -68,6 +68,11 @@ class Mee6Importer(utils.Cog):
                         ctx.guild.id, int(role['role']['id']), int(self.get_exp_for_level(role['rank']) / 20)
                     )
 
+        # Remove cached roles for the guild
+        cog = self.bot.get_cog("RoleHandler")
+        if cog:
+            cog.static_role_handles[ctx.guild.id] = None
+
         # Output to user
         return await ctx.send("Your roles from Mee6 have been copied over.")
 
