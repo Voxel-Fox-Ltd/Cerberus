@@ -67,15 +67,22 @@ class UserMessageHandler(utils.Cog):
         else:
             return
 
-        # Cache to be saved
+        # Cache for dynamic role handles
         self.cached_for_saving.append(message)
-
-        # Cache for internal use
         utils.CachedMessage(
             user_id=message.author.id,
             guild_id=message.guild.id,
             message_id=message.id
         )
+
+        # Store for non-dynamic role handles
+        self.bot.message_count[(message.author.id, message.guild.id)] += 1
+        async with self.bot.database() as db:
+            await db(
+                """INSERT INTO static_user_messages (user_id, guild_id, message_count) 
+                VALUES ($1, $2, $3) ON CONFLICT DO UPDATE SET message_count=$3""",
+                message.author.id, message.guild.id, self.bot.message_count[(message.author.id, message.guild.id)]
+            )
 
         # Dispatch event
         self.bot.dispatch('user_points_receive', message.author)

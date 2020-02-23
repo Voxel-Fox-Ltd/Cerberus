@@ -33,5 +33,4 @@ CREATE TABLE static_role_gain(
     guild_id BIGINT NOT NULL,
     role_id BIGINT PRIMARY KEY,
     threshold INTEGER NOT NULL
-    PRIMARY KEY (role_id)
 );

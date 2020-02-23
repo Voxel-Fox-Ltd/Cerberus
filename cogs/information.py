@@ -72,14 +72,22 @@ class Information(utils.Cog):
         if window_days == 0:
             window_days = 1
 
+        # Check our window, see if we can make it a lil bigger for them
+        # if window_days <= 1:
+        #     window = 'minutes', window_days * 24 * 60, 24 * 60
+        if window_days <= 10:
+            window = 'hours', window_days * 24, 24
+        else:
+            window = 'days', window_days, 1
+
         # Go through each day and work out how many points it has
-        points_per_week_base = [0] * window_days  # A list of the amount of points the user have in each given day (index)
+        points_per_week_base = [0] * window[1]  # A list of the amount of points the user have in each given day (index)
         points_per_week = collections.defaultdict(points_per_week_base.copy)
         for user in users:
-            for index in range(window_days):
-                between = 7 + window_days - index - 1, window_days - index - 1
+            for index in range(window[1]):
+                between = (7 * window[2]) + window[1] - index - 1, window[1] - index - 1
                 points_per_week[user][index] = len(utils.CachedMessage.get_messages_between(
-                    user.id, ctx.guild.id, after=dict(days=between[0]), before=dict(days=between[1])
+                    user.id, ctx.guild.id, after={window[0]: between[0]}, before={window[0]: between[1]}
                 ))
 
         # Don't bother uploading if they've not got any data
@@ -102,7 +110,7 @@ class Information(utils.Cog):
             else:
                 colour = format(hex(random.randint(0, 0xffffff))[2:], "0>6")
             rgb_colour = tuple(int(colour[i:i+2], 16) / 255 for i in (0, 2, 4))
-            ax.plot(list(range(window_days)), i, 'k-', label=(user.nick or user.name), color=rgb_colour)
+            ax.plot(list(range(window[1])), i, 'k-', label=(user.nick or user.name), color=rgb_colour)
         fig.legend()
 
         # Set size
@@ -111,7 +119,7 @@ class Information(utils.Cog):
             graph_height = max([role_object_data[-1][0] + MINOR_AXIS_STOP, math.ceil((max([max(i) for i in points_per_week.values()]) + 1) / MINOR_AXIS_STOP) * MINOR_AXIS_STOP])
         else:
             graph_height = math.ceil((max([max(i) for i in points_per_week.values()]) + 1) / MINOR_AXIS_STOP) * MINOR_AXIS_STOP
-        ax.axis([0, window_days, 0, graph_height])
+        ax.axis([0, window[1], 0, graph_height])
 
         # Fix axies
         ax.axis('off')
