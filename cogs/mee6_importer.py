@@ -65,7 +65,7 @@ class Mee6Importer(utils.Cog):
                     await db(
                         """INSERT INTO static_role_gain (guild_id, role_id, threshold) 
                         VALUES ($1, $2, $3) ON CONFLICT (role_id) DO NOTHING""",
-                        ctx.guild.id, int(role['role']['id']), self.get_exp_for_level(role['rank'])
+                        ctx.guild.id, int(role['role']['id']), int(self.get_exp_for_level(role['rank']) / 20)
                     )
 
         # Output to user
