@@ -82,6 +82,12 @@ class Mee6Importer(utils.Cog):
     async def copymee6exp(self, ctx:utils.Context):
         """Copies the Mee6 exp into Cerberus"""
 
+        # Check that they're not already copied
+        async with self.bot.database() as db:
+            data = await db("SELECT * FROM copied_mee6_exp WHERE guild_id=$1", ctx.guild.id)
+        if data:
+            return await ctx.send("You've already copied over your exp from Mee6.")
+
         async with ctx.typing():
 
             # Get data from the Mee6 API
@@ -104,6 +110,7 @@ class Mee6Importer(utils.Cog):
 
             # Store in database
             async with self.bot.database() as db:
+                await db("INSERT INTO copied_mee6_exp VALUES ($1) ON CONFLICT (guild_id) DO NOTHING", ctx.guild.id)
                 for user in user_data:
                     self.bot.message_count[(int(user['id']), ctx.guild.id)] += user['message_count']
                     await db(
