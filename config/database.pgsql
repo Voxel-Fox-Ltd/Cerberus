@@ -33,3 +33,8 @@ CREATE TABLE static_role_gain(
     role_id BIGINT PRIMARY KEY,
     threshold INTEGER NOT NULL
 );
+
+
+CREATE TABLE copied_mee6_exp(
+    guild_id BIGINT PRIMARY KEY
+);
