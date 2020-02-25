@@ -150,7 +150,7 @@ class Information(utils.Cog):
             all_data_for_guild[key[0]] = len(utils.CachedMessage.get_messages(key[0], ctx.guild, days=7))
         ordered_user_ids = sorted(all_data_for_guild.keys(), key=lambda k: all_data_for_guild[k], reverse=True)
         filtered_list = [i for i in ordered_user_ids if ctx.guild.get_member(i) is not None and self.bot.get_user(i).bot is False]
-        await ctx.send(f"__Messages over 7 days:__\n" + '\n'.join([f"**{self.bot.get_user(i)!s}** - {all_data_for_guild[i]}" for i in filtered_list[:10]]))
+        await ctx.send(f"__Tracked Messages over 7 days:__\n" + '\n'.join([f"**{self.bot.get_user(i)!s}** - {all_data_for_guild[i]}" for i in filtered_list[:10]]))
 
     @commands.command(aliases=['point', 'level'], cls=utils.Command)
     @commands.guild_only()
@@ -159,7 +159,7 @@ class Information(utils.Cog):
 
         user = user or ctx.author
         amount = len(utils.CachedMessage.get_messages(user.id, ctx.guild.id, days=7))
-        await ctx.send(f"Over the past 7 days, {user.mention} has sent {amount} messages.")
+        await ctx.send(f"Over the past 7 days, {user.mention} has sent {amount} tracked messages.")
 
     @commands.command(cls=utils.Command)
     @commands.guild_only()
@@ -167,7 +167,7 @@ class Information(utils.Cog):
         """Tells you how many total messages you've sent"""
 
         user = user or ctx.author
-        await ctx.send(f"{user.mention} has sent {self.bot.message_count[(user.id, ctx.guild.id)]} tracked messages.")
+        await ctx.send(f"{user.mention} has sent {self.bot.message_count[(user.id, ctx.guild.id)]} total tracked messages.")
 
     @commands.command(cls=utils.Command)
     @commands.guild_only()
@@ -184,7 +184,7 @@ class Information(utils.Cog):
         # Output nicely
         output = []
         for threshold, role in role_object_data:
-            output.append(f"**{role.name}** :: `{threshold}` messages every 7 days")
+            output.append(f"**{role.name}** :: `{threshold}` tracked messages every 7 days")
         return await ctx.send('\n'.join(output))
 
     @commands.command(cls=utils.Command)
@@ -202,7 +202,7 @@ class Information(utils.Cog):
         # Output nicely
         output = []
         for threshold, role in role_object_data:
-            output.append(f"**{role.name}** :: `{threshold}` messages")
+            output.append(f"**{role.name}** :: `{threshold}` tracked messages")
         return await ctx.send('\n'.join(output))
 
 
