@@ -38,3 +38,16 @@ CREATE TABLE static_role_gain(
 CREATE TABLE copied_mee6_exp(
     guild_id BIGINT PRIMARY KEY
 );
+
+
+CREATE TABLE no_exp_channels(
+    guild_id BIGINT,
+    channel_id BIGINT PRIMARY KEY
+);
+
+
+
+CREATE TABLE no_exp_roles(
+    guild_id BIGINT,
+    role_id BIGINT PRIMARY KEY
+);
