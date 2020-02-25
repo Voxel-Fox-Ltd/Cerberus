@@ -109,9 +109,9 @@ class Information(utils.Cog):
                 colour = colours.get(user.id)
             else:
                 colour = format(hex(random.randint(0, 0xffffff))[2:], "0>6")
-            rgb_colour = tuple(int(colour[i:i+2], 16) / 255 for i in (0, 2, 4))
+            rgb_colour = tuple(int(colour[i:i + 2], 16) / 255 for i in (0, 2, 4))
             ax.plot(list(range(window[1])), i, 'k-', label=(user.nick or user.name), color=rgb_colour)
-        fig.legend()
+        fig.legend(loc="upper left")
 
         # Set size
         MINOR_AXIS_STOP = 50
