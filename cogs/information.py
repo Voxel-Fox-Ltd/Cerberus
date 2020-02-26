@@ -11,6 +11,11 @@ from matplotlib import pyplot as plt
 from cogs import utils
 
 
+POINTS_MESSAGE = """
+Cerberus uses multiple methods of keeping track of points. To see your sent messages in the past 7 days, run `{0.prefix}dynamic`. To see your total sent messages, run `{0.prefix}static`.
+""".strip()
+
+
 class Information(utils.Cog):
 
     @commands.command(cls=utils.Command)
@@ -139,6 +144,12 @@ class Information(utils.Cog):
             embed.set_image(url="attachment://activity.png")
         await ctx.send(f"Activity graph in a {window_days} day window{(' (' + truncation + ')') if truncation else ''}, showing average activity over each 7 day period.", embed=embed, file=discord.File("activity.png"))
 
+    @commands.command(aliases=['rank'], cls=utils.Command)
+    async def points(self, ctx:utils.Context):
+        """Shows you all of the points based commands"""
+
+        await ctx.send(POINTS_MESSAGE.format(ctx))
+
     @commands.command(aliases=['dlb', 'dylb', 'dynlb'], cls=utils.Command)
     @commands.guild_only()
     async def dynamicleaderboard(self, ctx:utils.Context):
@@ -150,7 +161,7 @@ class Information(utils.Cog):
             all_data_for_guild[key[0]] = len(utils.CachedMessage.get_messages(key[0], ctx.guild, days=7))
         ordered_user_ids = sorted(all_data_for_guild.keys(), key=lambda k: all_data_for_guild[k], reverse=True)
         filtered_list = [i for i in ordered_user_ids if ctx.guild.get_member(i) is not None and self.bot.get_user(i).bot is False]
-        await ctx.send(f"__Tracked Messages over 7 days:__\n" + '\n'.join([f"**{self.bot.get_user(i)!s}** - {all_data_for_guild[i]}" for i in filtered_list[:10]]))
+        await ctx.send(f"__Tracked Messages over 7 days:__\n" + '\n'.join([f"**{self.bot.get_user(i)!s}** - {all_data_for_guild[i]:,}" for i in filtered_list[:10]]))
 
     @commands.command(aliases=['dyn', 'dy', 'd'], cls=utils.Command)
     @commands.guild_only()
@@ -159,7 +170,7 @@ class Information(utils.Cog):
 
         user = user or ctx.author
         amount = len(utils.CachedMessage.get_messages(user.id, ctx.guild.id, days=7))
-        await ctx.send(f"Over the past 7 days, {user.mention} has sent {amount} tracked messages.")
+        await ctx.send(f"Over the past 7 days, {user.mention} has sent **{amount:,}** tracked messages.")
 
     @commands.command(aliases=['s', 'st', 'staticlevel', 'slevel', 'stlevel', 'srank', 'staticrank', 'strank'], cls=utils.Command)
     @commands.guild_only()
@@ -170,7 +181,7 @@ class Information(utils.Cog):
         mee6_data = self.bot.get_cog('Mee6Data')
         static_message_count = self.bot.message_count[(user.id, ctx.guild.id)]
         current_level = mee6_data.get_level_by_messages(static_message_count)
-        await ctx.send(f"{user.mention} has sent {static_message_count} total tracked messages - they're currently level {current_level}.")
+        await ctx.send(f"{user.mention} has sent **{static_message_count:,}** total tracked messages - they're currently level **{current_level}**.")
 
     @commands.command(aliases=['dyroles', 'dynroles', 'droles'], cls=utils.Command)
     @commands.guild_only()
