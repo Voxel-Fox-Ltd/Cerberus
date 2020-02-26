@@ -95,12 +95,10 @@ class UserMessageHandler(utils.Cog):
 
         # Dispatch level up event
         mee6_data = self.bot.get_cog('Mee6Data')
-        if mee6_data is None:
-            return
         current_level = mee6_data.get_level_by_messages(static_message_count)
         previous_level = mee6_data.get_level_by_messages(static_message_count - 1)
         if current_level > previous_level:
-            self.bot.dispatch('user_static_level_up', message.author)
+            self.bot.dispatch('user_static_level_up', message.author, message.channel, current_level)
 
 
 def setup(bot:utils.Bot):
