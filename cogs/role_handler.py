@@ -118,20 +118,27 @@ class RoleHandler(utils.Cog):
             # Shorten variable names
             role_id = row['role_id']
             threshold = row['threshold']
+            role = user.guild.get_role(role_id)
+
+            # Check if we can manage roles
+            if not user.guild.me.guild_permissions.manage_roles:
+                self.logger.info(f"Can't manage {role_id} role for user {user.id} in guild {user.guild.id}")
+                continue
+            if user.guild.me.top_role.position <= role.position:
+                self.logger.info(f"Can't manage {role_id} role for user {user.id} in guild {user.guild.id}")
+                continue
 
             # Are they over the threshold? - role handle
             if points_in_week >= threshold and role_id not in user._roles:
-                role = user.guild.get_role(role_id)
                 try:
                     await user.add_roles(role)
-                    self.logger.info(f"Added role with ID {role.id} to user {user.id}")
+                    self.logger.info(f"Added role with ID {role.id} to user {user.id} in guild {user.guild.id}")
                 except Exception as e:
                     self.logger.info(f"Can't manage {role_id} role for user {user.id} in guild {user.guild.id} - {e}")
             elif points_in_week < threshold and role_id in user._roles:
-                role = user.guild.get_role(role_id)
                 try:
                     await user.remove_roles(role)
-                    self.logger.info(f"Removed role with ID {role.id} from user {user.id}")
+                    self.logger.info(f"Removed role with ID {role.id} from user {user.id} in guild {user.guild.id}")
                 except Exception as e:
                     self.logger.info(f"Can't manage {role_id} role for user {user.id} in guild {user.guild.id} - {e}")
 
