@@ -17,10 +17,10 @@ class RoleHandler(utils.Cog):
     def cog_unload(self):
         self.user_role_looper.cancel()
 
-    @commands.command(cls=utils.Command)
+    @commands.command(aliases=['adddrole', 'adrole'], cls=utils.Command)
     @commands.has_permissions(manage_roles=True)
     @commands.guild_only()
-    async def addrole(self, ctx:utils.Context, threshold:int, *, role:discord.Role):
+    async def adddynamicrole(self, ctx:utils.Context, threshold:int, *, role:discord.Role):
         """Adds a role that is given when a threshold is reached"""
 
         async with self.bot.database() as db:
@@ -37,8 +37,9 @@ class RoleHandler(utils.Cog):
         })
         self.role_handles[ctx.guild.id] = current
         await ctx.send(f"Now added - at an average of {threshold} points every 7 days, users will receive the **{role.name}** role.")
+        self.logger.info(f"Added dynamic role {role.id} to guild {ctx.guild.id} at threshold {threshold}")
 
-    @commands.command(cls=utils.Command)
+    @commands.command(aliases=['addsrole', 'asrole'], cls=utils.Command)
     @commands.has_permissions(manage_roles=True)
     @commands.guild_only()
     async def addstaticrole(self, ctx:utils.Context, threshold:int, *, role:discord.Role):
@@ -50,11 +51,12 @@ class RoleHandler(utils.Cog):
                 ctx.guild.id, role.id, threshold
             )
         await ctx.send(f"Now added - {threshold} messages sent, users will receive the **{role.name}** role.")
+        self.logger.info(f"Added static role {role.id} to guild {ctx.guild.id} at threshold {threshold}")
 
-    @commands.command(cls=utils.Command)
+    @commands.command(aliases=['removedrole', 'rdrole'], cls=utils.Command)
     @commands.has_permissions(manage_roles=True)
     @commands.guild_only()
-    async def removerole(self, ctx:utils.Context, *, role:discord.Role):
+    async def removedynamicrole(self, ctx:utils.Context, *, role:discord.Role):
         """Removes a role that is given"""
 
         async with self.bot.database() as db:
@@ -64,8 +66,9 @@ class RoleHandler(utils.Cog):
             current = [i for i in current if i['role_id'] != role.id]
             self.role_handles[ctx.guild.id] = current
         await ctx.send(f"Now removed users receiving the **{role.name}** role.")
+        self.logger.info(f"Removed dynamic role {role.id} to guild {ctx.guild.id}")
 
-    @commands.command(cls=utils.Command)
+    @commands.command(aliases=['removesrole', 'rsrole'], cls=utils.Command)
     @commands.has_permissions(manage_roles=True)
     @commands.guild_only()
     async def removestaticrole(self, ctx:utils.Context, *, role:discord.Role):
@@ -76,6 +79,7 @@ class RoleHandler(utils.Cog):
                 "DELETE FROM static_role_gain WHERE role_id=$1", role.id
             )
         await ctx.send(f"Now removed users receiving the **{role.name}** role.")
+        self.logger.info(f"Removed static role {role.id} to guild {ctx.guild.id}")
 
     @tasks.loop(hours=1)
     async def user_role_looper(self):
@@ -124,10 +128,10 @@ class RoleHandler(utils.Cog):
 
             # Check if we can manage roles
             if not user.guild.me.guild_permissions.manage_roles:
-                self.logger.info(f"Can't manage {role_id} role for user {user.id} in guild {user.guild.id}")
+                self.logger.info(f"Can't manage {role_id} role for user {user.id} in guild {user.guild.id} - no perms")
                 continue
             if user.guild.me.top_role.position <= role.position:
-                self.logger.info(f"Can't manage {role_id} role for user {user.id} in guild {user.guild.id}")
+                self.logger.info(f"Can't manage {role_id} role for user {user.id} in guild {user.guild.id} - too low")
                 continue
 
             # Are they over the threshold? - role handle
@@ -170,10 +174,10 @@ class RoleHandler(utils.Cog):
 
             # Check if we can manage roles
             if not user.guild.me.guild_permissions.manage_roles:
-                self.logger.info(f"Can't manage {role_id} role for user {user.id} in guild {user.guild.id}")
+                self.logger.info(f"Can't manage {role_id} role for user {user.id} in guild {user.guild.id} - no perms")
                 continue
             if user.guild.me.top_role.position <= role.position:
-                self.logger.info(f"Can't manage {role_id} role for user {user.id} in guild {user.guild.id}")
+                self.logger.info(f"Can't manage {role_id} role for user {user.id} in guild {user.guild.id} - too low")
                 continue
 
             # Are they over the message_count threshold? - role handle
@@ -198,6 +202,7 @@ class RoleHandler(utils.Cog):
         if user.bot:
             return
         await channel.send(f"Well done {user.mention}, you're now **level {new_level}**!")
+        self.logger.info(f"Sent level up message to {channel.guild.id}/{channel.id} for {user.id} at level {new_level}")
 
     @utils.Cog.listener("on_user_static_new_role")
     async def user_role_level_up_poster(self, user:discord.Member, role:discord.Role, channel:discord.TextChannel):
@@ -210,6 +215,7 @@ class RoleHandler(utils.Cog):
         if channel is None:
             return
         await channel.send(f"Well done {user.mention}, you've received the **{role.name}** role!")
+        self.logger.info(f"Sent role up message to {channel.guild.id}/{channel.id} for {user.id} at role {role.id}")
 
 
 def setup(bot:utils.Bot):
