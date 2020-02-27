@@ -172,7 +172,7 @@ class RoleHandler(utils.Cog):
                 except Exception as e:
                     self.logger.info(f"Can't manage {role_id} role for user {user.id} in guild {user.guild.id} - {e}")
 
-    @utils.Cog.listener("user_static_level_up")
+    @utils.Cog.listener("on_user_static_level_up")
     async def user_level_up_message_poster(self, user:discord.Member, channel:discord.TextChannel, new_level:int):
         """Posts in the chat when the user levels up"""
 
