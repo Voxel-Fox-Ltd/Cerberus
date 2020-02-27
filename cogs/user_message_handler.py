@@ -60,6 +60,10 @@ class UserMessageHandler(utils.Cog):
         if message.guild is None:
             return
 
+        # Filter out blacklisted roles
+        if (message.guild.id, message.role.id) in self.bot.blacklisted_roles:
+            return
+
         # Filter blacklisted channels
         if (message.guild.id, message.channel.id) in self.bot.blacklisted_channels:
             return
