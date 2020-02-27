@@ -6,31 +6,31 @@ from cogs import utils
 
 class BlacklistCommands(utils.Cog):
 
-	@commands.command(cls=utils.Command)
-	@commands.has_permissions(manage_guild=True)
-	@commands.guild_only()
-	async def blacklistrole(self, ctx:utils.Context, *, role:discord.Role):
-		"""Sets it so people don't receive points with a given role"""
-		
-		if(ctx.guild.id, role.id) in self.bot.blacklisted_roles:
-			return await ctx.send(f"{role.name} is already blacklisted.")
-		self.bot.blacklisted_roles.add((ctx.guild.id, role.id))
-		async with self.bot.database as db:
-			await db("INSERT INTO no_exp_roles VALUES ($1, $2) ON CONFLICT (channel_id) DO NOTHING", ctx.guild.id, role.id)
-		return await ctx.send(f"Stopped tracking user messages with {role.name}.")
+    @commands.command(cls=utils.Command)
+    @commands.has_permissions(manage_guild=True)
+    @commands.guild_only()
+    async def blacklistrole(self, ctx:utils.Context, *, role:discord.Role):
+        """Sets it so people don't receive points with a given role"""
 
-	@commands.command(cls=utils.Command)
-	@commands.has_permissions(manage_guild=True)
-	@commands.guild_only()
-	async def whitelistrole(self, utils.Context, *, role:discord.Role)
-		"""Re-allows the bot to track messages with a given role"""
+        if (ctx.guild.id, role.id) in self.bot.blacklisted_roles:
+            return await ctx.send(f"**{role.name}** is already blacklisted.")
+        self.bot.blacklisted_roles.add((ctx.guild.id, role.id))
+        async with self.bot.database as db:
+            await db("INSERT INTO no_exp_roles VALUES ($1, $2) ON CONFLICT (role_id) DO NOTHING", ctx.guild.id, role.id)
+        return await ctx.send(f"Stopped tracking user messages with the **{role.name}** role.")
 
-		if(ctx.guild.id, role.id) not in self.bot.blacklisted_roles:
-			return await ctx.send(f"{role.name} is not blacklisted")
-		self.bot.blacklisted_roles.remove((ctx.guild.id, channel.id))
-		async with self.bot.database() as db:
-			await db("DELETE FROM no_exp_roles WHERE guild_id=$1 AND role_id=$2", ctx.guild.id, role.id)
-		return await ctx.send(f"Now tracking user messages with {role.name}.")
+    @commands.command(cls=utils.Command)
+    @commands.has_permissions(manage_guild=True)
+    @commands.guild_only()
+    async def whitelistrole(self, ctx:utils.Context, *, role:discord.Role):
+        """Re-allows the bot to track messages with a given role"""
+
+        if (ctx.guild.id, role.id) not in self.bot.blacklisted_roles:
+            return await ctx.send(f"**{role.name}** is not blacklisted")
+        self.bot.blacklisted_roles.remove((ctx.guild.id, role.id))
+        async with self.bot.database() as db:
+            await db("DELETE FROM no_exp_roles WHERE guild_id=$1 AND role_id=$2", ctx.guild.id, role.id)
+        return await ctx.send(f"Now tracking user messages with the **{role.name}** role.")
 
     @commands.command(cls=utils.Command)
     @commands.has_permissions(manage_guild=True)
@@ -64,4 +64,3 @@ class BlacklistCommands(utils.Cog):
 def setup(bot:utils.Bot):
     x = BlacklistCommands(bot)
     bot.add_cog(x)
-
