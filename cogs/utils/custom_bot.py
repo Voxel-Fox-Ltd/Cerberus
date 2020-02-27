@@ -66,6 +66,7 @@ class CustomBot(commands.AutoShardedBot):
         # Here's the storage for cached stuff
         self.guild_settings = collections.defaultdict(self.DEFAULT_GUILD_SETTINGS.copy)
         self.message_count = collections.defaultdict(int)  # (author.id, guild.id): int
+        self.blacklisted_channels = set()
 
     def get_invite_link(self, *, scope:str='bot', response_type:str=None, redirect_uri:str=None, guild_id:int=None, **kwargs):
         """Gets the invite link for the bot, with permissions all set properly"""
@@ -143,6 +144,8 @@ class CustomBot(commands.AutoShardedBot):
         # Remove caches
         self.logger.debug("Clearing caches")
         self.guild_settings.clear()
+        self.message_count.clear()
+        self.blacklisted_channels.clear()
 
         # Get database connection
         db = await self.database.get_connection()
@@ -151,7 +154,7 @@ class CustomBot(commands.AutoShardedBot):
         try:
             data = await db("SELECT * FROM user_messages")
         except Exception as e:
-            self.logger.critical(f"Failed to get data from user_messages")
+            self.logger.critical(f"Failed to get data from user_messages - {e}")
             exit(1)
         for row in data:
             CachedMessage(**row)
@@ -160,10 +163,19 @@ class CustomBot(commands.AutoShardedBot):
         try:
             data = await db("SELECT * FROM static_user_messages")
         except Exception as e:
-            self.logger.critical(f"Failed to get data from static_user_messages")
+            self.logger.critical(f"Failed to get data from static_user_messages - {e}")
             exit(1)
         for row in data:
             self.message_count[(row['user_id'], row['guild_id'])] = row['message_count']
+
+        # Get blacklisted channels
+        try:
+            data = await db("SELECT * FROM no_exp_channels")
+        except Exception as e:
+            self.logger.critical(f"Failed to get data from no_exp_channels - {e}")
+            exit(1)
+        for row in data:
+            self.blacklisted_channels.add((row['guild_id'], row['channel_id']))
 
         # Get stored prefixes
         try:

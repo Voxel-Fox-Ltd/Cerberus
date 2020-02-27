@@ -138,7 +138,7 @@ class RoleHandler(utils.Cog):
     @utils.Cog.listener("on_user_points_receive")
     async def static_user_role_handler(self, user:discord.Member):
         """Looks for when a user passes the threshold of points and then handles their roles accordingly"""
-        
+
         # Grab static data
         current_static = self.static_role_handles[user.guild.id]
         if current_static is None:
@@ -148,10 +148,10 @@ class RoleHandler(utils.Cog):
             for i in static_roles:
                 current_static.append(dict(i))
             self.static_role_handles[user.guild.id] = current_static
-        
+
         # Run for each static role
         for row in current_static:
-            
+
             # Shorten variable names
             role_id = row['role_id']
             threshold = row['threshold']
@@ -164,6 +164,14 @@ class RoleHandler(utils.Cog):
                     self.logger.info(f"Added static role with ID {role.id} to user {user.id}")
                 except Exception as e:
                     self.logger.info(f"Can't manage {role_id} role for user {user.id} in guild {user.guild.id} - {e}")
+
+    @utils.Cog.listener("user_static_level_up")
+    async def user_level_up_message_poster(self, user:discord.Member, channel:discord.TextChannel, new_level:int):
+        """Posts in the chat when the user levels up"""
+
+        # TODO check the guild settings to see if level up messages should be posted
+
+        await channel.send(f"Well done {user.mention}, you're now **level {new_level}**!")
 
 
 def setup(bot:utils.Bot):

@@ -60,6 +60,10 @@ class UserMessageHandler(utils.Cog):
         if message.guild is None:
             return
 
+        # Filter blacklisted channels
+        if (message.guild.id, message.channel.id) in self.bot.blacklisted_channels:
+            return
+
         # Make sure it's in the time we want
         last_message_from_user = self.last_message[message.author]
         if last_message_from_user < dt.utcnow() - timedelta(minutes=1):
@@ -78,15 +82,23 @@ class UserMessageHandler(utils.Cog):
         # Store for non-dynamic role handles
         self.logger.info(f"Adding static exp to user {message.author.id} in guild {message.guild.id}")
         self.bot.message_count[(message.author.id, message.guild.id)] += 1
+        static_message_count = self.bot.message_count[(message.author.id, message.guild.id)]
         async with self.bot.database() as db:
             await db(
-                """INSERT INTO static_user_messages (user_id, guild_id, message_count) 
+                """INSERT INTO static_user_messages (user_id, guild_id, message_count)
                 VALUES ($1, $2, $3) ON CONFLICT (user_id, guild_id) DO UPDATE SET message_count=$3""",
-                message.author.id, message.guild.id, self.bot.message_count[(message.author.id, message.guild.id)]
+                message.author.id, message.guild.id, static_message_count
             )
 
-        # Dispatch event
+        # Dispatch points event
         self.bot.dispatch('user_points_receive', message.author)
+
+        # Dispatch level up event
+        mee6_data = self.bot.get_cog('Mee6Data')
+        current_level = mee6_data.get_level_by_messages(static_message_count)
+        previous_level = mee6_data.get_level_by_messages(static_message_count - 1)
+        if current_level > previous_level:
+            self.bot.dispatch('user_static_level_up', message.author, message.channel, current_level)
 
 
 def setup(bot:utils.Bot):

@@ -3,25 +3,42 @@ from discord.ext import commands
 from cogs import utils
 
 
-class Mee6Importer(utils.Cog):
+class Mee6Data(utils.Cog):
+
+    mee6_exp_by_level = {}
 
     def __init__(self, bot:utils.Bot):
         super().__init__(bot)
-        self.mee6_exp_for_level = {}
 
-    def get_exp_for_level(self, level:int):
+    @classmethod
+    def get_exp_by_level(cls, level:int) -> int:
         """Gets the amount of exp associated with a level"""
 
         # https://mee6.github.io/Mee6-documentation/levelxp/
-        # 5 * (lvl ^ 2) + 50 * lvl + 100 
+        # 5 * (lvl ^ 2) + 50 * lvl + 100
 
-        if level in self.mee6_exp_for_level:
-            return self.mee6_exp_for_level[level]
+        if level in cls.mee6_exp_by_level:
+            return cls.mee6_exp_by_level[level]
         if level == 0:
             return 0
-        exp = 5 * ((level - 1) ** 2) + 50 * (level - 1) + 100 + self.get_exp_for_level(level - 1)
-        self.mee6_exp_for_level[level] = exp
+        exp = 5 * ((level - 1) ** 2) + 50 * (level - 1) + 100 + cls.get_exp_by_level(level - 1)
+        cls.mee6_exp_by_level[level] = exp
         return exp
+
+    @classmethod
+    def get_messages_by_level(cls, level:int) -> int:
+        """Gets the amount of exp associated with a level"""
+
+        return int(cls.get_exp_by_level(level) / 20)
+
+    @classmethod
+    def get_level_by_messages(cls, messages:int) -> int:
+        """Gets the amount of exp associated with a level"""
+
+        level = 0
+        while cls.get_messages_by_level(level) <= messages:
+            level += 1
+        return level - 1
 
     @commands.command(cls=utils.Command, hidden=True)
     @commands.guild_only()
@@ -63,9 +80,9 @@ class Mee6Importer(utils.Cog):
             async with self.bot.database() as db:
                 for role in role_rewards:
                     await db(
-                        """INSERT INTO static_role_gain (guild_id, role_id, threshold) 
+                        """INSERT INTO static_role_gain (guild_id, role_id, threshold)
                         VALUES ($1, $2, $3) ON CONFLICT (role_id) DO NOTHING""",
-                        ctx.guild.id, int(role['role']['id']), int(self.get_exp_for_level(role['rank']) / 20)
+                        ctx.guild.id, int(role['role']['id']), self.get_messages_by_level(role['rank'])
                     )
 
         # Remove cached roles for the guild
@@ -114,7 +131,7 @@ class Mee6Importer(utils.Cog):
                 for user in user_data:
                     self.bot.message_count[(int(user['id']), ctx.guild.id)] += user['message_count']
                     await db(
-                        """INSERT INTO static_user_messages (user_id, guild_id, message_count) 
+                        """INSERT INTO static_user_messages (user_id, guild_id, message_count)
                         VALUES ($1, $2, $3) ON CONFLICT (user_id, guild_id) DO UPDATE SET message_count=$3""",
                         int(user['id']), ctx.guild.id, self.bot.message_count[(int(user['id']), ctx.guild.id)]
                     )
@@ -124,5 +141,5 @@ class Mee6Importer(utils.Cog):
 
 
 def setup(bot:utils.Bot):
-    x = Mee6Importer(bot)
+    x = Mee6Data(bot)
     bot.add_cog(x)

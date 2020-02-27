@@ -11,6 +11,11 @@ from matplotlib import pyplot as plt
 from cogs import utils
 
 
+POINTS_MESSAGE = """
+Cerberus uses multiple methods of keeping track of points. To see your sent messages in the past 7 days, run `{0.prefix}dynamic`. To see your total sent messages, run `{0.prefix}static`.
+""".strip()
+
+
 class Information(utils.Cog):
 
     @commands.command(cls=utils.Command)
@@ -109,9 +114,9 @@ class Information(utils.Cog):
                 colour = colours.get(user.id)
             else:
                 colour = format(hex(random.randint(0, 0xffffff))[2:], "0>6")
-            rgb_colour = tuple(int(colour[i:i+2], 16) / 255 for i in (0, 2, 4))
+            rgb_colour = tuple(int(colour[i:i + 2], 16) / 255 for i in (0, 2, 4))
             ax.plot(list(range(window[1])), i, 'k-', label=(user.nick or user.name), color=rgb_colour)
-        fig.legend()
+        fig.legend(loc="upper left")
 
         # Set size
         MINOR_AXIS_STOP = 50
@@ -139,9 +144,15 @@ class Information(utils.Cog):
             embed.set_image(url="attachment://activity.png")
         await ctx.send(f"Activity graph in a {window_days} day window{(' (' + truncation + ')') if truncation else ''}, showing average activity over each 7 day period.", embed=embed, file=discord.File("activity.png"))
 
-    @commands.command(aliases=['lb'], cls=utils.Command)
+    @commands.command(aliases=['rank'], cls=utils.Command)
+    async def points(self, ctx:utils.Context):
+        """Shows you all of the points based commands"""
+
+        await ctx.send(POINTS_MESSAGE.format(ctx))
+
+    @commands.command(aliases=['dlb', 'dylb', 'dynlb'], cls=utils.Command)
     @commands.guild_only()
-    async def leaderboard(self, ctx:utils.Context):
+    async def dynamicleaderboard(self, ctx:utils.Context):
         """Gives you the top 10 leaderboard users for the server"""
 
         all_keys_for_guild = [i for i in utils.CachedMessage.all_messages.keys() if i[1] == ctx.guild.id]
@@ -150,28 +161,31 @@ class Information(utils.Cog):
             all_data_for_guild[key[0]] = len(utils.CachedMessage.get_messages(key[0], ctx.guild, days=7))
         ordered_user_ids = sorted(all_data_for_guild.keys(), key=lambda k: all_data_for_guild[k], reverse=True)
         filtered_list = [i for i in ordered_user_ids if ctx.guild.get_member(i) is not None and self.bot.get_user(i).bot is False]
-        await ctx.send(f"__Messages over 7 days:__\n" + '\n'.join([f"**{self.bot.get_user(i)!s}** - {all_data_for_guild[i]}" for i in filtered_list[:10]]))
+        await ctx.send(f"__Tracked Messages over 7 days:__\n" + '\n'.join([f"**{self.bot.get_user(i)!s}** - {all_data_for_guild[i]:,}" for i in filtered_list[:10]]))
 
-    @commands.command(aliases=['point', 'level'], cls=utils.Command)
+    @commands.command(aliases=['dyn', 'dy', 'd'], cls=utils.Command)
     @commands.guild_only()
-    async def points(self, ctx:utils.Context, user:typing.Optional[discord.Member]=None):
+    async def dynamic(self, ctx:utils.Context, user:typing.Optional[discord.Member]=None):
         """Shows you your message amount over 7 days"""
 
         user = user or ctx.author
         amount = len(utils.CachedMessage.get_messages(user.id, ctx.guild.id, days=7))
-        await ctx.send(f"Over the past 7 days, {user.mention} has sent {amount} messages.")
+        await ctx.send(f"Over the past 7 days, {user.mention} has sent **{amount:,}** tracked messages.")
 
-    @commands.command(cls=utils.Command)
+    @commands.command(aliases=['s', 'st', 'staticlevel', 'slevel', 'stlevel', 'srank', 'staticrank', 'strank'], cls=utils.Command)
     @commands.guild_only()
     async def static(self, ctx:utils.Context, user:typing.Optional[discord.Member]=None):
         """Tells you how many total messages you've sent"""
 
         user = user or ctx.author
-        await ctx.send(f"{user.mention} has sent {self.bot.message_count[(user.id, ctx.guild.id)]} tracked messages.")
+        mee6_data = self.bot.get_cog('Mee6Data')
+        static_message_count = self.bot.message_count[(user.id, ctx.guild.id)]
+        current_level = mee6_data.get_level_by_messages(static_message_count)
+        await ctx.send(f"{user.mention} has sent **{static_message_count:,}** total tracked messages - they're currently level **{current_level}**.")
 
-    @commands.command(cls=utils.Command)
+    @commands.command(aliases=['dyroles', 'dynroles', 'droles'], cls=utils.Command)
     @commands.guild_only()
-    async def roles(self, ctx:utils.Context):
+    async def dynamicroles(self, ctx:utils.Context):
         """Shows you the roles that have been set up for the guild"""
 
         # Get roles
@@ -184,10 +198,10 @@ class Information(utils.Cog):
         # Output nicely
         output = []
         for threshold, role in role_object_data:
-            output.append(f"**{role.name}** :: `{threshold}` messages every 7 days")
+            output.append(f"**{role.name}** :: `{threshold}` tracked messages every 7 days")
         return await ctx.send('\n'.join(output))
 
-    @commands.command(cls=utils.Command)
+    @commands.command(aliases=['sroles', 'stroles'], cls=utils.Command)
     @commands.guild_only()
     async def staticroles(self, ctx:utils.Context):
         """Shows you the static roles that have been set up for the guild"""
@@ -202,7 +216,7 @@ class Information(utils.Cog):
         # Output nicely
         output = []
         for threshold, role in role_object_data:
-            output.append(f"**{role.name}** :: `{threshold}` messages")
+            output.append(f"**{role.name}** :: `{threshold}` tracked messages")
         return await ctx.send('\n'.join(output))
 
 
