@@ -12,8 +12,7 @@ class UserMessageHandler(utils.Cog):
 
     def __init__(self, bot:utils.Bot):
         super().__init__(bot)
-        the_start_of_time = lambda: dt(2000, 1, 1, 0, 0)
-        self.last_message: typing.Dict[discord.Member, dt] = collections.defaultdict(the_start_of_time)
+        self.last_message: typing.Dict[discord.Member, dt] = collections.defaultdict(lambda: dt(2000, 1, 1, 0, 0))
         self.cached_for_saving: typing.List[discord.Message] = list()
         self.user_message_databaser.start()
 
@@ -59,6 +58,10 @@ class UserMessageHandler(utils.Cog):
         # Filter out DMs
         if message.guild is None:
             return
+
+        # # Filter out blacklisted roles
+        # if (message.guild.id, message.role.id) in self.bot.blacklisted_roles:
+        #     return
 
         # Filter blacklisted channels
         if (message.guild.id, message.channel.id) in self.bot.blacklisted_channels:
