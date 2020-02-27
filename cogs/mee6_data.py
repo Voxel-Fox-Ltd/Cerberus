@@ -81,6 +81,7 @@ class Mee6Data(utils.Cog):
                 data = await r.json()
             if str(r.status) == '404':
                 return await ctx.send("The leaderboard page for this guild is either not public or not present - Mee6 must be on your server for this to work.")
+            await ctx.send(f"Grabbed {len(data['role_rewards'])} roles from Mee6 - now saving to database...")
 
             # Save to db
             role_rewards = data['role_rewards']
@@ -98,9 +99,9 @@ class Mee6Data(utils.Cog):
             cog.static_role_handles[ctx.guild.id] = None
 
         # Output to user
-        return await ctx.send("Your roles from Mee6 have been copied over.")
+        return await ctx.send(f"Saved {len(role_rewards)} role rewards from Mee6.")
 
-    @commands.command(cls=utils.Command)
+    @commands.command(cls=utils.Command, enabled=False)
     @commands.has_permissions(manage_guild=True)
     @commands.guild_only()
     async def copymee6exp(self, ctx:utils.Context):
@@ -131,6 +132,7 @@ class Mee6Data(utils.Cog):
                 else:
                     break
                 i += 1
+            await ctx.send(f"Grabbed data from Mee6, now putting {len(user_data)} fields into the database - this may take a few minutes.")
 
             # Store in database
             async with self.bot.database() as db:

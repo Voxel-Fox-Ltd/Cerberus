@@ -162,6 +162,17 @@ class RoleHandler(utils.Cog):
                 current_static.append(dict(i))
             self.static_role_handles[user.guild.id] = current_static
 
+        # Make sure there are roles to handle
+        if not current_static:
+            return
+
+        # Get the max role
+        user_exp = self.bot.exp_count[(user.id, user.guild.id)]
+        max_role = max([i for i in current_static if i['threshold'] <= user_exp], key=lambda i: i['threshold'])
+
+        # Decide whether or not to remove old roles
+        remove_old_roles = False  # TODO
+
         # Run for each static role
         for row in current_static:
 
@@ -180,8 +191,15 @@ class RoleHandler(utils.Cog):
                 self.logger.info(f"Can't manage {role_id} role for user {user.id} in guild {user.guild.id} - too low")
                 continue
 
-            # Are they over the message_count threshold? - role handle
-            if self.bot.message_count[(user.id, user.guild.id)] >= threshold and role_id not in user._roles:
+            # Are they over the exp_count threshold? - role handle
+            if user_exp >= threshold and role_id not in user._roles:
+                if remove_old_roles and max_role != row:
+                    try:
+                        if role in user.roles:
+                            await user.remove_roles(role)
+                    except Exception as e:
+                        self.logger.info(f"Can't manage {role_id} role for user {user.id} in guild {user.guild.id} - {e}")
+                    continue
                 try:
                     dispatch_role_update = False
                     if role not in user.roles:
@@ -189,7 +207,6 @@ class RoleHandler(utils.Cog):
                     await user.add_roles(role)
                     if dispatch_role_update:
                         self.bot.dispatch("user_static_new_role", user, role, channel)
-                    self.logger.info(f"Added static role with ID {role.id} to user {user.id}")
                 except Exception as e:
                     self.logger.info(f"Can't manage {role_id} role for user {user.id} in guild {user.guild.id} - {e}")
 

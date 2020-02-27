@@ -46,7 +46,6 @@ CREATE TABLE no_exp_channels(
 );
 
 
-
 CREATE TABLE no_exp_roles(
     guild_id BIGINT,
     role_id BIGINT PRIMARY KEY
