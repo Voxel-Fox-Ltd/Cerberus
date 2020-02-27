@@ -14,7 +14,7 @@ class BlacklistCommands(utils.Cog):
 
         if (ctx.guild.id, role.id) in self.bot.blacklisted_roles:
             return await ctx.send(f"**{role.name}** is already blacklisted.")
-        self.bot.blacklisted_roles.add((ctx.guild.id, role.id))
+        self.bot.blacklisted_roles[ctx.guild.id].add(role.id)
         async with self.bot.database as db:
             await db("INSERT INTO no_exp_roles VALUES ($1, $2) ON CONFLICT (role_id) DO NOTHING", ctx.guild.id, role.id)
         return await ctx.send(f"Stopped tracking user messages with the **{role.name}** role.")
@@ -27,7 +27,7 @@ class BlacklistCommands(utils.Cog):
 
         if (ctx.guild.id, role.id) not in self.bot.blacklisted_roles:
             return await ctx.send(f"**{role.name}** is not blacklisted")
-        self.bot.blacklisted_roles.remove((ctx.guild.id, role.id))
+        self.bot.blacklisted_roles[ctx.guild.id].discard(role.id)
         async with self.bot.database() as db:
             await db("DELETE FROM no_exp_roles WHERE guild_id=$1 AND role_id=$2", ctx.guild.id, role.id)
         return await ctx.send(f"Now tracking user messages with the **{role.name}** role.")

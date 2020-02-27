@@ -56,12 +56,13 @@ class UserMessageHandler(utils.Cog):
         into the db should their last message be long enough ago"""
 
         # Filter out DMs
-        if message.guild is None:
+        if getattr(message.guild, 'id', None) is None:
             return
 
-        # # Filter out blacklisted roles
-        # if (message.guild.id, message.role.id) in self.bot.blacklisted_roles:
-        #     return
+        # Filter out blacklisted roles
+        blacklisted_roles = self.bot.blacklisted_roles[message.guild.id]
+        if set(message.author._roles).intersection(blacklisted_roles):
+            return
 
         # Filter blacklisted channels
         if (message.guild.id, message.channel.id) in self.bot.blacklisted_channels:
