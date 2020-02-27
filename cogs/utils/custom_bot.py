@@ -67,6 +67,7 @@ class CustomBot(commands.AutoShardedBot):
         self.guild_settings = collections.defaultdict(self.DEFAULT_GUILD_SETTINGS.copy)
         self.message_count = collections.defaultdict(int)  # (author.id, guild.id): int
         self.blacklisted_channels = set()
+        self.blacklisted_roles = set()
 
     def get_invite_link(self, *, scope:str='bot', response_type:str=None, redirect_uri:str=None, guild_id:int=None, **kwargs):
         """Gets the invite link for the bot, with permissions all set properly"""
@@ -146,6 +147,7 @@ class CustomBot(commands.AutoShardedBot):
         self.guild_settings.clear()
         self.message_count.clear()
         self.blacklisted_channels.clear()
+        self.blacklisted_roles.clear()
 
         # Get database connection
         db = await self.database.get_connection()
@@ -176,6 +178,14 @@ class CustomBot(commands.AutoShardedBot):
             exit(1)
         for row in data:
             self.blacklisted_channels.add((row['guild_id'], row['channel_id']))
+
+        try:
+            data = await db("SELECT * FROM no_exp_roles")
+        except Exception as e:
+            self.logger.critical(f"Failed to get data from no_exp_roles - {e}")
+            exit(1)
+        for row in data:
+            self.blacklisted_roles.add((row['guild_id'], row['channel_id']))
 
         # Get stored prefixes
         try:
