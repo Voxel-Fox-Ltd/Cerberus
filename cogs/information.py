@@ -12,7 +12,13 @@ from cogs import utils
 
 
 POINTS_MESSAGE = """
-Cerberus uses multiple methods of keeping track of points. To see your sent messages in the past 7 days, run `{0.prefix}dynamic`. To see your total sent messages, run `{0.prefix}static`.
+Cerberus uses multiple methods of keeping track of points. To see your sent messages in the past 7 days, run `{0.prefix}dynamic` (or `{0.prefix}d`). To see your total sent messages, run `{0.prefix}static` (or `{0.prefix}s`).
+""".strip()
+LEADERBOARD_MESSAGE = """
+Cerberus uses multiple methods of keeping track of points. To the leaderboard of sent messages in the past 7 days, run `{0.prefix}dynamicleaderboard` (or `{0.prefix}dlb`). To see the total sent message leaderboard, run `{0.prefix}staticleaderboard` (or `{0.prefix}slb`).
+""".strip()
+ROLES_MESSAGE = """
+Cerberus uses multiple methods of keeping track of points. To the which roles you get for dynamic points days, run `{0.prefix}dynamicroles` (or `{0.prefix}droles`). To see the roles you receive for static messages, run `{0.prefix}staticroles` (or `{0.prefix}sroles`).
 """.strip()
 
 
@@ -26,7 +32,7 @@ class Information(utils.Cog):
         user = user or ctx.author
         return await self.make_graph(ctx, [user], window_days, {user.id: "000000"})
 
-    @commands.command(cls=utils.Command)
+    @commands.command(cls=utils.Command, hidden=True)
     @commands.guild_only()
     async def multigraph(self, ctx:utils.Context, users:commands.Greedy[discord.Member], window_days:typing.Optional[int]=7):
         """Graphs your points over a given time"""
@@ -37,7 +43,7 @@ class Information(utils.Cog):
             users = users + [ctx.author]
         await self.make_graph(ctx, users, window_days)
 
-    @commands.command(cls=utils.Command)
+    @commands.command(cls=utils.Command, hidden=True)
     @commands.guild_only()
     async def multigraphrole(self, ctx:utils.Context, role:discord.Role, window_days:typing.Optional[int]=7):
         """Graphs the points of a role over a given time"""
@@ -150,7 +156,19 @@ class Information(utils.Cog):
 
         await ctx.send(POINTS_MESSAGE.format(ctx))
 
-    @commands.command(aliases=['dlb', 'dylb', 'dynlb'], cls=utils.Command)
+    @commands.command(aliases=['lb'], cls=utils.Command)
+    async def leaderboard(self, ctx:utils.Context):
+        """Shows you all of the leaderboard based commands"""
+
+        await ctx.send(LEADERBOARD_MESSAGE.format(ctx))
+
+    @commands.command(cls=utils.Command)
+    async def roles(self, ctx:utils.Context):
+        """Shows you all of the role based commands"""
+
+        await ctx.send(ROLES_MESSAGE.format(ctx))
+
+    @commands.command(aliases=['dlb', 'dylb', 'dynlb'], cls=utils.Command, hidden=True)
     @commands.guild_only()
     async def dynamicleaderboard(self, ctx:utils.Context):
         """Gives you the top 10 leaderboard users for the server"""
@@ -163,7 +181,7 @@ class Information(utils.Cog):
         filtered_list = [i for i in ordered_user_ids if ctx.guild.get_member(i) is not None and self.bot.get_user(i).bot is False]
         await ctx.send(f"__Tracked Messages over 7 days:__\n" + '\n'.join([f"**{self.bot.get_user(i)!s}** - {all_data_for_guild[i]:,}" for i in filtered_list[:10]]))
 
-    @commands.command(aliases=['dyn', 'dy', 'd'], cls=utils.Command)
+    @commands.command(aliases=['dyn', 'dy', 'd'], cls=utils.Command, hidden=True)
     @commands.guild_only()
     async def dynamic(self, ctx:utils.Context, user:typing.Optional[discord.Member]=None):
         """Shows you your message amount over 7 days"""
@@ -172,7 +190,7 @@ class Information(utils.Cog):
         amount = len(utils.CachedMessage.get_messages(user.id, ctx.guild.id, days=7))
         await ctx.send(f"Over the past 7 days, {user.mention} has sent **{amount:,}** tracked messages.")
 
-    @commands.command(aliases=['s', 'st', 'staticlevel', 'slevel', 'stlevel', 'srank', 'staticrank', 'strank'], cls=utils.Command)
+    @commands.command(aliases=['s', 'st', 'staticlevel', 'slevel', 'stlevel', 'srank', 'staticrank', 'strank'], cls=utils.Command, hidden=True)
     @commands.guild_only()
     async def static(self, ctx:utils.Context, user:typing.Optional[discord.Member]=None):
         """Tells you how many total messages you've sent"""
@@ -183,7 +201,7 @@ class Information(utils.Cog):
         current_level = mee6_data.get_level_by_messages(static_message_count)
         await ctx.send(f"{user.mention} has sent **{static_message_count:,}** total tracked messages - they're currently level **{current_level}**.")
 
-    @commands.command(aliases=['dyroles', 'dynroles', 'droles'], cls=utils.Command)
+    @commands.command(aliases=['dyroles', 'dynroles', 'droles'], cls=utils.Command, hidden=True)
     @commands.guild_only()
     async def dynamicroles(self, ctx:utils.Context):
         """Shows you the roles that have been set up for the guild"""
@@ -201,7 +219,7 @@ class Information(utils.Cog):
             output.append(f"**{role.name}** :: `{threshold}` tracked messages every 7 days")
         return await ctx.send('\n'.join(output))
 
-    @commands.command(aliases=['sroles', 'stroles'], cls=utils.Command)
+    @commands.command(aliases=['sroles', 'stroles'], cls=utils.Command, hidden=True)
     @commands.guild_only()
     async def staticroles(self, ctx:utils.Context):
         """Shows you the static roles that have been set up for the guild"""
