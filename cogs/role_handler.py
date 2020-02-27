@@ -119,6 +119,8 @@ class RoleHandler(utils.Cog):
             role_id = row['role_id']
             threshold = row['threshold']
             role = user.guild.get_role(role_id)
+            if role is None:
+                continue
 
             # Check if we can manage roles
             if not user.guild.me.guild_permissions.manage_roles:
@@ -162,10 +164,20 @@ class RoleHandler(utils.Cog):
             # Shorten variable names
             role_id = row['role_id']
             threshold = row['threshold']
+            role = user.guild.get_role(role_id)
+            if role is None:
+                continue
+
+            # Check if we can manage roles
+            if not user.guild.me.guild_permissions.manage_roles:
+                self.logger.info(f"Can't manage {role_id} role for user {user.id} in guild {user.guild.id}")
+                continue
+            if user.guild.me.top_role.position <= role.position:
+                self.logger.info(f"Can't manage {role_id} role for user {user.id} in guild {user.guild.id}")
+                continue
 
             # Are they over the message_count threshold? - role handle
             if self.bot.message_count[(user.id, user.guild.id)] >= threshold and role_id not in user._roles:
-                role = user.guild.get_role(role_id)
                 try:
                     await user.add_roles(role)
                     self.logger.info(f"Added static role with ID {role.id} to user {user.id}")
