@@ -179,9 +179,12 @@ class RoleHandler(utils.Cog):
             # Are they over the message_count threshold? - role handle
             if self.bot.message_count[(user.id, user.guild.id)] >= threshold and role_id not in user._roles:
                 try:
+                    dispatch_role_update = False
                     if role not in user.roles:
-                        self.bot.dispatch("user_static_new_role", user, role, channel)
+                        dispatch_role_update = True
                     await user.add_roles(role)
+                    if dispatch_role_update:
+                        self.bot.dispatch("user_static_new_role", user, role, channel)
                     self.logger.info(f"Added static role with ID {role.id} to user {user.id}")
                 except Exception as e:
                     self.logger.info(f"Can't manage {role_id} role for user {user.id} in guild {user.guild.id} - {e}")
