@@ -134,6 +134,8 @@ class RoleHandler(utils.Cog):
                 self.logger.info(f"Can't manage {role_id} role for user {user.id} in guild {user.guild.id} - too low")
                 continue
 
+            # TODO remove old roles??
+
             # Are they over the threshold? - role handle
             if points_in_week >= threshold and role_id not in user._roles:
                 try:
@@ -191,15 +193,18 @@ class RoleHandler(utils.Cog):
                 self.logger.info(f"Can't manage {role_id} role for user {user.id} in guild {user.guild.id} - too low")
                 continue
 
+            # Do we wanna remove old roles? - role handle
+            if user_exp > threshold and remove_old_roles and max_role['role_id'] != role.id:
+                try:
+                    if role in user.roles:
+                        await user.remove_roles(role)
+                        self.logger.info(f"Removed role {role_id} from user {user.id}")
+                except Exception as e:
+                    self.logger.info(f"Can't manage {role_id} role for user {user.id} in guild {user.guild.id} - {e}")
+                continue
+
             # Are they over the exp_count threshold? - role handle
             if user_exp >= threshold and role_id not in user._roles:
-                if remove_old_roles and max_role != row:
-                    try:
-                        if role in user.roles:
-                            await user.remove_roles(role)
-                    except Exception as e:
-                        self.logger.info(f"Can't manage {role_id} role for user {user.id} in guild {user.guild.id} - {e}")
-                    continue
                 try:
                     dispatch_role_update = False
                     if role not in user.roles:
@@ -207,6 +212,7 @@ class RoleHandler(utils.Cog):
                     await user.add_roles(role)
                     if dispatch_role_update:
                         self.bot.dispatch("user_static_new_role", user, role, channel)
+                        self.logger.info(f"Added role {role_id} to user {user.id}")
                 except Exception as e:
                     self.logger.info(f"Can't manage {role_id} role for user {user.id} in guild {user.guild.id} - {e}")
 
