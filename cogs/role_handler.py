@@ -190,6 +190,8 @@ class RoleHandler(utils.Cog):
 
         # TODO check the guild settings to see if level up messages should be posted
 
+        if user.bot:
+            return
         await channel.send(f"Well done {user.mention}, you're now **level {new_level}**!")
 
 
