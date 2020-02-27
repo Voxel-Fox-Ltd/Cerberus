@@ -181,7 +181,17 @@ class Information(utils.Cog):
         filtered_list = [i for i in ordered_user_ids if ctx.guild.get_member(i) is not None and self.bot.get_user(i).bot is False]
         await ctx.send(f"__Tracked Messages over 7 days:__\n" + '\n'.join([f"**{self.bot.get_user(i)!s}** - {all_data_for_guild[i]:,}" for i in filtered_list[:10]]))
 
-    @commands.command(aliases=['dyn', 'dy', 'd'], cls=utils.Command, hidden=True)
+    @commands.command(aliases=['slb', 'stlb'], cls=utils.Command, hidden=True)
+    @commands.guild_only()
+    async def staticleaderboard(self, ctx:utils.Context):
+        """Gives you the top 10 leaderboard users for the server"""
+
+        static_message_count = [(i[0], o) for i, o in self.bot.message_count.items() if i[1] == ctx.guild.id]
+        filtered_list = [i for i in static_message_count if ctx.guild.get_member(i[0]) is not None and self.bot.get_user(i[0]).bot is False]
+        ordered_list = sorted(filtered_list, key=lambda x: x[1], reverse=True)
+        await ctx.send(f"__Tracked Messages:__\n" + '\n'.join([f"**{self.bot.get_user(i[0])!s}** - {i[1]:,}" for i in ordered_list[:10]]))
+
+    @commands.command(aliases=['dyn', 'dy', 'd', 'dpoints', 'dpoint'], cls=utils.Command, hidden=True)
     @commands.guild_only()
     async def dynamic(self, ctx:utils.Context, user:typing.Optional[discord.Member]=None):
         """Shows you your message amount over 7 days"""
@@ -190,7 +200,7 @@ class Information(utils.Cog):
         amount = len(utils.CachedMessage.get_messages(user.id, ctx.guild.id, days=7))
         await ctx.send(f"Over the past 7 days, {user.mention} has sent **{amount:,}** tracked messages.")
 
-    @commands.command(aliases=['s', 'st', 'staticlevel', 'slevel', 'stlevel', 'srank', 'staticrank', 'strank'], cls=utils.Command, hidden=True)
+    @commands.command(aliases=['s', 'st', 'staticlevel', 'slevel', 'stlevel', 'srank', 'staticrank', 'strank', 'spoints', 'spoint'], cls=utils.Command, hidden=True)
     @commands.guild_only()
     async def static(self, ctx:utils.Context, user:typing.Optional[discord.Member]=None):
         """Tells you how many total messages you've sent"""
