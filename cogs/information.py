@@ -108,7 +108,7 @@ class Information(utils.Cog):
         # Get roles
         async with self.bot.database() as db:
             role_data = await db("SELECT role_id, threshold FROM role_gain WHERE guild_id=$1", ctx.guild.id)
-        role_object_data = sorted([(row['threshold'], ctx.guild.get_role(row['role_id'])) for row in role_data], key=lambda x: x[0])
+        role_object_data = sorted([(row['threshold'], ctx.guild.get_role(row['role_id'])) for row in role_data if ctx.guild.get_role(row['role_id'])], key=lambda x: x[0])
 
         # Build our output graph
         fig = plt.figure()
@@ -221,7 +221,7 @@ class Information(utils.Cog):
             role_data = await db("SELECT role_id, threshold FROM role_gain WHERE guild_id=$1", ctx.guild.id)
         if not role_data:
             return await ctx.send("There are no roles set up for this guild.")
-        role_object_data = sorted([(row['threshold'], ctx.guild.get_role(row['role_id'])) for row in role_data], key=lambda x: x[0], reverse=True)
+        role_object_data = sorted([(row['threshold'], ctx.guild.get_role(row['role_id'])) for row in role_data if ctx.guild.get_role(row['role_id'])], key=lambda x: x[0], reverse=True)
 
         # Output nicely
         output = []
@@ -239,7 +239,7 @@ class Information(utils.Cog):
             role_data = await db("SELECT role_id, threshold FROM static_role_gain WHERE guild_id=$1", ctx.guild.id)
         if not role_data:
             return await ctx.send("There are no static roles set up for this guild.")
-        role_object_data = sorted([(row['threshold'], ctx.guild.get_role(row['role_id'])) for row in role_data], key=lambda x: x[0], reverse=True)
+        role_object_data = sorted([(row['threshold'], ctx.guild.get_role(row['role_id'])) for row in role_data if ctx.guild.get_role(row['role_id'])], key=lambda x: x[0], reverse=True)
 
         # Output nicely
         output = []

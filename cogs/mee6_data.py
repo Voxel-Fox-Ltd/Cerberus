@@ -58,7 +58,7 @@ class Mee6Data(utils.Cog):
             data = await r.json()
         if str(r.status) == '404':
             return await ctx.send("The leaderboard page for this guild is either not public or not present - Mee6 must be on your server for this to work.")
-        self.logger.info(f"Grabbed Mee6 role data for guild {ctx.guild.id} page {i}")
+        self.logger.info(f"Grabbed Mee6 role data for guild {ctx.guild.id}")
 
         # Output to user
         role_rewards = sorted(data['role_rewards'], key=lambda r: r['rank'])
