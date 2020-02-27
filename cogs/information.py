@@ -206,10 +206,8 @@ class Information(utils.Cog):
         """Tells you how many total messages you've sent"""
 
         user = user or ctx.author
-        mee6_data = self.bot.get_cog('Mee6Data')
         static_message_count = self.bot.message_count[(user.id, ctx.guild.id)]
-        current_level = mee6_data.get_level_by_messages(static_message_count)
-        await ctx.send(f"{user.mention} has sent **{static_message_count:,}** total tracked messages - they're currently level **{current_level}**.")
+        await ctx.send(f"{user.mention} has sent **{static_message_count:,}** total tracked messages.")
 
     @commands.command(aliases=['dyroles', 'dynroles', 'droles'], cls=utils.Command, hidden=True)
     @commands.guild_only()

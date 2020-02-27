@@ -142,7 +142,6 @@ class Mee6Data(utils.Cog):
                         VALUES ($1, $2, $3) ON CONFLICT (user_id, guild_id) DO UPDATE SET message_count=$3""",
                         int(user['id']), ctx.guild.id, self.bot.message_count[(int(user['id']), ctx.guild.id)]
                     )
-                    # self.bot.dispatch('user_points_receive', message.author)
 
         return await ctx.send(f"Copied over {len(user_data)} users' exp from Mee6.")
 

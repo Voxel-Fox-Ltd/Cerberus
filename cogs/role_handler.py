@@ -91,7 +91,7 @@ class RoleHandler(utils.Cog):
         await self.bot.wait_until_ready()
 
     @utils.Cog.listener("on_user_points_receive")
-    async def user_role_handler(self, user:discord.Member):
+    async def user_role_handler(self, user:discord.Member, channel:discord.TextChannel=None):
         """Looks for when a user passes the threshold of points and then handles their roles accordingly"""
 
         # Don't add roles to bots
@@ -145,7 +145,7 @@ class RoleHandler(utils.Cog):
                     self.logger.info(f"Can't manage {role_id} role for user {user.id} in guild {user.guild.id} - {e}")
 
     @utils.Cog.listener("on_user_points_receive")
-    async def static_user_role_handler(self, user:discord.Member):
+    async def static_user_role_handler(self, user:discord.Member, channel:discord.TextChannel=None):
         """Looks for when a user passes the threshold of points and then handles their roles accordingly"""
 
         # Grab static data
@@ -179,6 +179,8 @@ class RoleHandler(utils.Cog):
             # Are they over the message_count threshold? - role handle
             if self.bot.message_count[(user.id, user.guild.id)] >= threshold and role_id not in user._roles:
                 try:
+                    if role not in user.roles:
+                        self.bot.dispatch("user_static_new_role", user, role, channel)
                     await user.add_roles(role)
                     self.logger.info(f"Added static role with ID {role.id} to user {user.id}")
                 except Exception as e:
@@ -193,6 +195,18 @@ class RoleHandler(utils.Cog):
         if user.bot:
             return
         await channel.send(f"Well done {user.mention}, you're now **level {new_level}**!")
+
+    @utils.Cog.listener("on_user_static_new_role")
+    async def user_role_level_up_poster(self, user:discord.Member, role:discord.Role, channel:discord.TextChannel):
+        """Posts in the chat when the user levels up"""
+
+        # TODO check the guild settings to see if level up messages should be posted
+
+        if user.bot:
+            return
+        if channel is None:
+            return
+        await channel.send(f"Well done {user.mention}, you've received the **{role.name}** role!")
 
 
 def setup(bot:utils.Bot):

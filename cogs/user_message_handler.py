@@ -56,7 +56,7 @@ class UserMessageHandler(utils.Cog):
         into the db should their last message be long enough ago"""
 
         # Filter out DMs
-        if getattr(message.guild, 'id', None) is None:
+        if not isinstance(message.author, discord.Member):
             return
 
         # Filter out blacklisted roles
@@ -95,14 +95,7 @@ class UserMessageHandler(utils.Cog):
             )
 
         # Dispatch points event
-        self.bot.dispatch('user_points_receive', message.author)
-
-        # Dispatch level up event
-        mee6_data = self.bot.get_cog('Mee6Data')
-        current_level = mee6_data.get_level_by_messages(static_message_count)
-        previous_level = mee6_data.get_level_by_messages(static_message_count - 1)
-        if current_level > previous_level:
-            self.bot.dispatch('user_static_level_up', message.author, message.channel, current_level)
+        self.bot.dispatch('user_points_receive', message.author, message.channel)
 
 
 def setup(bot:utils.Bot):
