@@ -170,7 +170,7 @@ class RoleHandler(utils.Cog):
 
         # Get the max role
         user_exp = self.bot.message_count[(user.id, user.guild.id)]
-        max_role = max([i for i in current_static if i['threshold'] <= user_exp], key=lambda i: i['threshold'])
+        max_role = max([i for i in current_static if i['threshold'] <= user_exp], key=lambda i: i['threshold'], default=None)
 
         # Decide whether or not to remove old roles
         remove_old_roles = self.bot.guild_settings[user.guild.id]['remove_old_roles']
@@ -194,7 +194,7 @@ class RoleHandler(utils.Cog):
                 continue
 
             # Do we wanna remove old roles? - role handle
-            if user_exp > threshold and remove_old_roles and max_role['role_id'] != role.id:
+            if user_exp > threshold and remove_old_roles and max_role and max_role['role_id'] != role.id:
                 try:
                     if role in user.roles:
                         await user.remove_roles(role)
