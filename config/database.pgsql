@@ -1,7 +1,7 @@
 CREATE TABLE guild_settings(
     guild_id BIGINT PRIMARY KEY,
-    prefix VARCHAR(30)
-    remove_old_roles BOOLEAN NOT NULL
+    prefix VARCHAR(30),
+    remove_old_roles BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 
