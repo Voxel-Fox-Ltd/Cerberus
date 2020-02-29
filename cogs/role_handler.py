@@ -173,7 +173,7 @@ class RoleHandler(utils.Cog):
         max_role = max([i for i in current_static if i['threshold'] <= user_exp], key=lambda i: i['threshold'])
 
         # Decide whether or not to remove old roles
-        remove_old_roles = False  # TODO
+        remove_old_roles = bot.guild_settings[user.guild.id]['remove_old_roles']
 
         # Run for each static role
         for row in current_static:
