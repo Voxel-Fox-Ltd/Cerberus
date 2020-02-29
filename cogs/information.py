@@ -170,8 +170,9 @@ class Information(utils.Cog):
 
     @commands.command(aliases=['dlb', 'dylb', 'dynlb'], cls=utils.Command, hidden=True)
     @commands.guild_only()
-    async def dynamicleaderboard(self, ctx:utils.Context):
-        """Gives you the top 10 leaderboard users for the server"""
+    async def dynamicleaderboard(self, ctx:utils.Context, pages:int=1):
+        """Gives you the leaderboard users for the server"""
+
 
         all_keys_for_guild = [i for i in utils.CachedMessage.all_messages.keys() if i[1] == ctx.guild.id]
         all_data_for_guild = {}
@@ -179,17 +180,19 @@ class Information(utils.Cog):
             all_data_for_guild[key[0]] = len(utils.CachedMessage.get_messages(key[0], ctx.guild, days=7))
         ordered_user_ids = sorted(all_data_for_guild.keys(), key=lambda k: all_data_for_guild[k], reverse=True)
         filtered_list = [i for i in ordered_user_ids if ctx.guild.get_member(i) is not None and self.bot.get_user(i).bot is False]
-        await ctx.send(f"__Tracked Messages over 7 days:__\n" + '\n'.join([f"**{self.bot.get_user(i)!s}** - {all_data_for_guild[i]:,}" for i in filtered_list[:10]]))
+        max_page = math.ceil(len(filtered_list/10))
+        await ctx.send(f"__Tracked Messages over 7 days:__\n" + '\n'.join([f"**{self.bot.get_user(i)!s}** - {all_data_for_guild[i]:,}" for i in filtered_list[(pages*10)-10:(pages*10)]]) + "\nPage **" + pages + "** out of **" + max_page + "**")
 
     @commands.command(aliases=['slb', 'stlb'], cls=utils.Command, hidden=True)
     @commands.guild_only()
-    async def staticleaderboard(self, ctx:utils.Context):
-        """Gives you the top 10 leaderboard users for the server"""
+    async def staticleaderboard(self, ctx:utils.Context, pages:int=1):
+        """Gives you the leaderboard users for the server"""
 
         static_message_count = [(i[0], o) for i, o in self.bot.message_count.items() if i[1] == ctx.guild.id]
         filtered_list = [i for i in static_message_count if ctx.guild.get_member(i[0]) is not None and self.bot.get_user(i[0]).bot is False]
         ordered_list = sorted(filtered_list, key=lambda x: x[1], reverse=True)
-        await ctx.send(f"__Tracked Messages:__\n" + '\n'.join([f"**{self.bot.get_user(i[0])!s}** - {i[1]:,}" for i in ordered_list[:10]]))
+        max_page = math.ceil(len(ordered_list)/10)
+        await ctx.send(f"__Tracked Messages:__\n" + '\n'.join([f"**{self.bot.get_user(i[0])!s}** - {i[1]:,}" for i in ordered_list[(pages*10)-10:(pages*10)]]) + "\nPage **" + pages + "** out of **" + max_page + "**")
 
     @commands.command(aliases=['dyn', 'dy', 'd', 'dpoints', 'dpoint'], cls=utils.Command, hidden=True)
     @commands.guild_only()

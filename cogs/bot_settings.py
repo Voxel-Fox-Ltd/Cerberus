@@ -7,9 +7,9 @@ from cogs import utils
 class BotSettings(utils.Cog):
 
     @commands.command(cls=utils.Command)
-    @commands.guild_only()
     @commands.bot_has_permissions(send_messages=True)
     @commands.has_permissions(manage_guild=True)
+    @commands.guild_only()
     async def prefix(self, ctx:utils.Context, *, new_prefix:str):
         """Changes the prefix that the bot uses"""
 
@@ -27,9 +27,9 @@ class BotSettings(utils.Cog):
         await ctx.send(f"My prefix has been updated to `{new_prefix}`.")
 
     @commands.command(cls=utils.Command)
-    @commands.guild_only()
     @commands.bot_has_permissions(send_messages=True)
     @commands.has_permissions(manage_guild=True)
+    @commands.guild_only()
     async def removeoldroles(self, ctx:utils.Context):
         """Removes old roles upon level up."""
         
@@ -41,7 +41,7 @@ class BotSettings(utils.Cog):
             except asyncpg.UniqueViolationError:
                 await db("UPDATE guild_settings SET remove_old_roles=$2 WHERE guild_id=$1", ctx.guild.id, False)
         
-            await ctx.send(f"I will now remove old roles upon level up.")
+        await ctx.send(f"I will now remove old roles upon level up.")
     
     @commands.command(cls=utils.Command)
     @commands.guild_only()
@@ -58,7 +58,7 @@ class BotSettings(utils.Cog):
             except asyncpg.UniqueViolationError:
                 await db("UPDATE guild_settings SET remove_old_roles=$2 WHERE guild_id=$1", ctx.guild.id, True)
         
-            await ctx.send(f"I will now keep old roles upon level up.")
+        await ctx.send(f"I will now keep old roles upon level up.")
         
 
 
