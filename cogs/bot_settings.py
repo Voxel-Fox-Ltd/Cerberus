@@ -37,9 +37,9 @@ class BotSettings(utils.Cog):
         self.bot.guild_settings[ctx.guild.id]['remove_old_roles'] = False
         async with self.bot.database() as db:
             try:
-                await db("INSERT INTO guild_settings (guild_id, remove_old_roles) VALUES ($1, $2)", ctx.guild.id, remove_old_roles)
+                await db("INSERT INTO guild_settings (guild_id, remove_old_roles) VALUES ($1, $2)", ctx.guild.id, False)
             except asyncpg.UniqueViolationError:
-                await db("UPDATE guild_settings SET remove_old_roles=$2 WHERE guild_id=$1", ctx.guild.id, remove_old_roles)
+                await db("UPDATE guild_settings SET remove_old_roles=$2 WHERE guild_id=$1", ctx.guild.id, False)
         
             await ctx.send(f"I will now remove old roles upon level up.")
     
@@ -54,9 +54,9 @@ class BotSettings(utils.Cog):
         self.bot.guild_settings[ctx.guild.id]['remove_old_roles'] = True
         async with self.bot.database() as db:
             try:
-                await db("INSERT INTO guild_settings (guild_id, remove_old_roles) VALUES ($1, $2)", ctx.guild.id, remove_old_roles)
+                await db("INSERT INTO guild_settings (guild_id, remove_old_roles) VALUES ($1, $2)", ctx.guild.id, True)
             except asyncpg.UniqueViolationError:
-                await db("UPDATE guild_settings SET remove_old_roles=$2 WHERE guild_id=$1", ctx.guild.id, remove_old_roles)
+                await db("UPDATE guild_settings SET remove_old_roles=$2 WHERE guild_id=$1", ctx.guild.id, True)
         
             await ctx.send(f"I will now keep old roles upon level up.")
         
