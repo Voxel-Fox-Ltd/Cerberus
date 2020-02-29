@@ -30,20 +30,36 @@ class BotSettings(utils.Cog):
     @commands.guild_only()
     @commands.bot_has_permissions(send_messages=True)
     @commands.has_permissions(manage_guild=True)
-    async def removeoldroles(self, ctx:utils.Context, remove_old_roles:bool):
-        """Whether or not to remove old roles upon level up or not."""
+    async def removeoldroles(self, ctx:utils.Context):
+        """Removes old roles upon level up."""
         
         # Store setting
-        self.bot.guild_settings[ctx.guild.id]['remove_old_roles'] = remove_old_roles
+        self.bot.guild_settings[ctx.guild.id]['remove_old_roles'] = False
         async with self.bot.database() as db:
             try:
                 await db("INSERT INTO guild_settings (guild_id, remove_old_roles) VALUES ($1, $2)", ctx.guild.id, remove_old_roles)
             except asyncpg.UniqueViolationError:
                 await db("UPDATE guild_settings SET remove_old_roles=$2 WHERE guild_id=$1", ctx.guild.id, remove_old_roles)
-        if remove_old_roles is True:
+        
             await ctx.send(f"I will now remove old roles upon level up.")
-        else:
-            await ctx.send(f"I will now no longer remove old roles upon level up.")
+    
+    @commands.command(cls=utils.Command)
+    @commands.guild_only()
+    @commands.bot_has_permissions(send_messages=True)
+    @commands.has_permissions(manage_guild=True)
+    async def keepoldroles(self, ctx:utils.Context):
+        """Keeps old roles upon level up."""
+        
+        # Store setting
+        self.bot.guild_settings[ctx.guild.id]['remove_old_roles'] = True
+        async with self.bot.database() as db:
+            try:
+                await db("INSERT INTO guild_settings (guild_id, remove_old_roles) VALUES ($1, $2)", ctx.guild.id, remove_old_roles)
+            except asyncpg.UniqueViolationError:
+                await db("UPDATE guild_settings SET remove_old_roles=$2 WHERE guild_id=$1", ctx.guild.id, remove_old_roles)
+        
+            await ctx.send(f"I will now keep old roles upon level up.")
+        
 
 
 def setup(bot:utils.Bot):
