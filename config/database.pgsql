@@ -12,6 +12,13 @@ CREATE TABLE user_messages(
 );
 
 
+CREATE TABLE user_vc_activity(
+    user_id BIGINT,
+    guild_id BIGINT,
+    timestamp TIMESTAMP
+);
+
+
 CREATE TABLE role_gain(
     guild_id BIGINT NOT NULL,
     role_id BIGINT PRIMARY KEY,
