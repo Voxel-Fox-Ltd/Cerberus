@@ -227,7 +227,7 @@ class Information(utils.Cog):
                 all_keys_for_guild[user_id][0] = message_count
         for (user_id, guild_id), minute_count in self.bot.minute_count.items():
             if guild_id == ctx.guild.id:
-                all_keys_for_guild[user_id][1] = minute_count // 5
+                all_keys_for_guild[user_id][1] = minute_count
 
         # Order em
         valid_user_data = [(uid, text, vc) for uid, (text, vc) in all_keys_for_guild.items() if getattr(self.bot.get_user(uid), 'bot', False) is False and ctx.guild.get_member(uid)]
@@ -246,8 +246,9 @@ class Information(utils.Cog):
         """Shows you your message amount over 7 days"""
 
         user = user or ctx.author
-        amount = len(utils.CachedMessage.get_messages_after(user.id, ctx.guild.id, days=7))
-        await ctx.send(f"Over the past 7 days, {user.mention} has sent **{amount:,}** tracked messages.")
+        text = len(utils.CachedMessage.get_messages_after(user.id, ctx.guild.id, days=7))
+        vc = len(utils.CachedVCMinute.get_minutes_after(user.id, ctx.guild.id, days=7))
+        await ctx.send(f"Over the past 7 days, {user.mention} has gained **{text:,}** tracked messages and been in VC for **{utils.TimeValue(vc * 60).clean}**, giving them a total of **{text + (vc // 5):,}** points.")
 
     @commands.command(aliases=['s', 'st', 'staticlevel', 'slevel', 'stlevel', 'srank', 'staticrank', 'strank', 'spoints', 'spoint'], cls=utils.Command, hidden=True)
     @commands.guild_only()
@@ -256,7 +257,8 @@ class Information(utils.Cog):
 
         user = user or ctx.author
         static_message_count = self.bot.message_count[(user.id, ctx.guild.id)]
-        await ctx.send(f"{user.mention} has sent **{static_message_count:,}** total tracked messages.")
+        static_vc_count = self.bot.minute_count[(user.id, ctx.guild.id)]
+        await ctx.send(f"{user.mention} has sent **{static_message_count:,}** total tracked messages and been in VC for **{utils.TimeValue(static_vc_count * 60).clean}**, giving them a total of **{static_message_count + (static_vc_count // 5):,}** points.")
 
     @commands.command(aliases=['dyroles', 'dynroles', 'droles'], cls=utils.Command, hidden=True)
     @commands.guild_only()
