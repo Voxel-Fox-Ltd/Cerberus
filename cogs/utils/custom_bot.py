@@ -12,6 +12,7 @@ import toml
 from discord.ext import commands
 
 from cogs.utils.cached_message import CachedMessage
+from cogs.utils.cached_vc_minute import CachedVCMinute
 from cogs.utils.custom_context import CustomContext
 from cogs.utils.database import DatabaseConnection
 from cogs.utils.redis import RedisConnection
@@ -67,6 +68,7 @@ class CustomBot(commands.AutoShardedBot):
         # Here's the storage for cached stuff
         self.guild_settings = collections.defaultdict(self.DEFAULT_GUILD_SETTINGS.copy)
         self.message_count = collections.defaultdict(int)  # (author.id, guild.id): int
+        self.minute_count = collections.defaultdict(int)  # (author.id, guild.id): int
         self.blacklisted_channels = set()
         self.blacklisted_roles = collections.defaultdict(set)
 
@@ -162,6 +164,15 @@ class CustomBot(commands.AutoShardedBot):
         for row in data:
             CachedMessage(**row)
 
+        # Get cached VC minutes
+        try:
+            data = await db("SELECT * FROM user_vc_activity")
+        except Exception as e:
+            self.logger.critical(f"Failed to get data from user_vc_activity - {e}")
+            exit(1)
+        for row in data:
+            CachedVCMinute(**row)
+
         # Get cached static messages
         try:
             data = await db("SELECT * FROM static_user_messages")
@@ -170,6 +181,15 @@ class CustomBot(commands.AutoShardedBot):
             exit(1)
         for row in data:
             self.message_count[(row['user_id'], row['guild_id'])] = row['message_count']
+
+        # Get cached static VC minutes
+        try:
+            data = await db("SELECT * FROM static_user_vc_activity")
+        except Exception as e:
+            self.logger.critical(f"Failed to get data from static_user_vc_activity - {e}")
+            exit(1)
+        for row in data:
+            self.minute_count[(row['user_id'], row['guild_id'])] = row['minutes']
 
         # Get blacklisted channels
         try:

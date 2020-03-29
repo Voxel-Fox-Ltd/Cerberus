@@ -36,6 +36,14 @@ CREATE TABLE static_user_messages(
 );
 
 
+CREATE TABLE static_user_vc_activity(
+    user_id BIGINT,
+    guild_id BIGINT,
+    minutes INTEGER,
+    PRIMARY KEY (user_id, guild_id)
+);
+
+
 CREATE TABLE static_role_gain(
     guild_id BIGINT NOT NULL,
     role_id BIGINT PRIMARY KEY,

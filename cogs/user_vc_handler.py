@@ -19,13 +19,18 @@ class UserVCHandler(utils.Cog):
             voice_channels.extend(i.voice_channels)
 
         # Grab VCs where there's multiple people in them
-        voice_members: typing.List[typing.Tuple[int, int]] = []
+        voice_members: typing.List[typing.Tuple[int, int]] = []  # (uid, gid)...
         for vc in voice_channels:
             if len(vc.voice_states) > 1:
                 voice_members.extend([(user_id, vc.guild.id) for user_id, state in vc.voice_states.items() if self.bot.get_user(user_id).bot is False and self.valid_voice_state(state)])
 
         # Make our records
-        records: typing.List[typing.Tuple[int, int, dt]] = [(i, o, dt.utcnow()) for i, o in voice_members]
+        records: typing.List[typing.Tuple[int, int, dt]] = [(i, o, dt.utcnow()) for i, o in voice_members]  # (uid, gid, timestamp)...
+
+        # Let's cache the static VC minutes, just for fun
+        for uid, gid, timestamp in records:
+            utils.CachedVCMinute(user_id=uid, guild_id=gid, timestamp=timestamp)
+            self.bot.minute_count[(uid, gid)] += 1
 
         # Only save messages if there _were_ any
         if len(records) == 0:
@@ -40,6 +45,13 @@ class UserVCHandler(utils.Cog):
                 columns=('user_id', 'guild_id', 'timestamp'),
                 records=records
             )
+            for uid, gid, timestamp in records:
+                await db(
+                    """INSERT INTO static_user_vc_activity (user_id, guild_id, minutes)
+                    VALUES ($1, $2, $3) ON CONFLICT (user_id, guild_id)
+                    DO UPDATE SET minutes=static_user_vc_activity.minutes+excluded.minutes""",
+                    uid, gid, self.bot.minute_count[uid, gid]
+                )  # TODO this is dreadfully inefficient. Please fix this. Please.
 
 
 def setup(bot:utils.Bot):
