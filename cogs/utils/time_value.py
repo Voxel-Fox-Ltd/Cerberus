@@ -21,22 +21,13 @@ class TimeValue(object):
 
     def __init__(self, duration:int):
         self.duration = int(duration)
-        days, remaining = self.get_quotient_and_remainder(self.duration, 60 * 60 * 24)
-        hours, remaining = self.get_quotient_and_remainder(remaining, 60 * 60)
-        minutes, remaining = self.get_quotient_and_remainder(remaining, 60)
+        days, remaining = divmod(self.duration, 60 * 60 * 24)
+        hours, remaining = divmod(remaining, 60 * 60)
+        minutes, remaining = divmod(remaining, 60)
         seconds = remaining
         self.clean_spaced = f"{str(days) + 'd ' if days > 0 else ''}{str(hours) + 'h ' if hours > 0 else ''}{str(minutes) + 'm ' if minutes > 0 else ''}{str(seconds) + 's ' if seconds > 0 else ''}".strip()
         self.clean = self.clean_spaced.replace(" ", "")
         self.delta = timedelta(seconds=self.duration)
-
-    @staticmethod
-    def get_quotient_and_remainder(value:int, divisor:int, raise_error_on_zero:bool=False):
-        """Gets the quotiend AND remainder of a given value"""
-
-        try:
-            return value // divisor, value % divisor
-        except ZeroDivisionError:
-            return 0, value
 
     def __repr__(self):
         return f"<{self.__class__.__name__} {self.clean} ({self.duration})>"
