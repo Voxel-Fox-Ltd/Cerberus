@@ -16,6 +16,18 @@ class UserVCHandler(utils.Cog):
     def cog_unload(self):
         self.user_vc_databaser.stop()
 
+    @staticmethod
+    def valid_voice_state(voice_state:discord.VoiceState) -> bool:
+        """Returns whether or not a voice state is unmuted, undeafened, etc"""
+
+        return not any([
+            voice_state.deaf,
+            voice_state.mute,
+            voice_state.self_mute,
+            voice_state.self_deaf,
+            voice_state.afk,
+        ])
+
     @tasks.loop(minutes=1)
     async def user_vc_databaser(self):
         """Saves all VC points into the database"""
