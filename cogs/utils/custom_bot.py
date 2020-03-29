@@ -22,9 +22,11 @@ def get_prefix(bot, message:discord.Message):
     """Gives the prefix for the bot - override this to make guild-specific prefixes"""
 
     if message.guild is None:
-        return commands.when_mentioned_or(bot.config['default_prefix'])(bot, message)
-    prefix = bot.guild_settings[message.guild.id]['prefix'] or bot.config['default_prefix']
-    return commands.when_mentioned_or(prefix)(bot, message)
+        prefix = bot.config['default_prefix']
+    else:
+        prefix = bot.guild_settings[message.guild.id]['prefix'] or bot.config['default_prefix']
+    prefix = [prefix] if isinstance(prefix, str) else prefix
+    return commands.when_mentioned_or(*prefix)(bot, message)
 
 
 class CustomBot(commands.AutoShardedBot):
@@ -94,6 +96,10 @@ class CustomBot(commands.AutoShardedBot):
     async def add_delete_button(self, message:discord.Message, valid_users:typing.List[discord.User], *, delete:typing.List[discord.Message]=None, timeout=60.0):
         """Adds a delete button to the given message"""
 
+        # Let's not add delete buttons to DMs
+        if isinstance(message.channel, discord.DMChannel):
+            return
+
         # Add reaction
         await message.add_reaction("\N{WASTEBASKET}")
 
@@ -103,11 +109,19 @@ class CustomBot(commands.AutoShardedBot):
 
         # Wait for response
         def check(r, u) -> bool:
-            return all([
-                r.message.id == message.id,
-                u.id in [user.id for user in valid_users],
-                str(r.emoji) == "\N{WASTEBASKET}"
-            ])
+            if r.message.id != message.id:
+                return False
+            if u.bot is True:
+                return False
+            if isinstance(u, discord.Member) is False:
+                return False
+            if getattr(u, 'roles', None) is None:
+                return False
+            if str(r.emoji) != "\N{WASTEBASKET}":
+                return False
+            if u.id in [user.id for user in valid_users] or u.permissions_in(message.channel).manage_messages:
+                return True
+            return False
         try:
             await self.wait_for("reaction_add", check=check, timeout=timeout)
         except asyncio.TimeoutError:
@@ -232,10 +246,10 @@ class CustomBot(commands.AutoShardedBot):
 
         return (dt.now() - self.startup_time).total_seconds()
 
-    async def get_context(self, message, *, cls=commands.Context):
+    async def get_context(self, message, *, cls=CustomContext):
         """Gently insert a new original_author field into the context"""
 
-        ctx = await super().get_context(message, cls=CustomContext)
+        ctx = await super().get_context(message, cls=cls)
         ctx.original_author_id = ctx.author.id
         return ctx
 
@@ -276,12 +290,18 @@ class CustomBot(commands.AutoShardedBot):
 
         # Update presence
         self.logger.info("Setting default bot presence")
-        presence = self.config['presence']
+        presence = self.config['presence']  # Get text
+
+        # Update per shard
         if self.shard_count > 1:
+
+            # Get shard IDs
             if shard_id:
-                min, max = shard_id, shard_id + 1
+                min, max = shard_id, shard_id + 1  # If we're only setting it for one shard
             else:
-                min, max = self.shard_ids[0], self.shard_ids[-1]
+                min, max = self.shard_ids[0], self.shard_ids[-1]  # If we're setting for all shards
+
+            # Go through each shard ID
             for i in range(min, max):
                 activity = discord.Activity(
                     name=f"{presence['text']} (shard {i})",
@@ -289,6 +309,8 @@ class CustomBot(commands.AutoShardedBot):
                 )
                 status = getattr(discord.Status, presence['status'].lower())
                 await self.change_presence(activity=activity, status=status, shard_id=i)
+
+        # Not sharded - just do everywhere
         else:
             activity = discord.Activity(
                 name=presence['text'],
@@ -305,8 +327,8 @@ class CustomBot(commands.AutoShardedBot):
             with open(self.config_file) as a:
                 self.config = toml.load(a)
         except Exception as e:
-            self.logger.critical("Couldn't read config file")
-            raise e
+            self.logger.critical(f"Couldn't read config file - {e}")
+            exit(1)
 
     async def login(self, token:str=None, *args, **kwargs):
         """The original login method with optional token"""
@@ -316,8 +338,11 @@ class CustomBot(commands.AutoShardedBot):
     async def start(self, token:str=None, *args, **kwargs):
         """Start the bot with the given token, create the startup method task"""
 
-        self.logger.info("Running startup method")
-        self.startup_method = self.loop.create_task(self.startup())
+        if self.config['database']['enabled']:
+            self.logger.info("Running startup method")
+            self.startup_method = self.loop.create_task(self.startup())
+        else:
+            self.logger.info("Not running bot startup method due to database being disabled")
         self.logger.info("Running original D.py start method")
         await super().start(token or self.config['token'], *args, **kwargs)
 
