@@ -30,10 +30,17 @@ class TimeValue(object):
         self.delta = timedelta(seconds=self.duration)
 
     def __repr__(self):
-        return f"<{self.__class__.__name__} {self.clean} ({self.duration})>"
+        return f"{self.__class__.__name__}.convert('{self.clean}')"
 
     @classmethod
     async def convert(cls, ctx:commands.Context, value:str) -> 'TimeValue':
+        """Takes a value (1h/30m/10s/2d etc) and returns a TimeValue instance with the duration
+        Implemented as async for D.py converters"""
+
+        return cls.parse(value)
+
+    @classmethod
+    def parse(cls, value:str) -> 'TimeValue':
         """Takes a value (1h/30m/10s/2d etc) and returns a TimeValue instance with the duration"""
 
         match = cls.time_value_regex.search(value)
@@ -56,4 +63,4 @@ class TimeValue(object):
             duration += int(match.group(6)) * 60
         if match.group(8):
             duration += int(match.group(8))
-        return TimeValue(duration)
+        return cls(duration)
