@@ -113,8 +113,9 @@ class RoleHandler(utils.Cog):
             self.role_handles[user.guild.id] = current
 
         # Work out an average for the time
-        points = utils.CachedMessage.get_messages_between(user.id, user.guild.id, before={'days': 0}, after={'days': 7})
-        points_in_week = len(points)  # Add how many points they got in that week
+        text_points = utils.CachedMessage.get_messages_between(user.id, user.guild.id, before={'days': 0}, after={'days': 7})
+        vc_points = utils.CachedVCMinute.get_minutes_between(user.id, user.guild.id, before={'days': 0}, after={'days': 7})
+        points_in_week = len(text_points) + (len(vc_points) // 5)  # Add how many points they got in that week
 
         # Run for each role
         for row in current:
@@ -169,7 +170,7 @@ class RoleHandler(utils.Cog):
             return
 
         # Get the max role
-        user_exp = self.bot.message_count[(user.id, user.guild.id)]
+        user_exp = self.bot.message_count[(user.id, user.guild.id)] + (self.bot.minute_count[(user.id, user.guild.id)] // 5)
         max_role = max([i for i in current_static if i['threshold'] <= user_exp], key=lambda i: i['threshold'], default=None)
 
         # Decide whether or not to remove old roles
@@ -223,6 +224,8 @@ class RoleHandler(utils.Cog):
         # TODO check the guild settings to see if level up messages should be posted
 
         if user.bot:
+            return
+        if channel is None:
             return
         await channel.send(f"Well done {user.mention}, you're now **level {new_level}**!")
         self.logger.info(f"Sent level up message to {channel.guild.id}/{channel.id} for {user.id} at level {new_level}")

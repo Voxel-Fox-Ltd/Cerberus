@@ -23,21 +23,7 @@ Cerberus uses multiple methods of keeping track of points. To the which roles yo
 """.strip()
 
 
-class VCLeaderboardSource(menus.ListPageSource):
-
-    def __init__(self, bot, data):
-        super().__init__(data, per_page=10)
-        self.bot = bot
-
-    async def format_page(self, menu, entries):
-        offset = menu.current_page * self.per_page
-        clean_rows = [(self.bot.get_user(row['user_id']), row['count'] * 60) for _, row in enumerate(entries, start=offset)]
-        text = '\n'.join(f"**{i!s}** - `{utils.TimeValue(o).clean}`" for _, (i, o) in enumerate(clean_rows, start=offset))
-        max_page = math.ceil(len(self.entries) / self.per_page)
-        return '__Tracked VC Activity:__\n' + text + f'\n\nPage {menu.current_page + 1} of {max_page}'
-
-
-class TextLeaderboardSource(menus.ListPageSource):
+class LeaderboardSource(menus.ListPageSource):
 
     def __init__(self, bot, data, header):
         super().__init__(data, per_page=10)
@@ -45,9 +31,8 @@ class TextLeaderboardSource(menus.ListPageSource):
         self.header = header
 
     async def format_page(self, menu, entries):
-        offset = menu.current_page * self.per_page
-        clean_rows = [(self.bot.get_user(i), o) for _, (i, o) in enumerate(entries, start=offset)]
-        text = '\n'.join(f"**{i!s}** - `{o}`" for _, (i, o) in enumerate(clean_rows, start=offset))
+        clean_rows = [(self.bot.get_user(i), o, j) for i, o, j in entries]
+        text = '\n'.join(f"**{i!s}** - `{o + (j // 5):,}` (`{o:,}` text, `{utils.TimeValue(j * 60).clean or '0m'}` VC)" for i, o, j in clean_rows)
         max_page = math.ceil(len(self.entries) / self.per_page)
         return f'__{self.header}:__\n' + text + f'\n\nPage {menu.current_page + 1} of {max_page}'
 
@@ -127,9 +112,13 @@ class Information(utils.Cog):
         for user in users:
             for index in range(window[1]):
                 between = (7 * window[2]) + window[1] - index - 1, window[1] - index - 1
-                points_per_week[user][index] = len(utils.CachedMessage.get_messages_between(
+                cached_message_amount = len(utils.CachedMessage.get_messages_between(
                     user.id, ctx.guild.id, after={window[0]: between[0]}, before={window[0]: between[1]}
                 ))
+                cached_vc_minute_amount = len(utils.CachedVCMinute.get_minutes_between(
+                    user.id, ctx.guild.id, after={window[0]: between[0]}, before={window[0]: between[1]}
+                )) // 5
+                points_per_week[user][index] = cached_message_amount + cached_vc_minute_amount
 
         # Don't bother uploading if they've not got any data
         if sum([sum(user_points) for user_points in points_per_week.values()]) == 0:
@@ -209,15 +198,19 @@ class Information(utils.Cog):
 
         # Get the user's points
         for key in all_keys_for_guild:
-            all_data_for_guild.append((key[0], len(utils.CachedMessage.get_messages_after(key[0], ctx.guild, days=7))))
+            all_data_for_guild.append((
+                key[0],
+                len(utils.CachedMessage.get_messages_after(key[0], ctx.guild, days=7)),
+                len(utils.CachedVCMinute.get_minutes_after(key[0], ctx.guild, days=7)),
+            ))
 
         # Order em
         valid_user_data = [i for i in all_data_for_guild if getattr(self.bot.get_user(i[0]), 'bot', False) is False and ctx.guild.get_member(i[0])]
-        ordered_user_data = sorted(valid_user_data, key=lambda k: k[1], reverse=True)
+        ordered_user_data = sorted(valid_user_data, key=lambda k: k[1] + (k[2] // 5), reverse=True)
 
         # Make menu
         pages = menus.MenuPages(
-            source=TextLeaderboardSource(self.bot, ordered_user_data, "Tracked Messages over 7 days"),
+            source=LeaderboardSource(self.bot, ordered_user_data, "Tracked Points over 7 days"),
             clear_reactions_after=True
         )
         return await pages.start(ctx)
@@ -227,22 +220,22 @@ class Information(utils.Cog):
     async def staticleaderboard(self, ctx:utils.Context, pages:int=1):
         """Gives you the leaderboard users for the server"""
 
-        static_message_count = [(i[0], o) for i, o in self.bot.message_count.items() if i[1] == ctx.guild.id]
-        filtered_list = [i for i in static_message_count if ctx.guild.get_member(i[0]) is not None and self.bot.get_user(i[0]).bot is False]
-        ordered_list = sorted(filtered_list, key=lambda x: x[1], reverse=True)
-        max_page = math.ceil(len(ordered_list) / 10)
-        await ctx.send(f"__Tracked Messages:__\n" + '\n'.join([f"**{self.bot.get_user(i[0])!s}** - {i[1]:,}" for i in ordered_list[(pages * 10) - 10:(pages * 10)]]) + f"\nPage **{pages}** out of **{max_page}**")
-
         # Get all their valid user IDs
-        all_keys_for_guild = [(i[0], o) for i, o in self.bot.message_count.items() if i[1] == ctx.guild.id]
+        all_keys_for_guild = collections.defaultdict([0, 0].copy)
+        for (user_id, guild_id), message_count in self.bot.message_count.items():
+            if guild_id == ctx.guild.id:
+                all_keys_for_guild[user_id][0] = message_count
+        for (user_id, guild_id), minute_count in self.bot.minute_count.items():
+            if guild_id == ctx.guild.id:
+                all_keys_for_guild[user_id][1] = minute_count // 5
 
         # Order em
-        valid_user_data = [i for i in all_keys_for_guild if getattr(self.bot.get_user(i[0]), 'bot', False) is False and ctx.guild.get_member(i[0])]
-        ordered_user_data = sorted(valid_user_data, key=lambda k: k[1], reverse=True)
+        valid_user_data = [(uid, text, vc) for uid, (text, vc) in all_keys_for_guild.items() if getattr(self.bot.get_user(uid), 'bot', False) is False and ctx.guild.get_member(uid)]
+        ordered_user_data = sorted(valid_user_data, key=lambda k: k[1] + (k[2] // 5), reverse=True)
 
         # Make menu
         pages = menus.MenuPages(
-            source=TextLeaderboardSource(self.bot, ordered_user_data, "Tracked Messages over 7 days"),
+            source=LeaderboardSource(self.bot, ordered_user_data, "Total Tracked Points"),
             clear_reactions_after=True
         )
         return await pages.start(ctx)
@@ -300,35 +293,6 @@ class Information(utils.Cog):
         for threshold, role in role_object_data:
             output.append(f"**{role.name}** :: `{threshold}` tracked messages")
         return await ctx.send('\n'.join(output))
-
-    @commands.command(cls=utils.Command, hidden=True)
-    @commands.guild_only()
-    async def vcpoints(self, ctx:utils.Context, user:typing.Optional[discord.Member]=None):
-        """Shows you the static roles that have been set up for the guild"""
-
-        # Get data
-        user = user or ctx.author
-        async with self.bot.database() as db:
-            data = await db("SELECT COUNT(*) FROM user_vc_activity WHERE guild_id=$1 AND user_id=$2", ctx.guild.id, user.id)
-
-        # Output nicely
-        timevalue = utils.TimeValue(data[0]['count'] * 60)
-        return await ctx.send(f"{user.mention} has `{timevalue.clean}` of recorded VC activity.")
-
-    @commands.command(cls=utils.Command, hidden=True)
-    @commands.guild_only()
-    async def vclb(self, ctx:utils.Context):
-        """Shows you the static roles that have been set up for the guild"""
-
-        # Get data
-        async with self.bot.database() as db:
-            data = await db("SELECT count(timestamp), user_id FROM user_vc_activity WHERE guild_id=$1 GROUP BY user_id ORDER BY count DESC", ctx.guild.id)
-        if not data:
-            return await ctx.send("Nobody in your server has any recorded VC activity.")
-
-        # Output nicely
-        pages = menus.MenuPages(source=VCLeaderboardSource(self.bot, data), clear_reactions_after=True)
-        return await pages.start(ctx)
 
 
 def setup(bot:utils.Bot):
