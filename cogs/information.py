@@ -209,7 +209,7 @@ class Information(utils.Cog):
 
         # Get the user's points
         for key in all_keys_for_guild:
-            all_data_for_guild.append((key[0], len(utils.CachedMessage.get_messages(key[0], ctx.guild, days=7))))
+            all_data_for_guild.append((key[0], len(utils.CachedMessage.get_messages_after(key[0], ctx.guild, days=7))))
 
         # Order em
         valid_user_data = [i for i in all_data_for_guild if getattr(self.bot.get_user(i[0]), 'bot', False) is False and ctx.guild.get_member(i[0])]
@@ -253,7 +253,7 @@ class Information(utils.Cog):
         """Shows you your message amount over 7 days"""
 
         user = user or ctx.author
-        amount = len(utils.CachedMessage.get_messages(user.id, ctx.guild.id, days=7))
+        amount = len(utils.CachedMessage.get_messages_after(user.id, ctx.guild.id, days=7))
         await ctx.send(f"Over the past 7 days, {user.mention} has sent **{amount:,}** tracked messages.")
 
     @commands.command(aliases=['s', 'st', 'staticlevel', 'slevel', 'stlevel', 'srank', 'staticrank', 'strank', 'spoints', 'spoint'], cls=utils.Command, hidden=True)

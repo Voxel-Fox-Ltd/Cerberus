@@ -41,7 +41,7 @@ class CachedMessage(object):
         return self.timestamp < dt.utcnow() - timedelta(**kwargs)
 
     @classmethod
-    def get_messages(cls, user_id:typing.Union[discord.User, int], guild_id:typing.Union[discord.Guild, int], **kwargs) -> typing.List['CachedMessage']:
+    def get_messages_after(cls, user_id:typing.Union[discord.User, int], guild_id:typing.Union[discord.Guild, int], **kwargs) -> typing.List['CachedMessage']:
         """Returns all messages from a given user (via their ID) after a given time
         kwargs are passed directly into a timedelta
 
