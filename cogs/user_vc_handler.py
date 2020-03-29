@@ -9,6 +9,13 @@ from cogs import utils
 
 class UserVCHandler(utils.Cog):
 
+    def __init__(self, bot:utils.Bot):
+        super().__init__(bot)
+        self.user_vc_databaser.start()
+
+    def cog_unload(self):
+        self.user_vc_databaser.stop()
+
     @tasks.loop(minutes=1)
     async def user_vc_databaser(self):
         """Saves all VC points into the database"""

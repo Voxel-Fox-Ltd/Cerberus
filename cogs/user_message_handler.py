@@ -15,13 +15,11 @@ class UserMessageHandler(utils.Cog):
         self.last_message: typing.Dict[discord.Member, dt] = collections.defaultdict(lambda: dt(2000, 1, 1, 0, 0))
         self.cached_for_saving: typing.List[discord.Message] = list()
         self.user_message_databaser.start()
-        self.user_vc_databaser.start()
 
     def cog_unload(self):
         """Stop the databaser loop very gently so it stores everything in cache first"""
 
         self.user_message_databaser.stop()
-        self.user_vc_databaser.stop()
 
     @staticmethod
     def valid_voice_state(voice_state:discord.VoiceState) -> bool:
