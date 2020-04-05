@@ -25,7 +25,8 @@ class RoleHandler(utils.Cog):
 
         async with self.bot.database() as db:
             await db(
-                "INSERT INTO role_gain (guild_id, role_id, threshold, period, duration) VALUES ($1, $2, $3, 'days', 7)",
+                """INSERT INTO role_gain (guild_id, role_id, threshold, period, duration) VALUES ($1, $2, $3, 'days', 7)
+                ON CONFLICT (role_id) DO UPDATE SET threshold=excluded.threshold""",
                 ctx.guild.id, role.id, threshold
             )
         current = self.role_handles[ctx.guild.id]
@@ -47,7 +48,8 @@ class RoleHandler(utils.Cog):
 
         async with self.bot.database() as db:
             await db(
-                "INSERT INTO static_role_gain (guild_id, role_id, threshold) VALUES ($1, $2, $3)",
+                """INSERT INTO static_role_gain (guild_id, role_id, threshold) VALUES ($1, $2, $3)
+                ON CONFLICT (role_id) DO UPDATE SET threshold=excluded.threshold""",
                 ctx.guild.id, role.id, threshold
             )
         await ctx.send(f"Now added - {threshold} messages sent, users will receive the **{role.name}** role.")
