@@ -248,7 +248,7 @@ class Information(utils.Cog):
         user = user or ctx.author
         text = len(utils.CachedMessage.get_messages_after(user.id, ctx.guild.id, days=7))
         vc = len(utils.CachedVCMinute.get_minutes_after(user.id, ctx.guild.id, days=7))
-        await ctx.send(f"Over the past 7 days, {user.mention} has gained **{text:,}** tracked messages and been in VC for **{utils.TimeValue(vc * 60).clean}**, giving them a total of **{text + (vc // 5):,}** points.")
+        await ctx.send(f"Over the past 7 days, {user.mention} has gained **{text:,}** tracked messages and been in VC for **{utils.TimeValue(vc * 60).clean or '0m'}**, giving them a total of **{text + (vc // 5):,}** points.")
 
     @commands.command(aliases=['s', 'st', 'staticlevel', 'slevel', 'stlevel', 'srank', 'staticrank', 'strank', 'spoints', 'spoint'], cls=utils.Command, hidden=True)
     @commands.guild_only()
@@ -258,7 +258,7 @@ class Information(utils.Cog):
         user = user or ctx.author
         static_message_count = self.bot.message_count[(user.id, ctx.guild.id)]
         static_vc_count = self.bot.minute_count[(user.id, ctx.guild.id)]
-        await ctx.send(f"{user.mention} has sent **{static_message_count:,}** total tracked messages and been in VC for **{utils.TimeValue(static_vc_count * 60).clean}**, giving them a total of **{static_message_count + (static_vc_count // 5):,}** points.")
+        await ctx.send(f"{user.mention} has sent **{static_message_count:,}** total tracked messages and been in VC for **{utils.TimeValue(static_vc_count * 60).clean or '0m'}**, giving them a total of **{static_message_count + (static_vc_count // 5):,}** points.")
 
     @commands.command(aliases=['dyroles', 'dynroles', 'droles'], cls=utils.Command, hidden=True)
     @commands.guild_only()
