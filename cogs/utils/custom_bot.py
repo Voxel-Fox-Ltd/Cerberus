@@ -70,9 +70,15 @@ class CustomBot(commands.AutoShardedBot):
         # Here's the storage for cached stuff
         self.guild_settings = collections.defaultdict(self.DEFAULT_GUILD_SETTINGS.copy)
         self.message_count = collections.defaultdict(int)  # (author.id, guild.id): int
-        self.minute_count = collections.defaultdict(int)  # (author.id, guild.id): int
+        # self.minute_count = collections.defaultdict(int)  # (author.id, guild.id): int
         self.blacklisted_channels = set()
         self.blacklisted_roles = collections.defaultdict(set)
+
+    @property
+    def minute_count(self):
+        """Dictionary of (uid, gid): int for the amount of minutes a user has been in a VC"""
+
+        return {i: len(o) for i, o in CachedVCMinute.all_minutes.copy().items()}
 
     def get_invite_link(self, *, scope:str='bot', response_type:str=None, redirect_uri:str=None, guild_id:int=None, **kwargs):
         """Gets the invite link for the bot, with permissions all set properly"""

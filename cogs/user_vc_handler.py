@@ -49,7 +49,7 @@ class UserVCHandler(utils.Cog):
         # Let's cache the static VC minutes, just for fun
         for uid, gid, timestamp in records:
             utils.CachedVCMinute(user_id=uid, guild_id=gid, timestamp=timestamp)
-            self.bot.minute_count[(uid, gid)] += 1
+            # self.bot.minute_count[(uid, gid)] += 1
 
         # Only save messages if there _were_ any
         if len(records) == 0:
@@ -64,13 +64,13 @@ class UserVCHandler(utils.Cog):
                 columns=('user_id', 'guild_id', 'timestamp'),
                 records=records
             )
-            for uid, gid, timestamp in records:
-                await db(
-                    """INSERT INTO static_user_vc_activity (user_id, guild_id, minutes)
-                    VALUES ($1, $2, $3) ON CONFLICT (user_id, guild_id)
-                    DO UPDATE SET minutes=static_user_vc_activity.minutes+excluded.minutes""",
-                    uid, gid, self.bot.minute_count[uid, gid]
-                )  # TODO this is dreadfully inefficient. Please fix this. Please.
+            # for uid, gid, timestamp in records:
+            #     await db(
+            #         """INSERT INTO static_user_vc_activity (user_id, guild_id, minutes)
+            #         VALUES ($1, $2, $3) ON CONFLICT (user_id, guild_id)
+            #         DO UPDATE SET minutes=static_user_vc_activity.minutes+excluded.minutes""",
+            #         uid, gid, self.bot.minute_count[uid, gid]
+            #     )  # TODO this is dreadfully inefficient. Please fix this. Please.
 
 
 def setup(bot:utils.Bot):

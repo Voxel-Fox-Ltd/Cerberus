@@ -172,7 +172,7 @@ class RoleHandler(utils.Cog):
             return
 
         # Get the max role
-        user_exp = self.bot.message_count[(user.id, user.guild.id)] + (self.bot.minute_count[(user.id, user.guild.id)] // 5)
+        user_exp = self.bot.message_count.get((user.id, user.guild.id), 0) + (self.bot.minute_count.get((user.id, user.guild.id), 0) // 5)
         max_role = max([i for i in current_static if i['threshold'] <= user_exp], key=lambda i: i['threshold'], default=None)
 
         # Decide whether or not to remove old roles
