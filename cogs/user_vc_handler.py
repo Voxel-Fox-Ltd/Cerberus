@@ -41,7 +41,7 @@ class UserVCHandler(utils.Cog):
         voice_members: typing.List[typing.Tuple[int, int]] = []  # (uid, gid)...
         for vc in voice_channels:
             if len(vc.voice_states) > 1:
-                voice_members.extend([(user_id, vc.guild.id) for user_id, state in vc.voice_states.items() if self.bot.get_user(user_id).bot is False and self.valid_voice_state(state)])
+                voice_members.extend([(user_id, vc.guild.id) for user_id, state in vc.voice_states.items() if self.valid_voice_state(state)])
 
         # Make our records
         records: typing.List[typing.Tuple[int, int, dt]] = [(i, o, dt.utcnow()) for i, o in voice_members]  # (uid, gid, timestamp)...

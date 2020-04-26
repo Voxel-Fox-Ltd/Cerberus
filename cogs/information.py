@@ -87,9 +87,9 @@ class Information(utils.Cog):
         if window_days > 365:
             window_days = 365
             truncation = f"shortened from your original request of {original} days for going over the 365 day max"
-        if window_days > (dt.utcnow() - min([i.joined_at for i in users])).days:
-            window_days = (dt.utcnow() - min([i.joined_at for i in users])).days
-            truncation = f"shortened from your original request of {original} days as {'someone you pinged has not' if len(users) > 1 else 'they have not'} been in the guild that long"
+        # if window_days > (dt.utcnow() - min([i.joined_at for i in users])).days:
+        #     window_days = (dt.utcnow() - min([i.joined_at for i in users])).days
+        #     truncation = f"shortened from your original request of {original} days as {'someone you pinged has not' if len(users) > 1 else 'they have not'} been in the guild that long"
         if window_days > (dt.utcnow() - ctx.guild.me.joined_at).days:
             window_days = (dt.utcnow() - ctx.guild.me.joined_at).days
             truncation = f"shortened from your original request of {original} days as I haven't been in the guild that long"
