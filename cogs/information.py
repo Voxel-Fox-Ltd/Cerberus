@@ -40,6 +40,7 @@ class LeaderboardSource(menus.ListPageSource):
 class Information(utils.Cog):
 
     @commands.command(cls=utils.Command)
+    @commands.bot_has_permissions(send_messages=True, embed_links=True)
     @commands.guild_only()
     async def graph(self, ctx:utils.Context, user:typing.Optional[discord.Member], window_days:typing.Optional[int]=7):
         """Graphs your points over a given time"""
@@ -48,6 +49,7 @@ class Information(utils.Cog):
         return await self.make_graph(ctx, [user], window_days, {user.id: "000000"})
 
     @commands.command(cls=utils.Command, hidden=True)
+    @commands.bot_has_permissions(send_messages=True, embed_links=True)
     @commands.guild_only()
     async def multigraph(self, ctx:utils.Context, users:commands.Greedy[discord.Member], window_days:typing.Optional[int]=7):
         """Graphs your points over a given time"""
@@ -59,6 +61,7 @@ class Information(utils.Cog):
         await self.make_graph(ctx, users, window_days)
 
     @commands.command(cls=utils.Command, hidden=True)
+    @commands.bot_has_permissions(send_messages=True, embed_links=True)
     @commands.guild_only()
     async def multigraphrole(self, ctx:utils.Context, role:discord.Role, window_days:typing.Optional[int]=7):
         """Graphs the points of a role over a given time"""
@@ -170,24 +173,28 @@ class Information(utils.Cog):
         await ctx.send(f"Activity graph in a {window_days} day window{(' (' + truncation + ')') if truncation else ''}, showing average activity over each 7 day period.", embed=embed, file=discord.File("activity.png"))
 
     @commands.command(aliases=['rank'], cls=utils.Command)
+    @commands.bot_has_permissions(send_messages=True)
     async def points(self, ctx:utils.Context):
         """Shows you all of the points based commands"""
 
         await ctx.send(POINTS_MESSAGE.format(ctx))
 
     @commands.command(aliases=['lb'], cls=utils.Command)
+    @commands.bot_has_permissions(send_messages=True)
     async def leaderboard(self, ctx:utils.Context):
         """Shows you all of the leaderboard based commands"""
 
         await ctx.send(LEADERBOARD_MESSAGE.format(ctx))
 
     @commands.command(cls=utils.Command)
+    @commands.bot_has_permissions(send_messages=True)
     async def roles(self, ctx:utils.Context):
         """Shows you all of the role based commands"""
 
         await ctx.send(ROLES_MESSAGE.format(ctx))
 
     @commands.command(aliases=['dlb', 'dylb', 'dynlb'], cls=utils.Command, hidden=True)
+    @commands.bot_has_permissions(send_messages=True, embed_links=True)
     @commands.guild_only()
     async def dynamicleaderboard(self, ctx:utils.Context, pages:int=1):
         """Gives you the leaderboard users for the server"""
@@ -216,6 +223,7 @@ class Information(utils.Cog):
         return await pages.start(ctx)
 
     @commands.command(aliases=['slb', 'stlb'], cls=utils.Command, hidden=True)
+    @commands.bot_has_permissions(send_messages=True, embed_links=True)
     @commands.guild_only()
     async def staticleaderboard(self, ctx:utils.Context, pages:int=1):
         """Gives you the leaderboard users for the server"""
@@ -241,6 +249,7 @@ class Information(utils.Cog):
         return await pages.start(ctx)
 
     @commands.command(aliases=['dyn', 'dy', 'd', 'dpoints', 'dpoint'], cls=utils.Command, hidden=True)
+    @commands.bot_has_permissions(send_messages=True)
     @commands.guild_only()
     async def dynamic(self, ctx:utils.Context, user:typing.Optional[discord.Member]=None):
         """Shows you your message amount over 7 days"""
@@ -251,6 +260,7 @@ class Information(utils.Cog):
         await ctx.send(f"Over the past 7 days, {user.mention} has gained **{text:,}** tracked messages and been in VC for **{utils.TimeValue(vc * 60).clean or '0m'}**, giving them a total of **{text + (vc // 5):,}** points.")
 
     @commands.command(aliases=['s', 'st', 'staticlevel', 'slevel', 'stlevel', 'srank', 'staticrank', 'strank', 'spoints', 'spoint'], cls=utils.Command, hidden=True)
+    @commands.bot_has_permissions(send_messages=True)
     @commands.guild_only()
     async def static(self, ctx:utils.Context, user:typing.Optional[discord.Member]=None):
         """Tells you how many total messages you've sent"""
@@ -261,6 +271,7 @@ class Information(utils.Cog):
         await ctx.send(f"{user.mention} has sent **{static_message_count:,}** total tracked messages and been in VC for **{utils.TimeValue(static_vc_count * 60).clean or '0m'}**, giving them a total of **{static_message_count + (static_vc_count // 5):,}** points.")
 
     @commands.command(aliases=['dyroles', 'dynroles', 'droles'], cls=utils.Command, hidden=True)
+    @commands.bot_has_permissions(send_messages=True)
     @commands.guild_only()
     async def dynamicroles(self, ctx:utils.Context):
         """Shows you the roles that have been set up for the guild"""
@@ -279,6 +290,7 @@ class Information(utils.Cog):
         return await ctx.send('\n'.join(output))
 
     @commands.command(aliases=['sroles', 'stroles'], cls=utils.Command, hidden=True)
+    @commands.bot_has_permissions(send_messages=True)
     @commands.guild_only()
     async def staticroles(self, ctx:utils.Context):
         """Shows you the static roles that have been set up for the guild"""
