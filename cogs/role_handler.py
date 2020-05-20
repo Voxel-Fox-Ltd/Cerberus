@@ -19,6 +19,7 @@ class RoleHandler(utils.Cog):
 
     @commands.command(aliases=['adddrole', 'adrole'], cls=utils.Command)
     @commands.has_permissions(manage_roles=True)
+    @commands.bot_has_permissions(send_messages=True)
     @commands.guild_only()
     async def adddynamicrole(self, ctx:utils.Context, threshold:int, *, role:discord.Role):
         """Adds a role that is given when a threshold is reached"""
@@ -42,6 +43,7 @@ class RoleHandler(utils.Cog):
 
     @commands.command(aliases=['addsrole', 'asrole'], cls=utils.Command)
     @commands.has_permissions(manage_roles=True)
+    @commands.bot_has_permissions(send_messages=True)
     @commands.guild_only()
     async def addstaticrole(self, ctx:utils.Context, threshold:int, *, role:discord.Role):
         """Adds a role when a user reaches a certain level"""
@@ -57,6 +59,7 @@ class RoleHandler(utils.Cog):
 
     @commands.command(aliases=['removedrole', 'rdrole'], cls=utils.Command)
     @commands.has_permissions(manage_roles=True)
+    @commands.bot_has_permissions(send_messages=True)
     @commands.guild_only()
     async def removedynamicrole(self, ctx:utils.Context, *, role:discord.Role):
         """Removes a role that is given"""
@@ -72,6 +75,7 @@ class RoleHandler(utils.Cog):
 
     @commands.command(aliases=['removesrole', 'rsrole'], cls=utils.Command)
     @commands.has_permissions(manage_roles=True)
+    @commands.bot_has_permissions(send_messages=True)
     @commands.guild_only()
     async def removestaticrole(self, ctx:utils.Context, *, role:discord.Role):
         """Removes a level role"""

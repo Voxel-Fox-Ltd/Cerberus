@@ -45,7 +45,7 @@ class Mee6Data(utils.Cog):
     async def getmessages(self, ctx:utils.Context, level:int):
         """Gives you the amount of messages associated with a given Mee6 level"""
 
-        return await ctx.send(f"To get to level **{level}** you need to send **{self.get_messages_by_level(level)}** tracked messages")
+        return await ctx.send(f"To get to Mee6 level **{level}** you need to send **{self.get_messages_by_level(level)}** tracked messages")
 
     @commands.command(cls=utils.Command, hidden=True)
     @commands.guild_only()
