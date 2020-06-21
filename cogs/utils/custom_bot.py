@@ -3,6 +3,7 @@ import collections
 import glob
 import logging
 import typing
+import copy
 from datetime import datetime as dt
 from urllib.parse import urlencode
 
@@ -51,15 +52,19 @@ class CustomBot(commands.AutoShardedBot):
             'prefix': self.config['default_prefix'],
             'remove_old_roles': False,
         }
+        self.DEFAULT_USER_SETTINGS = {
+        }
 
         # Aiohttp session
         self.session = aiohttp.ClientSession(loop=self.loop)
 
         # Allow database connections like this
+        # if self.config['database'].get('enabled'):
         self.database = DatabaseConnection
         self.database.logger = self.logger.getChild('database')
 
         # Allow redis connections like this
+        # if self.config['redis'].get('enabled'):
         self.redis = RedisConnection
         self.redis.logger = self.logger.getChild('redis')
 
@@ -69,6 +74,7 @@ class CustomBot(commands.AutoShardedBot):
 
         # Here's the storage for cached stuff
         self.guild_settings = collections.defaultdict(self.DEFAULT_GUILD_SETTINGS.copy)
+        self.user_settings = collections.defaultdict(lambda: copy.deepcopy(self.DEFAULT_USER_SETTINGS))
         self.message_count = collections.defaultdict(int)  # (author.id, guild.id): int
         # self.minute_count = collections.defaultdict(int)  # (author.id, guild.id): int
         self.blacklisted_channels = set()
