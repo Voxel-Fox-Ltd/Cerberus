@@ -144,7 +144,7 @@ class Information(utils.Cog):
             else:
                 colour = format(hex(random.randint(0, 0xffffff))[2:], "0>6")
             rgb_colour = tuple(int(colour[i:i + 2], 16) / 255 for i in (0, 2, 4))
-            ax.plot(list(range(window[1])), i, 'k-', label=str(self.bot.get_user(user)), color=rgb_colour)
+            ax.plot(list(range(window[1])), i, 'k-', label=str(self.bot.get_user(user)) or user, color=rgb_colour)
         fig.legend(loc="upper left")
 
         # Set size

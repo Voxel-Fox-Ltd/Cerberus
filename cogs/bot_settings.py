@@ -1,3 +1,4 @@
+import asyncpg
 from discord.ext import commands
 
 from cogs import utils
