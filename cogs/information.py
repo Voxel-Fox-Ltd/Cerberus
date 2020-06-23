@@ -104,7 +104,7 @@ class Information(utils.Cog):
         # Check our window, see if we can make it a lil bigger for them
         # if window_days <= 1:
         #     window = 'minutes', window_days * 24 * 60, 24 * 60
-        if window_days <= 10:
+        if window_days <= 3:
             window = 'hours', window_days * 24, 24
         else:
             window = 'days', window_days, 1
