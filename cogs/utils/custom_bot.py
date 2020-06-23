@@ -51,6 +51,9 @@ class CustomBot(commands.AutoShardedBot):
         self.DEFAULT_GUILD_SETTINGS = {
             'prefix': self.config['default_prefix'],
             'remove_old_roles': False,
+            'role_gain': dict(),
+            'blacklisted_channels': list(),
+            'blacklisted_roles': list(),
         }
         self.DEFAULT_USER_SETTINGS = {
         }
@@ -75,8 +78,8 @@ class CustomBot(commands.AutoShardedBot):
         # Here's the storage for cached stuff
         self.guild_settings = collections.defaultdict(self.DEFAULT_GUILD_SETTINGS.copy)
         self.user_settings = collections.defaultdict(lambda: copy.deepcopy(self.DEFAULT_USER_SETTINGS))
-        self.blacklisted_channels = set()
-        self.blacklisted_roles = collections.defaultdict(set)
+        # self.blacklisted_channels = set()
+        # self.blacklisted_roles = collections.defaultdict(set)
 
     async def startup(self):
         """Clears all the bot's caches and fills them from a DB read"""
@@ -92,30 +95,25 @@ class CustomBot(commands.AutoShardedBot):
         # Get database connection
         db = await self.database.get_connection()
 
-        # Get stored prefixes
-        try:
-            guild_data = await db("SELECT * FROM guild_settings")
-        except Exception as e:
-            self.logger.critical(f"Error selecting from guild_settings - {e}")
-            exit(1)
-        for row in guild_data:
-            self.guild_settings[row['guild_id']] = dict(row)
+        # Get guild settings
+        data = await self.get_all_table_data(db, "guild_settings")
+        for row in data:
+            for key, value in row.items():
+                self.guild_settings[row['guild_id']][key] = value
+
+        # Get user settings
+        data = await self.get_all_table_data(db, "user_settings")
+        for row in data:
+            for key, value in row.items():
+                self.user_settings[row['user_id']][key] = value
 
         # Get cached messages
-        try:
-            data = await db("SELECT * FROM user_messages")
-        except Exception as e:
-            self.logger.critical(f"Failed to get data from user_messages - {e}")
-            exit(1)
+        data = await self.get_all_table_data(db, "user_messages")
         for row in data:
             CachedMessage(**row)
 
         # Get cached VC minutes
-        try:
-            data = await db("SELECT * FROM user_vc_activity")
-        except Exception as e:
-            self.logger.critical(f"Failed to get data from user_vc_activity - {e}")
-            exit(1)
+        data = await self.get_all_table_data(db, "user_vc_activity")
         for row in data:
             CachedVCMinute(**row)
 
@@ -143,6 +141,25 @@ class CustomBot(commands.AutoShardedBot):
 
         # Close database connection
         await db.disconnect()
+
+    async def run_sql_exit_on_error(self, db, sql, *args):
+        """Get data form a table, exiting if it can't"""
+
+        try:
+            return await db(sql, *args)
+        except Exception as e:
+            self.logger.critical(f"Error selecting from table - {e}")
+            exit(1)
+
+    async def get_all_table_data(self, db, table_name):
+        """Get all data from a table"""
+
+        return await self.run_sql_exit_on_error(db, "SELECT * FROM {0}".format(table_name))
+
+    async def get_list_table_data(self, db, table_name, key):
+        """Get all data from a table"""
+
+        return await self.run_sql_exit_on_error(db, "SELECT * FROM {0} WHERE key=$1".format(table_name), key)
 
     @property
     def minute_count(self):

@@ -16,46 +16,6 @@ class RoleHandler(utils.Cog):
     def cog_unload(self):
         self.user_role_looper.cancel()
 
-    @commands.command(aliases=['adddynamicrole'], cls=utils.Command)
-    @commands.has_permissions(manage_roles=True)
-    @commands.bot_has_permissions(send_messages=True)
-    @commands.guild_only()
-    async def addrole(self, ctx:utils.Context, threshold:int, *, role:discord.Role):
-        """Adds a role that is given when a threshold is reached"""
-
-        async with self.bot.database() as db:
-            await db(
-                """INSERT INTO role_gain (guild_id, role_id, threshold, period, duration) VALUES ($1, $2, $3, 'days', 7)
-                ON CONFLICT (role_id) DO UPDATE SET threshold=excluded.threshold""",
-                ctx.guild.id, role.id, threshold
-            )
-        current = self.role_handles[ctx.guild.id]
-        if current is None:
-            current = list()
-        current.append({
-            'role_id': role.id,
-            'threshold': threshold,
-        })
-        self.role_handles[ctx.guild.id] = current
-        await ctx.send(f"Now added - at an average of {threshold} points every 7 days, users will receive the **{role.name}** role.")
-        self.logger.info(f"Added dynamic role {role.id} to guild {ctx.guild.id} at threshold {threshold}")
-
-    @commands.command(aliases=['removedrole', 'rdrole', 'removedynamicrole'], cls=utils.Command)
-    @commands.has_permissions(manage_roles=True)
-    @commands.bot_has_permissions(send_messages=True)
-    @commands.guild_only()
-    async def removerole(self, ctx:utils.Context, *, role:discord.Role):
-        """Removes a role that is given"""
-
-        async with self.bot.database() as db:
-            await db("DELETE FROM role_gain WHERE role_id=$1", role.id)
-        current = self.role_handles[ctx.guild.id]
-        if current is not None:
-            current = [i for i in current if i['role_id'] != role.id]
-            self.role_handles[ctx.guild.id] = current
-        await ctx.send(f"Now removed users receiving the **{role.name}** role.")
-        self.logger.info(f"Removed dynamic role {role.id} to guild {ctx.guild.id}")
-
     @tasks.loop(hours=1)
     async def user_role_looper(self):
         """Loop every hour to remove roles from everyone who might have talked"""
@@ -81,14 +41,7 @@ class RoleHandler(utils.Cog):
             return
 
         # Grab data
-        current = self.role_handles[user.guild.id]
-        if current is None:
-            async with self.bot.database() as db:
-                roles = await db("SELECT * FROM role_gain WHERE guild_id=$1", user.guild.id)  # These should always be cached
-            current = list()
-            for i in roles:
-                current.append(dict(i))
-            self.role_handles[user.guild.id] = current
+        role_data = self.bot.guild_settings[user.guild.id]['role_data']
 
         # Work out an average for the time
         text_points = utils.CachedMessage.get_messages_between(user.id, user.guild.id, before={'days': 0}, after={'days': 7})
@@ -96,7 +49,7 @@ class RoleHandler(utils.Cog):
         points_in_week = len(text_points) + (len(vc_points) // 5)  # Add how many points they got in that week
 
         # Run for each role
-        for row in current:
+        for row in role_data:
 
             # Shorten variable names
             role_id = row['role_id']

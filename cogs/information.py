@@ -118,8 +118,7 @@ class Information(utils.Cog):
             return await ctx.send("They've not sent any messages that I can graph.")
 
         # Get roles
-        async with self.bot.database() as db:
-            role_data = await db("SELECT role_id, threshold FROM role_gain WHERE guild_id=$1", ctx.guild.id)
+        role_data = self.bot.guild_settings[ctx.guild.id]['role_data']
         role_object_data = sorted([(row['threshold'], ctx.guild.get_role(row['role_id'])) for row in role_data if ctx.guild.get_role(row['role_id'])], key=lambda x: x[0])
 
         # Build our output graph
@@ -209,8 +208,7 @@ class Information(utils.Cog):
         """Shows you the roles that have been set up for the guild"""
 
         # Get roles
-        async with self.bot.database() as db:
-            role_data = await db("SELECT role_id, threshold FROM role_gain WHERE guild_id=$1", ctx.guild.id)
+        role_data = self.bot.guild_settings[ctx.guild.id]['role_data']
         if not role_data:
             return await ctx.send("There are no roles set up for this guild.")
         role_object_data = sorted([(row['threshold'], ctx.guild.get_role(row['role_id'])) for row in role_data if ctx.guild.get_role(row['role_id'])], key=lambda x: x[0], reverse=True)

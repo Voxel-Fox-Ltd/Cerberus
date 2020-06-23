@@ -23,40 +23,45 @@ class BotSettings(utils.Cog):
             await db("INSERT INTO guild_settings (guild_id, prefix) VALUES ($1, $2) ON CONFLICT (guild_id) DO UPDATE SET prefix=excluded.prefix", ctx.guild.id, new_prefix)
         await ctx.send(f"My prefix has been updated to `{new_prefix}`.")
 
-    # @commands.command(cls=utils.Command)
+    # @commands.command(aliases=['adddynamicrole'], cls=utils.Command)
+    # @commands.has_permissions(manage_roles=True)
     # @commands.bot_has_permissions(send_messages=True)
-    # @commands.has_permissions(manage_guild=True)
     # @commands.guild_only()
-    # async def removeoldroles(self, ctx:utils.Context):
-    #     """Removes old roles upon level up."""
-        
-    #     # Store setting
-    #     self.bot.guild_settings[ctx.guild.id]['remove_old_roles'] = False
+    # async def addrole(self, ctx:utils.Context, threshold:int, *, role:discord.Role):
+    #     """Adds a role that is given when a threshold is reached"""
+
     #     async with self.bot.database() as db:
-    #         try:
-    #             await db("INSERT INTO guild_settings (guild_id, remove_old_roles) VALUES ($1, $2)", ctx.guild.id, False)
-    #         except asyncpg.UniqueViolationError:
-    #             await db("UPDATE guild_settings SET remove_old_roles=$2 WHERE guild_id=$1", ctx.guild.id, False)
-        
-    #     await ctx.send(f"I will now remove old roles upon level up.")
-    
-    # @commands.command(cls=utils.Command)
-    # @commands.guild_only()
+    #         await db(
+    #             """INSERT INTO role_gain (guild_id, role_id, threshold, period, duration) VALUES ($1, $2, $3, 'days', 7)
+    #             ON CONFLICT (role_id) DO UPDATE SET threshold=excluded.threshold""",
+    #             ctx.guild.id, role.id, threshold
+    #         )
+    #     current = self.role_handles[ctx.guild.id]
+    #     if current is None:
+    #         current = list()
+    #     current.append({
+    #         'role_id': role.id,
+    #         'threshold': threshold,
+    #     })
+    #     self.role_handles[ctx.guild.id] = current
+    #     await ctx.send(f"Now added - at an average of {threshold} points every 7 days, users will receive the **{role.name}** role.")
+    #     self.logger.info(f"Added dynamic role {role.id} to guild {ctx.guild.id} at threshold {threshold}")
+
+    # @commands.command(aliases=['removedrole', 'rdrole', 'removedynamicrole'], cls=utils.Command)
+    # @commands.has_permissions(manage_roles=True)
     # @commands.bot_has_permissions(send_messages=True)
-    # @commands.has_permissions(manage_guild=True)
-    # async def keepoldroles(self, ctx:utils.Context):
-    #     """Keeps old roles upon level up."""
-        
-    #     # Store setting
-    #     self.bot.guild_settings[ctx.guild.id]['remove_old_roles'] = True
+    # @commands.guild_only()
+    # async def removerole(self, ctx:utils.Context, *, role:discord.Role):
+    #     """Removes a role that is given"""
+
     #     async with self.bot.database() as db:
-    #         try:
-    #             await db("INSERT INTO guild_settings (guild_id, remove_old_roles) VALUES ($1, $2)", ctx.guild.id, True)
-    #         except asyncpg.UniqueViolationError:
-    #             await db("UPDATE guild_settings SET remove_old_roles=$2 WHERE guild_id=$1", ctx.guild.id, True)
-        
-    #     await ctx.send(f"I will now keep old roles upon level up.")
-        
+    #         await db("DELETE FROM role_gain WHERE role_id=$1", role.id)
+    #     current = self.role_handles[ctx.guild.id]
+    #     if current is not None:
+    #         current = [i for i in current if i['role_id'] != role.id]
+    #         self.role_handles[ctx.guild.id] = current
+    #     await ctx.send(f"Now removed users receiving the **{role.name}** role.")
+    #     self.logger.info(f"Removed dynamic role {role.id} to guild {ctx.guild.id}")        
 
     @commands.group(cls=utils.Group)
     @commands.has_permissions(manage_guild=True)
