@@ -58,7 +58,8 @@ class RoleHandler(utils.Cog):
 
     @tasks.loop(hours=1)
     async def user_role_looper(self):
-        return
+        """Loop every hour to remove roles from everyone who might have talked"""
+        
         self.logger.info("Pinging every guild member with an update")
         for guild in self.bot.guilds:
             del self.role_handles[guild.id]

@@ -23,42 +23,42 @@ class BotSettings(utils.Cog):
             await db("INSERT INTO guild_settings (guild_id, prefix) VALUES ($1, $2) ON CONFLICT (guild_id) DO UPDATE SET prefix=excluded.prefix", ctx.guild.id, new_prefix)
         await ctx.send(f"My prefix has been updated to `{new_prefix}`.")
 
-    @commands.command(cls=utils.Command)
-    @commands.bot_has_permissions(send_messages=True)
-    @commands.has_permissions(manage_guild=True)
-    @commands.guild_only()
-    async def removeoldroles(self, ctx:utils.Context):
-        """Removes old roles upon level up."""
+    # @commands.command(cls=utils.Command)
+    # @commands.bot_has_permissions(send_messages=True)
+    # @commands.has_permissions(manage_guild=True)
+    # @commands.guild_only()
+    # async def removeoldroles(self, ctx:utils.Context):
+    #     """Removes old roles upon level up."""
         
-        # Store setting
-        self.bot.guild_settings[ctx.guild.id]['remove_old_roles'] = False
-        async with self.bot.database() as db:
-            try:
-                await db("INSERT INTO guild_settings (guild_id, remove_old_roles) VALUES ($1, $2)", ctx.guild.id, False)
-            except asyncpg.UniqueViolationError:
-                await db("UPDATE guild_settings SET remove_old_roles=$2 WHERE guild_id=$1", ctx.guild.id, False)
+    #     # Store setting
+    #     self.bot.guild_settings[ctx.guild.id]['remove_old_roles'] = False
+    #     async with self.bot.database() as db:
+    #         try:
+    #             await db("INSERT INTO guild_settings (guild_id, remove_old_roles) VALUES ($1, $2)", ctx.guild.id, False)
+    #         except asyncpg.UniqueViolationError:
+    #             await db("UPDATE guild_settings SET remove_old_roles=$2 WHERE guild_id=$1", ctx.guild.id, False)
         
-        await ctx.send(f"I will now remove old roles upon level up.")
+    #     await ctx.send(f"I will now remove old roles upon level up.")
     
-    @commands.command(cls=utils.Command)
-    @commands.guild_only()
-    @commands.bot_has_permissions(send_messages=True)
-    @commands.has_permissions(manage_guild=True)
-    async def keepoldroles(self, ctx:utils.Context):
-        """Keeps old roles upon level up."""
+    # @commands.command(cls=utils.Command)
+    # @commands.guild_only()
+    # @commands.bot_has_permissions(send_messages=True)
+    # @commands.has_permissions(manage_guild=True)
+    # async def keepoldroles(self, ctx:utils.Context):
+    #     """Keeps old roles upon level up."""
         
-        # Store setting
-        self.bot.guild_settings[ctx.guild.id]['remove_old_roles'] = True
-        async with self.bot.database() as db:
-            try:
-                await db("INSERT INTO guild_settings (guild_id, remove_old_roles) VALUES ($1, $2)", ctx.guild.id, True)
-            except asyncpg.UniqueViolationError:
-                await db("UPDATE guild_settings SET remove_old_roles=$2 WHERE guild_id=$1", ctx.guild.id, True)
+    #     # Store setting
+    #     self.bot.guild_settings[ctx.guild.id]['remove_old_roles'] = True
+    #     async with self.bot.database() as db:
+    #         try:
+    #             await db("INSERT INTO guild_settings (guild_id, remove_old_roles) VALUES ($1, $2)", ctx.guild.id, True)
+    #         except asyncpg.UniqueViolationError:
+    #             await db("UPDATE guild_settings SET remove_old_roles=$2 WHERE guild_id=$1", ctx.guild.id, True)
         
-        await ctx.send(f"I will now keep old roles upon level up.")
+    #     await ctx.send(f"I will now keep old roles upon level up.")
         
 
-    @commands.group(cls=utils.Group, enabled=False)
+    @commands.group(cls=utils.Group)
     @commands.has_permissions(manage_guild=True)
     @commands.bot_has_permissions(send_messages=True, embed_links=True, add_reactions=True)
     @commands.guild_only()
@@ -75,9 +75,13 @@ class BotSettings(utils.Cog):
         menu.bulk_add_options(
             ctx,
             {
-                'display': lambda c: "Set setting (currently {0})".format(settings_mention(c, 'setting_id')),
-                'converter_args': [("What do you want to set the setting to?", "setting channel", commands.TextChannelConverter)],
-                'callback': utils.SettingsMenuOption.get_set_guild_settings_callback('guild_settings', 'setting_id'),
+                'display': lambda c: "Remove old roles (currently {0})".format(settings_mention(c, 'remove_old_roles')),
+                'converter_args': [("Do you want to remove old roles when you get a new one?", "old role removal", commands.BooleanConverter)],
+                'callback': utils.SettingsMenuOption.get_set_guild_settings_callback('guild_settings', 'remove_old_roles'),
+            },
+            {
+                'display': "Role settings",
+                'callback': self.bot.get_command("setup roles"),
             },
         )
         try:
@@ -85,6 +89,20 @@ class BotSettings(utils.Cog):
             await ctx.send("Done setting up!")
         except utils.errors.InvokedMetaCommand:
             pass
+
+    @setup.command(cls=utils.Command)
+    @utils.checks.meta_command()
+    async def roles(self, ctx:utils.Context):
+        """Run the bot setup"""
+
+        # Create settings menu
+        key_display_function = lambda k: getattr(ctx.guild.get_role(k), 'mention', 'none')
+        menu = utils.SettingsMenuIterable(
+            'role_gain', 'role_id', 'role_gain', 'RoleGain',
+            commands.RoleConverter, "What role would you like to add to the shop?", key_display_function,
+            int, "How much should the role cost?",
+        )
+        await menu.start(ctx)
 
     @commands.group(cls=utils.Group, enabled=False)
     @commands.bot_has_permissions(send_messages=True, embed_links=True, add_reactions=True)
