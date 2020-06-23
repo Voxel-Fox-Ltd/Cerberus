@@ -81,11 +81,11 @@ class BotSettings(utils.Cog):
             ctx,
             {
                 'display': lambda c: "Remove old roles (currently {0})".format(settings_mention(c, 'remove_old_roles')),
-                'converter_args': [("Do you want to remove old roles when you get a new one?", "old role removal", commands.BooleanConverter)],
+                'converter_args': [("Do you want to remove old roles when you get a new one?", "old role removal", utils.converters.BooleanConverter)],
                 'callback': utils.SettingsMenuOption.get_set_guild_settings_callback('guild_settings', 'remove_old_roles'),
             },
             {
-                'display': "Role settings",
+                'display': "Role gain settings",
                 'callback': self.bot.get_command("setup roles"),
             },
         )
@@ -104,8 +104,8 @@ class BotSettings(utils.Cog):
         key_display_function = lambda k: getattr(ctx.guild.get_role(k), 'mention', 'none')
         menu = utils.SettingsMenuIterable(
             'role_gain', 'role_id', 'role_gain', 'RoleGain',
-            commands.RoleConverter, "What role would you like to add to the shop?", key_display_function,
-            int, "How much should the role cost?",
+            commands.RoleConverter, "What activity role would you like to add?", key_display_function,
+            int, "How many tracked messages does a user have to send over 7 days to get that role?",
         )
         await menu.start(ctx)
 

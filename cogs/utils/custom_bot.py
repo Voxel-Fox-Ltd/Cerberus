@@ -76,7 +76,7 @@ class CustomBot(commands.AutoShardedBot):
         self.startup_method = None
 
         # Here's the storage for cached stuff
-        self.guild_settings = collections.defaultdict(self.DEFAULT_GUILD_SETTINGS.copy)
+        self.guild_settings = collections.defaultdict(lambda: copy.deepcopy(self.DEFAULT_GUILD_SETTINGS))
         self.user_settings = collections.defaultdict(lambda: copy.deepcopy(self.DEFAULT_USER_SETTINGS))
         # self.blacklisted_channels = set()
         # self.blacklisted_roles = collections.defaultdict(set)

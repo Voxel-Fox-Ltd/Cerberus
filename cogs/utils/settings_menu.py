@@ -160,9 +160,9 @@ class SettingsMenuOption(object):
         """Get an item from the bot's settings"""
 
         # Run converters
-        if '_channel' in attr.lower():
+        if 'channel' in attr.lower().split('_'):
             data = ctx.bot.get_channel(settings[attr])
-        elif '_role' in attr.lower():
+        elif 'role' in attr.lower().split('_'):
             data = ctx.guild.get_role(settings[attr])
         else:
             data = settings[attr]
