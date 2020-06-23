@@ -12,17 +12,6 @@ from matplotlib import pyplot as plt
 from cogs import utils
 
 
-POINTS_MESSAGE = """
-Cerberus uses multiple methods of keeping track of points. To see your sent messages in the past 7 days, run `{0.prefix}dynamic` (or `{0.prefix}d`). To see your total sent messages, run `{0.prefix}static` (or `{0.prefix}s`).
-""".strip()
-LEADERBOARD_MESSAGE = """
-Cerberus uses multiple methods of keeping track of points. To the leaderboard of sent messages in the past 7 days, run `{0.prefix}dynamicleaderboard` (or `{0.prefix}dlb`). To see the total sent message leaderboard, run `{0.prefix}staticleaderboard` (or `{0.prefix}slb`).
-""".strip()
-ROLES_MESSAGE = """
-Cerberus uses multiple methods of keeping track of points. To the which roles you get for dynamic points days, run `{0.prefix}dynamicroles` (or `{0.prefix}droles`). To see the roles you receive for static messages, run `{0.prefix}staticroles` (or `{0.prefix}sroles`).
-""".strip()
-
-
 class LeaderboardSource(menus.ListPageSource):
 
     def __init__(self, bot, data, header):
@@ -213,24 +202,24 @@ class Information(utils.Cog):
         vc = len(utils.CachedVCMinute.get_minutes_after(user.id, ctx.guild.id, days=7))
         await ctx.send(f"Over the past 7 days, {user.mention} has gained **{text:,}** tracked messages and been in VC for **{utils.TimeValue(vc * 60).clean or '0m'}**, giving them a total of **{text + (vc // 5):,}** points.")
 
-    # @commands.command(aliases=['dyroles', 'dynroles', 'droles'], cls=utils.Command, hidden=True)
-    # @commands.bot_has_permissions(send_messages=True)
-    # @commands.guild_only()
-    # async def dynamicroles(self, ctx:utils.Context):
-    #     """Shows you the roles that have been set up for the guild"""
+    @commands.command(aliases=['dynamicroles', 'dyroles', 'dynroles', 'droles'], cls=utils.Command, hidden=True)
+    @commands.bot_has_permissions(send_messages=True)
+    @commands.guild_only()
+    async def roles(self, ctx:utils.Context):
+        """Shows you the roles that have been set up for the guild"""
 
-    #     # Get roles
-    #     async with self.bot.database() as db:
-    #         role_data = await db("SELECT role_id, threshold FROM role_gain WHERE guild_id=$1", ctx.guild.id)
-    #     if not role_data:
-    #         return await ctx.send("There are no roles set up for this guild.")
-    #     role_object_data = sorted([(row['threshold'], ctx.guild.get_role(row['role_id'])) for row in role_data if ctx.guild.get_role(row['role_id'])], key=lambda x: x[0], reverse=True)
+        # Get roles
+        async with self.bot.database() as db:
+            role_data = await db("SELECT role_id, threshold FROM role_gain WHERE guild_id=$1", ctx.guild.id)
+        if not role_data:
+            return await ctx.send("There are no roles set up for this guild.")
+        role_object_data = sorted([(row['threshold'], ctx.guild.get_role(row['role_id'])) for row in role_data if ctx.guild.get_role(row['role_id'])], key=lambda x: x[0], reverse=True)
 
-    #     # Output nicely
-    #     output = []
-    #     for threshold, role in role_object_data:
-    #         output.append(f"**{role.name}** :: `{threshold}` tracked messages every 7 days")
-    #     return await ctx.send('\n'.join(output))
+        # Output nicely
+        output = []
+        for threshold, role in role_object_data:
+            output.append(f"**{role.name}** :: `{threshold}` tracked messages every 7 days")
+        return await ctx.send('\n'.join(output))
 
 
 def setup(bot:utils.Bot):

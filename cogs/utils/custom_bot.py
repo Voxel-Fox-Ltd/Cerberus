@@ -86,7 +86,7 @@ class CustomBot(commands.AutoShardedBot):
         self.guild_settings.clear()
         self.blacklisted_channels.clear()
         self.blacklisted_roles.clear()
-        CachedMessage.all_message.clear()
+        CachedMessage.all_messages.clear()
         CachedVCMinute.all_minutes.clear()
 
         # Get database connection
