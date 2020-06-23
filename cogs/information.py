@@ -193,13 +193,14 @@ class Information(utils.Cog):
     @commands.command(aliases=['dynamic', 'dyn', 'dy', 'd', 'dpoints', 'dpoint', 'rank'], cls=utils.Command)
     @commands.bot_has_permissions(send_messages=True)
     @commands.guild_only()
-    async def points(self, ctx:utils.Context, user:typing.Optional[discord.Member]=None):
+    async def points(self, ctx:utils.Context, user:typing.Optional[discord.Member]=None, days:int=7):
         """Shows you your message amount over 7 days"""
 
+        days = days if days > 0 else 7
         user = user or ctx.author
-        text = len(utils.CachedMessage.get_messages_after(user.id, ctx.guild.id, days=7))
-        vc = len(utils.CachedVCMinute.get_minutes_after(user.id, ctx.guild.id, days=7))
-        await ctx.send(f"Over the past 7 days, {user.mention} has gained **{text:,}** tracked messages and been in VC for **{utils.TimeValue(vc * 60).clean or '0m'}**, giving them a total of **{text + (vc // 5):,}** points.")
+        text = len(utils.CachedMessage.get_messages_after(user.id, ctx.guild.id, days=days))
+        vc = len(utils.CachedVCMinute.get_minutes_after(user.id, ctx.guild.id, days=days))
+        await ctx.send(f"Over the past {days} days, {user.mention} has gained **{text:,}** tracked messages and been in VC for **{utils.TimeValue(vc * 60).clean or '0m'}**, giving them a total of **{text + (vc // 5):,}** points.")
 
     @commands.command(aliases=['dynamicroles', 'dyroles', 'dynroles', 'droles'], cls=utils.Command, hidden=True)
     @commands.bot_has_permissions(send_messages=True)
