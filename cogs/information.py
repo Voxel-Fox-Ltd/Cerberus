@@ -162,7 +162,7 @@ class Information(utils.Cog):
         # Add background colour
         for zorder, tier in zip(range(-100, -100 + (len(role_object_data) * 2), 2), role_object_data):
             plt.axhspan(tier[0], graph_height, facecolor=f"#{tier[1].colour.value or 0xffffff:0>6X}", zorder=zorder)
-            plt.axhspan(tier[0], tier[0] + 1, facecolor=f"#000000", zorder=zorder + 1)
+            plt.axhspan(tier[0], tier[0] + 1, facecolor="#000000", zorder=zorder + 1)
 
         # Tighten border
         fig.tight_layout()
@@ -173,31 +173,10 @@ class Information(utils.Cog):
             embed.set_image(url="attachment://activity.png")
         await ctx.send(f"Activity graph in a {window_days} day window{(' (' + truncation + ')') if truncation else ''}, showing average activity over each 7 day period.", embed=embed, file=discord.File("activity.png"))
 
-    @commands.command(aliases=['rank'], cls=utils.Command)
-    @commands.bot_has_permissions(send_messages=True)
-    async def points(self, ctx:utils.Context):
-        """Shows you all of the points based commands"""
-
-        await ctx.send(POINTS_MESSAGE.format(ctx))
-
-    # @commands.command(aliases=['lb'], cls=utils.Command)
-    # @commands.bot_has_permissions(send_messages=True)
-    # async def leaderboard(self, ctx:utils.Context):
-    #     """Shows you all of the leaderboard based commands"""
-
-    #     await ctx.send(LEADERBOARD_MESSAGE.format(ctx))
-
-    # @commands.command(cls=utils.Command)
-    # @commands.bot_has_permissions(send_messages=True)
-    # async def roles(self, ctx:utils.Context):
-    #     """Shows you all of the role based commands"""
-
-    #     await ctx.send(ROLES_MESSAGE.format(ctx))
-
-    @commands.command(aliases=['dlb', 'dylb', 'dynlb'], cls=utils.Command, hidden=True)
+    @commands.command(aliases=['dynamicleaderboard', 'dlb', 'dylb', 'dynlb', 'lb'], cls=utils.Command)
     @commands.bot_has_permissions(send_messages=True, embed_links=True)
     @commands.guild_only()
-    async def dynamicleaderboard(self, ctx:utils.Context, pages:int=1):
+    async def leaderboard(self, ctx:utils.Context, pages:int=1):
         """Gives you the leaderboard users for the server"""
 
         # Get all their valid user IDs
@@ -223,53 +202,16 @@ class Information(utils.Cog):
         )
         return await pages.start(ctx)
 
-    @commands.command(aliases=['slb', 'stlb'], cls=utils.Command, hidden=True)
-    @commands.bot_has_permissions(send_messages=True, embed_links=True)
-    @commands.guild_only()
-    async def staticleaderboard(self, ctx:utils.Context, pages:int=1):
-        """Gives you the leaderboard users for the server"""
-
-        # Get all their valid user IDs
-        all_keys_for_guild = collections.defaultdict([0, 0].copy)
-        for (user_id, guild_id), message_count in self.bot.message_count.items():
-            if guild_id == ctx.guild.id:
-                all_keys_for_guild[user_id][0] = message_count
-        for (user_id, guild_id), minute_count in self.bot.minute_count.items():
-            if guild_id == ctx.guild.id:
-                all_keys_for_guild[user_id][1] = minute_count
-
-        # Order em
-        valid_user_data = [(uid, text, vc) for uid, (text, vc) in all_keys_for_guild.items() if getattr(self.bot.get_user(uid), 'bot', False) is False and ctx.guild.get_member(uid)]
-        ordered_user_data = sorted(valid_user_data, key=lambda k: k[1] + (k[2] // 5), reverse=True)
-
-        # Make menu
-        pages = menus.MenuPages(
-            source=LeaderboardSource(self.bot, ordered_user_data, "Total Tracked Points"),
-            clear_reactions_after=True
-        )
-        return await pages.start(ctx)
-
-    @commands.command(aliases=['dyn', 'dy', 'd', 'dpoints', 'dpoint'], cls=utils.Command, hidden=True)
+    @commands.command(aliases=['dynamic', 'dyn', 'dy', 'd', 'dpoints', 'dpoint', 'rank'], cls=utils.Command)
     @commands.bot_has_permissions(send_messages=True)
     @commands.guild_only()
-    async def dynamic(self, ctx:utils.Context, user:typing.Optional[discord.Member]=None):
+    async def points(self, ctx:utils.Context, user:typing.Optional[discord.Member]=None):
         """Shows you your message amount over 7 days"""
 
         user = user or ctx.author
         text = len(utils.CachedMessage.get_messages_after(user.id, ctx.guild.id, days=7))
         vc = len(utils.CachedVCMinute.get_minutes_after(user.id, ctx.guild.id, days=7))
         await ctx.send(f"Over the past 7 days, {user.mention} has gained **{text:,}** tracked messages and been in VC for **{utils.TimeValue(vc * 60).clean or '0m'}**, giving them a total of **{text + (vc // 5):,}** points.")
-
-    @commands.command(aliases=['s', 'st', 'staticlevel', 'slevel', 'stlevel', 'srank', 'staticrank', 'strank', 'spoints', 'spoint'], cls=utils.Command, hidden=True)
-    @commands.bot_has_permissions(send_messages=True)
-    @commands.guild_only()
-    async def static(self, ctx:utils.Context, user:typing.Optional[discord.Member]=None):
-        """Tells you how many total messages you've sent"""
-
-        user = user or ctx.author
-        static_message_count = self.bot.message_count[(user.id, ctx.guild.id)]
-        static_vc_count = self.bot.minute_count[(user.id, ctx.guild.id)]
-        await ctx.send(f"{user.mention} has sent **{static_message_count:,}** total tracked messages and been in VC for **{utils.TimeValue(static_vc_count * 60).clean or '0m'}**, giving them a total of **{static_message_count + (static_vc_count // 5):,}** points.")
 
     # @commands.command(aliases=['dyroles', 'dynroles', 'droles'], cls=utils.Command, hidden=True)
     # @commands.bot_has_permissions(send_messages=True)
@@ -288,25 +230,6 @@ class Information(utils.Cog):
     #     output = []
     #     for threshold, role in role_object_data:
     #         output.append(f"**{role.name}** :: `{threshold}` tracked messages every 7 days")
-    #     return await ctx.send('\n'.join(output))
-
-    # @commands.command(aliases=['sroles', 'stroles'], cls=utils.Command, hidden=True)
-    # @commands.bot_has_permissions(send_messages=True)
-    # @commands.guild_only()
-    # async def staticroles(self, ctx:utils.Context):
-    #     """Shows you the static roles that have been set up for the guild"""
-
-    #     # Get roles
-    #     async with self.bot.database() as db:
-    #         role_data = await db("SELECT role_id, threshold FROM static_role_gain WHERE guild_id=$1", ctx.guild.id)
-    #     if not role_data:
-    #         return await ctx.send("There are no static roles set up for this guild.")
-    #     role_object_data = sorted([(row['threshold'], ctx.guild.get_role(row['role_id'])) for row in role_data if ctx.guild.get_role(row['role_id'])], key=lambda x: x[0], reverse=True)
-
-    #     # Output nicely
-    #     output = []
-    #     for threshold, role in role_object_data:
-    #         output.append(f"**{role.name}** :: `{threshold}` tracked messages")
     #     return await ctx.send('\n'.join(output))
 
 

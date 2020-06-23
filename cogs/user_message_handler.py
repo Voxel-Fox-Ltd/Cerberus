@@ -82,18 +82,7 @@ class UserMessageHandler(utils.Cog):
             guild_id=message.guild.id,
             message_id=message.id
         )
-
-        # Store for non-dynamic role handles
-        self.logger.info(f"Adding static exp to user {message.author.id} in guild {message.guild.id}")
-        self.bot.message_count[(message.author.id, message.guild.id)] += 1
-        static_message_count = self.bot.message_count[(message.author.id, message.guild.id)]
-        async with self.bot.database() as db:
-            await db(
-                """INSERT INTO static_user_messages (user_id, guild_id, message_count)
-                VALUES ($1, $2, $3) ON CONFLICT (user_id, guild_id) DO UPDATE SET message_count=$3""",
-                message.author.id, message.guild.id, static_message_count
-            )
-
+        
         # Dispatch points event
         self.bot.dispatch('user_points_receive', message.author, message.channel)
 

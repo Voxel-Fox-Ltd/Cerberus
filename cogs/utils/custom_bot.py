@@ -75,10 +75,74 @@ class CustomBot(commands.AutoShardedBot):
         # Here's the storage for cached stuff
         self.guild_settings = collections.defaultdict(self.DEFAULT_GUILD_SETTINGS.copy)
         self.user_settings = collections.defaultdict(lambda: copy.deepcopy(self.DEFAULT_USER_SETTINGS))
-        self.message_count = collections.defaultdict(int)  # (author.id, guild.id): int
-        # self.minute_count = collections.defaultdict(int)  # (author.id, guild.id): int
         self.blacklisted_channels = set()
         self.blacklisted_roles = collections.defaultdict(set)
+
+    async def startup(self):
+        """Clears all the bot's caches and fills them from a DB read"""
+
+        # Remove caches
+        self.logger.debug("Clearing caches")
+        self.guild_settings.clear()
+        self.blacklisted_channels.clear()
+        self.blacklisted_roles.clear()
+        CachedMessage.all_message.clear()
+        CachedVCMinute.all_minutes.clear()
+
+        # Get database connection
+        db = await self.database.get_connection()
+
+        # Get stored prefixes
+        try:
+            guild_data = await db("SELECT * FROM guild_settings")
+        except Exception as e:
+            self.logger.critical(f"Error selecting from guild_settings - {e}")
+            exit(1)
+        for row in guild_data:
+            self.guild_settings[row['guild_id']] = dict(row)
+
+        # Get cached messages
+        try:
+            data = await db("SELECT * FROM user_messages")
+        except Exception as e:
+            self.logger.critical(f"Failed to get data from user_messages - {e}")
+            exit(1)
+        for row in data:
+            CachedMessage(**row)
+
+        # Get cached VC minutes
+        try:
+            data = await db("SELECT * FROM user_vc_activity")
+        except Exception as e:
+            self.logger.critical(f"Failed to get data from user_vc_activity - {e}")
+            exit(1)
+        for row in data:
+            CachedVCMinute(**row)
+
+        # Get blacklisted channels
+        try:
+            data = await db("SELECT * FROM no_exp_channels")
+        except Exception as e:
+            self.logger.critical(f"Failed to get data from no_exp_channels - {e}")
+            exit(1)
+        for row in data:
+            self.blacklisted_channels.add((row['guild_id'], row['channel_id']))
+
+        # Get blacklisted roles
+        try:
+            data = await db("SELECT * FROM no_exp_roles")
+        except Exception as e:
+            self.logger.critical(f"Failed to get data from no_exp_roles - {e}")
+            exit(1)
+        for row in data:
+            self.blacklisted_roles[row['guild_id']].add(row['channel_id'])
+
+        # Wait for the bot to cache users before continuing
+        self.logger.debug("Waiting until ready before completing startup method.")
+        await self.wait_until_ready()
+
+        # Close database connection
+        await db.disconnect()
 
     @property
     def minute_count(self):
@@ -167,89 +231,6 @@ class CustomBot(commands.AutoShardedBot):
         """A setter method so that the original bot object doesn't complain"""
 
         pass
-
-    async def startup(self):
-        """Clears all the bot's caches and fills them from a DB read"""
-
-        # Remove caches
-        self.logger.debug("Clearing caches")
-        self.guild_settings.clear()
-        self.message_count.clear()
-        self.blacklisted_channels.clear()
-        self.blacklisted_roles.clear()
-
-        # Get database connection
-        db = await self.database.get_connection()
-
-        # Get cached messages
-        try:
-            data = await db("SELECT * FROM user_messages")
-        except Exception as e:
-            self.logger.critical(f"Failed to get data from user_messages - {e}")
-            exit(1)
-        for row in data:
-            CachedMessage(**row)
-
-        # Get cached VC minutes
-        try:
-            data = await db("SELECT * FROM user_vc_activity")
-        except Exception as e:
-            self.logger.critical(f"Failed to get data from user_vc_activity - {e}")
-            exit(1)
-        for row in data:
-            CachedVCMinute(**row)
-
-        # Get cached static messages
-        try:
-            data = await db("SELECT * FROM static_user_messages")
-        except Exception as e:
-            self.logger.critical(f"Failed to get data from static_user_messages - {e}")
-            exit(1)
-        for row in data:
-            self.message_count[(row['user_id'], row['guild_id'])] = row['message_count']
-
-        # Get cached static VC minutes
-        try:
-            data = await db("SELECT * FROM static_user_vc_activity")
-        except Exception as e:
-            self.logger.critical(f"Failed to get data from static_user_vc_activity - {e}")
-            exit(1)
-        for row in data:
-            self.minute_count[(row['user_id'], row['guild_id'])] = row['minutes']
-
-        # Get blacklisted channels
-        try:
-            data = await db("SELECT * FROM no_exp_channels")
-        except Exception as e:
-            self.logger.critical(f"Failed to get data from no_exp_channels - {e}")
-            exit(1)
-        for row in data:
-            self.blacklisted_channels.add((row['guild_id'], row['channel_id']))
-
-        # Get blacklisted roles
-        try:
-            data = await db("SELECT * FROM no_exp_roles")
-        except Exception as e:
-            self.logger.critical(f"Failed to get data from no_exp_roles - {e}")
-            exit(1)
-        for row in data:
-            self.blacklisted_roles[row['guild_id']].add(row['channel_id'])
-
-        # Get stored prefixes
-        try:
-            guild_data = await db("SELECT * FROM guild_settings")
-        except Exception as e:
-            self.logger.critical(f"Error selecting from guild_settings - {e}")
-            exit(1)
-        for row in guild_data:
-            self.guild_settings[row['guild_id']] = dict(row)
-
-        # Wait for the bot to cache users before continuing
-        self.logger.debug("Waiting until ready before completing startup method.")
-        await self.wait_until_ready()
-
-        # Close database connection
-        await db.disconnect()
 
     def get_uptime(self) -> float:
         """Gets the uptime of the bot in seconds
