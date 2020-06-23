@@ -1,4 +1,3 @@
-import asyncpg
 from discord.ext import commands
 
 from cogs import utils
@@ -15,53 +14,13 @@ class BotSettings(utils.Cog):
 
         # Validate prefix
         if len(new_prefix) > 30:
-            return await ctx.send(f"The maximum length a prefix can be is 30 characters.")
+            return await ctx.send("The maximum length a prefix can be is 30 characters.")
 
         # Store setting
         self.bot.guild_settings[ctx.guild.id]['prefix'] = new_prefix
         async with self.bot.database() as db:
             await db("INSERT INTO guild_settings (guild_id, prefix) VALUES ($1, $2) ON CONFLICT (guild_id) DO UPDATE SET prefix=excluded.prefix", ctx.guild.id, new_prefix)
         await ctx.send(f"My prefix has been updated to `{new_prefix}`.")
-
-    # @commands.command(aliases=['adddynamicrole'], cls=utils.Command)
-    # @commands.has_permissions(manage_roles=True)
-    # @commands.bot_has_permissions(send_messages=True)
-    # @commands.guild_only()
-    # async def addrole(self, ctx:utils.Context, threshold:int, *, role:discord.Role):
-    #     """Adds a role that is given when a threshold is reached"""
-
-    #     async with self.bot.database() as db:
-    #         await db(
-    #             """INSERT INTO role_gain (guild_id, role_id, threshold, period, duration) VALUES ($1, $2, $3, 'days', 7)
-    #             ON CONFLICT (role_id) DO UPDATE SET threshold=excluded.threshold""",
-    #             ctx.guild.id, role.id, threshold
-    #         )
-    #     current = self.role_handles[ctx.guild.id]
-    #     if current is None:
-    #         current = list()
-    #     current.append({
-    #         'role_id': role.id,
-    #         'threshold': threshold,
-    #     })
-    #     self.role_handles[ctx.guild.id] = current
-    #     await ctx.send(f"Now added - at an average of {threshold} points every 7 days, users will receive the **{role.name}** role.")
-    #     self.logger.info(f"Added dynamic role {role.id} to guild {ctx.guild.id} at threshold {threshold}")
-
-    # @commands.command(aliases=['removedrole', 'rdrole', 'removedynamicrole'], cls=utils.Command)
-    # @commands.has_permissions(manage_roles=True)
-    # @commands.bot_has_permissions(send_messages=True)
-    # @commands.guild_only()
-    # async def removerole(self, ctx:utils.Context, *, role:discord.Role):
-    #     """Removes a role that is given"""
-
-    #     async with self.bot.database() as db:
-    #         await db("DELETE FROM role_gain WHERE role_id=$1", role.id)
-    #     current = self.role_handles[ctx.guild.id]
-    #     if current is not None:
-    #         current = [i for i in current if i['role_id'] != role.id]
-    #         self.role_handles[ctx.guild.id] = current
-    #     await ctx.send(f"Now removed users receiving the **{role.name}** role.")
-    #     self.logger.info(f"Removed dynamic role {role.id} to guild {ctx.guild.id}")        
 
     @commands.group(cls=utils.Group)
     @commands.has_permissions(manage_guild=True)
@@ -88,6 +47,14 @@ class BotSettings(utils.Cog):
                 'display': "Role gain settings",
                 'callback': self.bot.get_command("setup roles"),
             },
+            {
+                'display': "Blacklisted channel settings",
+                'callback': self.bot.get_command("setup blacklistedchannels"),
+            },
+            {
+                'display': "Blacklisted role settings",
+                'callback': self.bot.get_command("setup blacklistedroles"),
+            },
         )
         try:
             await menu.start(ctx)
@@ -103,9 +70,35 @@ class BotSettings(utils.Cog):
         # Create settings menu
         key_display_function = lambda k: getattr(ctx.guild.get_role(k), 'mention', 'none')
         menu = utils.SettingsMenuIterable(
-            'role_gain', 'role_id', 'role_gain', 'RoleGain',
+            'role_list', 'role_id', 'role_gain', 'RoleGain',
             commands.RoleConverter, "What activity role would you like to add?", key_display_function,
             int, "How many tracked messages does a user have to send over 7 days to get that role?",
+        )
+        await menu.start(ctx)
+
+    @setup.command(cls=utils.Command)
+    @utils.checks.meta_command()
+    async def blacklistedchannels(self, ctx:utils.Context):
+        """Run the bot setup"""
+
+        # Create settings menu
+        key_display_function = lambda k: getattr(ctx.bot.get_channel(k), 'mention', 'none')
+        menu = utils.SettingsMenuIterable(
+            'channel_list', 'channel_id', 'blacklisted_channels', 'BlacklistedChannel',
+            commands.TextChannelConverter, "What channel would you like to blacklist?", key_display_function,
+        )
+        await menu.start(ctx)
+
+    @setup.command(cls=utils.Command)
+    @utils.checks.meta_command()
+    async def blacklistedroles(self, ctx:utils.Context):
+        """Run the bot setup"""
+
+        # Create settings menu
+        key_display_function = lambda k: getattr(ctx.guild.get_role(k), 'mention', 'none')
+        menu = utils.SettingsMenuIterable(
+            'role_list', 'role_id', 'blacklisted_roles', 'BlacklistedRoles',
+            commands.RoleConverter, "What role would you like to blacklist?", key_display_function,
         )
         await menu.start(ctx)
 

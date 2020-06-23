@@ -116,28 +116,20 @@ class CustomBot(commands.AutoShardedBot):
         for row in data:
             CachedVCMinute(**row)
 
-        # Get cached VC minutes
+        # Get role settings
         data = await self.get_list_table_data(db, "role_list", "RoleGain")
         for row in data:
             self.guild_settings[row['guild_id']]['role_gain'][int(row['role_id'])] = int(row['value'])
 
-        # Get blacklisted channels
-        try:
-            data = await db("SELECT * FROM no_exp_channels")
-        except Exception as e:
-            self.logger.critical(f"Failed to get data from no_exp_channels - {e}")
-            exit(1)
+        # Get blacklisted channel settings
+        data = await self.get_list_table_data(db, "channel_list", "BlacklistedChannel")
         for row in data:
-            self.blacklisted_channels.add((row['guild_id'], row['channel_id']))
+            self.guild_settings[row['guild_id']]['blacklisted_channels'].append(int(row['channel_id']))
 
-        # Get blacklisted roles
-        try:
-            data = await db("SELECT * FROM no_exp_roles")
-        except Exception as e:
-            self.logger.critical(f"Failed to get data from no_exp_roles - {e}")
-            exit(1)
+        # Get blacklisted role settings
+        data = await self.get_list_table_data(db, "role_list", "BlacklistedRoles")
         for row in data:
-            self.blacklisted_roles[row['guild_id']].add(row['channel_id'])
+            self.guild_settings[row['guild_id']]['blacklisted_roles'].append(int(row['role_id']))
 
         # Wait for the bot to cache users before continuing
         self.logger.debug("Waiting until ready before completing startup method.")
