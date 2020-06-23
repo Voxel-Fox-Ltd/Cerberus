@@ -87,8 +87,7 @@ class CustomBot(commands.AutoShardedBot):
         # Remove caches
         self.logger.debug("Clearing caches")
         self.guild_settings.clear()
-        self.blacklisted_channels.clear()
-        self.blacklisted_roles.clear()
+        self.user_settings.clear()
         CachedMessage.all_messages.clear()
         CachedVCMinute.all_minutes.clear()
 
@@ -116,6 +115,11 @@ class CustomBot(commands.AutoShardedBot):
         data = await self.get_all_table_data(db, "user_vc_activity")
         for row in data:
             CachedVCMinute(**row)
+
+        # Get cached VC minutes
+        data = await self.get_list_table_data(db, "role_list", "RoleGain")
+        for row in data:
+            self.guild_settings[row['guild_id']]['role_gain'][int(row['role_id'])] = int(row['value'])
 
         # Get blacklisted channels
         try:

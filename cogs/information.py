@@ -118,8 +118,8 @@ class Information(utils.Cog):
             return await ctx.send("They've not sent any messages that I can graph.")
 
         # Get roles
-        role_data = self.bot.guild_settings[ctx.guild.id]['role_data']
-        role_object_data = sorted([(row['threshold'], ctx.guild.get_role(row['role_id'])) for row in role_data if ctx.guild.get_role(row['role_id'])], key=lambda x: x[0])
+        role_data = self.bot.guild_settings[ctx.guild.id]['role_gain']
+        role_object_data = sorted([(threshold, ctx.guild.get_role(role_id)) for role_id, threshold in role_data.items() if ctx.guild.get_role(role_id)], key=lambda x: x[0])
 
         # Build our output graph
         fig = plt.figure()
@@ -208,10 +208,10 @@ class Information(utils.Cog):
         """Shows you the roles that have been set up for the guild"""
 
         # Get roles
-        role_data = self.bot.guild_settings[ctx.guild.id]['role_data']
+        role_data = self.bot.guild_settings[ctx.guild.id]['role_gain']
         if not role_data:
             return await ctx.send("There are no roles set up for this guild.")
-        role_object_data = sorted([(row['threshold'], ctx.guild.get_role(row['role_id'])) for row in role_data if ctx.guild.get_role(row['role_id'])], key=lambda x: x[0], reverse=True)
+        role_object_data = sorted([(threshold, ctx.guild.get_role(role_id)) for role_id, threshold in role_data.items() if ctx.guild.get_role(role_id)], key=lambda x: x[0], reverse=True)
 
         # Output nicely
         output = []

@@ -41,7 +41,7 @@ class RoleHandler(utils.Cog):
             return
 
         # Grab data
-        role_data = self.bot.guild_settings[user.guild.id]['role_data']
+        role_data = self.bot.guild_settings[user.guild.id]['role_gain']
 
         # Work out an average for the time
         text_points = utils.CachedMessage.get_messages_between(user.id, user.guild.id, before={'days': 0}, after={'days': 7})
@@ -49,11 +49,9 @@ class RoleHandler(utils.Cog):
         points_in_week = len(text_points) + (len(vc_points) // 5)  # Add how many points they got in that week
 
         # Run for each role
-        for row in role_data:
+        for role_id, threshold in role_data.items():
 
             # Shorten variable names
-            role_id = row['role_id']
-            threshold = row['threshold']
             role = user.guild.get_role(role_id)
             if role is None:
                 continue
