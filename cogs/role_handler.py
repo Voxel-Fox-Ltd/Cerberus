@@ -1,7 +1,5 @@
-import collections
-
 import discord
-from discord.ext import commands, tasks
+from discord.ext import tasks
 
 from cogs import utils
 
@@ -18,7 +16,7 @@ class RoleHandler(utils.Cog):
     @tasks.loop(hours=1)
     async def user_role_looper(self):
         """Loop every hour to remove roles from everyone who might have talked"""
-        
+
         self.logger.info("Pinging every guild member with an update")
         for guild in self.bot.guilds:
             for member in guild.members:
