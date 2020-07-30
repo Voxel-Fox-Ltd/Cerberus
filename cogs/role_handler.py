@@ -69,7 +69,8 @@ class RoleHandler(utils.Cog):
                 continue
 
             # Add role if they're over the threshold - check for channel make sure users are only GIVEN roles if they actually sent a message
-            if points_in_week >= threshold and channel is not None:
+            # if points_in_week >= threshold and channel is not None:
+            if points_in_week >= threshold:
                 if added_top_role is False or remove_old_roles is False:
                     if role_id not in user._roles:
                         try:
