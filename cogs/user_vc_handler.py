@@ -46,7 +46,7 @@ class UserVCHandler(utils.Cog):
         # Filter out the bastards
         for user_id, guild_id in voice_members.copy():
             blacklisted_roles = self.bot.guild_settings[guild_id]['blacklisted_vc_roles']
-            member = self.bot.get_guid(guild_id).get_member(user_id)
+            member = self.bot.get_guild(guild_id).get_member(user_id)
             if set(member._roles).intersection(blacklisted_roles):
                 voice_members.remove((user_id, guild_id))
 
