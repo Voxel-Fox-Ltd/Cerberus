@@ -60,7 +60,7 @@ class UserMessageHandler(utils.Cog):
             return
 
         # Filter out blacklisted roles
-        blacklisted_roles = self.bot.guild_settings[message.guild.id]['blacklisted_roles']
+        blacklisted_roles = self.bot.guild_settings[message.guild.id]['blacklisted_text_roles']
         if set(message.author._roles).intersection(blacklisted_roles):
             return
 
@@ -82,7 +82,7 @@ class UserMessageHandler(utils.Cog):
             guild_id=message.guild.id,
             message_id=message.id
         )
-        
+
         # Dispatch points event
         self.bot.dispatch('user_points_receive', message.author, message.channel)
 

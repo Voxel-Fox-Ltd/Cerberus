@@ -55,7 +55,8 @@ class CustomBot(commands.AutoShardedBot):
             'remove_old_roles': False,
             'role_gain': dict(),
             'blacklisted_channels': list(),
-            'blacklisted_roles': list(),
+            'blacklisted_text_roles': list(),
+            'blacklisted_vc_roles': list(),
         }
         self.DEFAULT_USER_SETTINGS = {
         }
@@ -131,7 +132,12 @@ class CustomBot(commands.AutoShardedBot):
         # Get blacklisted role settings
         data = await self.get_list_table_data(db, "role_list", "BlacklistedRoles")
         for row in data:
-            self.guild_settings[row['guild_id']]['blacklisted_roles'].append(int(row['role_id']))
+            self.guild_settings[row['guild_id']]['blacklisted_text_roles'].append(int(row['role_id']))
+
+        # Get blacklisted role settings
+        data = await self.get_list_table_data(db, "role_list", "BlacklistedVCRoles")
+        for row in data:
+            self.guild_settings[row['guild_id']]['blacklisted_vc_roles'].append(int(row['role_id']))
 
         # Wait for the bot to cache users before continuing
         self.logger.debug("Waiting until ready before completing startup method.")

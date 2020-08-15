@@ -43,6 +43,13 @@ class UserVCHandler(utils.Cog):
             if len(vc.voice_states) > 1:
                 voice_members.extend([(user_id, vc.guild.id) for user_id, state in vc.voice_states.items() if self.valid_voice_state(state)])
 
+        # Filter out the bastards
+        for user_id, guild_id in voice_members.copy():
+            blacklisted_roles = self.bot.guild_settings[guild_id]['blacklisted_vc_roles']
+            member = self.bot.get_guid(guild_id).get_member(user_id)
+            if set(member._roles).intersection(blacklisted_roles):
+                voice_members.remove((user_id, guild_id))
+
         # Make our records
         records: typing.List[typing.Tuple[int, int, dt]] = [(i, o, dt.utcnow()) for i, o in voice_members]  # (uid, gid, timestamp)...
 
@@ -52,7 +59,7 @@ class UserVCHandler(utils.Cog):
 
         # Only save messages if there _were_ any
         if len(records) == 0:
-            self.logger.info(f"Storing 0 cached VC messages in database")
+            self.logger.info("Storing 0 cached VC messages in database")
             return
 
         # Copy the records into the db

@@ -55,6 +55,10 @@ class BotSettings(utils.Cog):
                 'display': "Blacklisted role settings",
                 'callback': self.bot.get_command("setup blacklistedroles"),
             },
+            {
+                'display': "Blacklisted VC role settings",
+                'callback': self.bot.get_command("setup blacklistedvcroles"),
+            },
         )
         try:
             await menu.start(ctx)
@@ -97,7 +101,20 @@ class BotSettings(utils.Cog):
         # Create settings menu
         key_display_function = lambda k: getattr(ctx.guild.get_role(k), 'mention', 'none')
         menu = utils.SettingsMenuIterable(
-            'role_list', 'role_id', 'blacklisted_roles', 'BlacklistedRoles',
+            'role_list', 'role_id', 'blacklisted_text_roles', 'BlacklistedRoles',
+            commands.RoleConverter, "What role would you like to blacklist?", key_display_function,
+        )
+        await menu.start(ctx)
+
+    @setup.command(cls=utils.Command)
+    @utils.checks.meta_command()
+    async def blacklistedvcroles(self, ctx:utils.Context):
+        """Run the bot setup"""
+
+        # Create settings menu
+        key_display_function = lambda k: getattr(ctx.guild.get_role(k), 'mention', 'none')
+        menu = utils.SettingsMenuIterable(
+            'role_list', 'role_id', 'blacklisted_vc_roles', 'BlacklistedVCRoles',
             commands.RoleConverter, "What role would you like to blacklist?", key_display_function,
         )
         await menu.start(ctx)

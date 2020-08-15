@@ -74,12 +74,6 @@ class TimeValue(object):
     def parse(cls, value:str) -> 'TimeValue':
         """Takes a value (1h/30m/10s/2d etc) and returns a TimeValue instance with the duration"""
 
-        return cls.parse(value)
-
-    @classmethod
-    def parse(cls, value:str) -> 'TimeValue':
-        """Takes a value (1h/30m/10s/2d etc) and returns a TimeValue instance with the duration"""
-
         match = cls.time_value_regex.search(value)
         if match is None:
             raise InvalidTimeDuration(value)
