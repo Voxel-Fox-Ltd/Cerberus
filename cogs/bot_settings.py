@@ -73,10 +73,14 @@ class BotSettings(utils.Cog):
 
         # Create settings menu
         key_display_function = lambda k: getattr(ctx.guild.get_role(k), 'mention', 'none')
-        menu = utils.SettingsMenuIterable(
-            'role_list', 'role_id', 'role_gain', 'RoleGain',
-            commands.RoleConverter, "What activity role would you like to add?", key_display_function,
-            int, "How many tracked messages does a user have to send over 7 days to get that role?",
+        menu = utils.SettingsMenuIterableBase(cache_key='role_gain', key_display_function=key_display_function, value_display_function=str)
+        menu.add_convertable_value("What activity role would you like to add?", commands.RoleConverter)
+        menu.add_convertable_value("How many tracked messages does a user have to send over 7 days to get that role?", int)
+        menu.iterable_add_callback = utils.SettingsMenuOption.get_set_iterable_add_callback(
+            database_name="role_list", column_name="role_id", cache_key="role_gain", database_key="RoleGain"
+        )
+        menu.iterable_delete_callback = utils.SettingsMenuOption.get_set_iterable_delete_callback(
+            database_name="role_list", column_name="role_id", cache_key="role_gain", database_key="RoleGain"
         )
         await menu.start(ctx)
 
@@ -87,9 +91,13 @@ class BotSettings(utils.Cog):
 
         # Create settings menu
         key_display_function = lambda k: getattr(ctx.bot.get_channel(k), 'mention', 'none')
-        menu = utils.SettingsMenuIterable(
-            'channel_list', 'channel_id', 'blacklisted_channels', 'BlacklistedChannel',
-            commands.TextChannelConverter, "What channel would you like to blacklist?", key_display_function,
+        menu = utils.SettingsMenuIterableBase(cache_key='role_gain', key_display_function=key_display_function)
+        menu.add_convertable_value("What channel would you like to blacklist?", commands.TextChannelConverter)
+        menu.iterable_add_callback = utils.SettingsMenuOption.get_set_iterable_add_callback(
+            database_name="channel_list", column_name="channel_id", cache_key="blacklisted_channels", database_key="BlacklistedChannel"
+        )
+        menu.iterable_delete_callback = utils.SettingsMenuOption.get_set_iterable_delete_callback(
+            database_name="channel_list", column_name="channel_id", cache_key="blacklisted_channels", database_key="BlacklistedChannel"
         )
         await menu.start(ctx)
 
@@ -100,9 +108,13 @@ class BotSettings(utils.Cog):
 
         # Create settings menu
         key_display_function = lambda k: getattr(ctx.guild.get_role(k), 'mention', 'none')
-        menu = utils.SettingsMenuIterable(
-            'role_list', 'role_id', 'blacklisted_text_roles', 'BlacklistedRoles',
-            commands.RoleConverter, "What role would you like to blacklist?", key_display_function,
+        menu = utils.SettingsMenuIterableBase(cache_key='role_gain', key_display_function=key_display_function)
+        menu.add_convertable_value("What channel would you like to blacklist?", commands.RoleConverter)
+        menu.iterable_add_callback = utils.SettingsMenuOption.get_set_iterable_add_callback(
+            database_name="role_list", column_name="role_id", cache_key="blacklisted_text_roles", database_key="BlacklistedRoles"
+        )
+        menu.iterable_delete_callback = utils.SettingsMenuOption.get_set_iterable_delete_callback(
+            database_name="role_list", column_name="role_id", cache_key="blacklisted_text_roles", database_key="BlacklistedRoles"
         )
         await menu.start(ctx)
 
@@ -113,9 +125,13 @@ class BotSettings(utils.Cog):
 
         # Create settings menu
         key_display_function = lambda k: getattr(ctx.guild.get_role(k), 'mention', 'none')
-        menu = utils.SettingsMenuIterable(
-            'role_list', 'role_id', 'blacklisted_vc_roles', 'BlacklistedVCRoles',
-            commands.RoleConverter, "What role would you like to blacklist?", key_display_function,
+        menu = utils.SettingsMenuIterableBase(cache_key='role_gain', key_display_function=key_display_function)
+        menu.add_convertable_value("What channel would you like to blacklist?", commands.RoleConverter)
+        menu.iterable_add_callback = utils.SettingsMenuOption.get_set_iterable_add_callback(
+            database_name="role_list", column_name="role_id", cache_key="blacklisted_vc_roles", database_key="BlacklistedVCRoles"
+        )
+        menu.iterable_delete_callback = utils.SettingsMenuOption.get_set_iterable_delete_callback(
+            database_name="role_list", column_name="role_id", cache_key="blacklisted_vc_roles", database_key="BlacklistedVCRoles"
         )
         await menu.start(ctx)
 
