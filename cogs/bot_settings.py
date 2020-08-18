@@ -91,7 +91,7 @@ class BotSettings(utils.Cog):
 
         # Create settings menu
         key_display_function = lambda k: getattr(ctx.bot.get_channel(k), 'mention', 'none')
-        menu = utils.SettingsMenuIterableBase(cache_key='role_gain', key_display_function=key_display_function)
+        menu = utils.SettingsMenuIterableBase(cache_key='blacklisted_channels', key_display_function=key_display_function)
         menu.add_convertable_value("What channel would you like to blacklist?", commands.TextChannelConverter)
         menu.iterable_add_callback = utils.SettingsMenuOption.get_set_iterable_add_callback(
             database_name="channel_list", column_name="channel_id", cache_key="blacklisted_channels", database_key="BlacklistedChannel"
@@ -108,7 +108,7 @@ class BotSettings(utils.Cog):
 
         # Create settings menu
         key_display_function = lambda k: getattr(ctx.guild.get_role(k), 'mention', 'none')
-        menu = utils.SettingsMenuIterableBase(cache_key='role_gain', key_display_function=key_display_function)
+        menu = utils.SettingsMenuIterableBase(cache_key='blacklisted_text_roles', key_display_function=key_display_function)
         menu.add_convertable_value("What channel would you like to blacklist?", commands.RoleConverter)
         menu.iterable_add_callback = utils.SettingsMenuOption.get_set_iterable_add_callback(
             database_name="role_list", column_name="role_id", cache_key="blacklisted_text_roles", database_key="BlacklistedRoles"
@@ -125,7 +125,7 @@ class BotSettings(utils.Cog):
 
         # Create settings menu
         key_display_function = lambda k: getattr(ctx.guild.get_role(k), 'mention', 'none')
-        menu = utils.SettingsMenuIterableBase(cache_key='role_gain', key_display_function=key_display_function)
+        menu = utils.SettingsMenuIterableBase(cache_key='blacklisted_vc_roles', key_display_function=key_display_function)
         menu.add_convertable_value("What channel would you like to blacklist?", commands.RoleConverter)
         menu.iterable_add_callback = utils.SettingsMenuOption.get_set_iterable_add_callback(
             database_name="role_list", column_name="role_id", cache_key="blacklisted_vc_roles", database_key="BlacklistedVCRoles"
