@@ -6,7 +6,7 @@ CREATE TABLE guild_settings(
 
 
 CREATE TABLE user_messages(
-    message_id BIGINT PRIMARY KEY,
+    timestamp TIMESTAMP,
     user_id BIGINT,
     guild_id BIGINT
 );

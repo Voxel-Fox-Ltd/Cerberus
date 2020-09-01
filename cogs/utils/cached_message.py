@@ -22,10 +22,10 @@ class CachedMessage(object):
     all_messages: typing.Dict[typing.List[int], typing.List['CachedMessage']] = collections.defaultdict(list)
     __slots__ = ('user_id', 'guild_id', 'timestamp')
 
-    def __init__(self, user_id:int, guild_id:int, message_id:int):
+    def __init__(self, user_id:int, guild_id:int, timestamp:dt, message_id:int=None):
         self.user_id = user_id
         self.guild_id = guild_id
-        self.timestamp = discord.Object(message_id).created_at
+        self.timestamp = timestamp
         self.all_messages[(self.user_id, self.guild_id)].append(self)
 
     def message_posted_after(self, **kwargs) -> bool:

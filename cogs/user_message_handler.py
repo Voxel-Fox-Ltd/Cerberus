@@ -27,7 +27,7 @@ class UserMessageHandler(utils.Cog):
 
         # Only save messages if there _were_ any
         if len(self.cached_for_saving) == 0:
-            self.logger.info(f"Storing 0 cached messages in database")
+            self.logger.info("Storing 0 cached messages in database")
             return
 
         # Get the messages we want to save
@@ -39,14 +39,14 @@ class UserMessageHandler(utils.Cog):
                 pass
 
         # Sort them into a nice easy tuple
-        records = [(i.id, i.author.id, i.guild.id) for i in currently_saving if i.author.bot is False]
+        records = [(i.created_at, i.author.id, i.guild.id) for i in currently_saving if i.author.bot is False and i.guild is not None]
 
         # Copy the records into the db
         self.logger.info(f"Storing {len(records)} cached messages in database")
         async with self.bot.database() as db:
             await db.conn.copy_records_to_table(
                 'user_messages',
-                columns=('message_id', 'user_id', 'guild_id'),
+                columns=('timestamp', 'user_id', 'guild_id'),
                 records=records
             )
 
@@ -80,7 +80,7 @@ class UserMessageHandler(utils.Cog):
         utils.CachedMessage(
             user_id=message.author.id,
             guild_id=message.guild.id,
-            message_id=message.id
+            timestamp=message.created_at,
         )
 
         # Dispatch points event
