@@ -17,6 +17,9 @@ class RoleHandler(utils.Cog):
     async def user_role_looper(self):
         """Loop every hour to remove roles from everyone who might have talked"""
 
+        # TODO chunk this by guild, maybe
+        if self.user_role_looper.current_loop == 0:
+            return
         self.logger.info("Pinging every guild member with an update")
         for guild in self.bot.guilds:
             for member in guild.members:
@@ -29,22 +32,28 @@ class RoleHandler(utils.Cog):
         await self.bot.wait_until_ready()
 
     @utils.Cog.listener("on_user_points_receive")
-    async def user_role_handler(self, user:discord.Member, channel:discord.TextChannel=None):
+    async def user_role_handler(self, user:discord.Member, only_check_for_descending:bool=False):
         """Looks for when a user passes the threshold of points and then handles their roles accordingly"""
 
         # Don't add roles to bots
         if user.bot:
             return
 
-        # Some lines for when testing
-        # if user.id not in self.bot.owner_ids:
-        #     return
-        self.logger.info(f"Pinging attempted role updates to user {user.id} in guild {user.guild.id}")
+        # See if we should care about the guild at all
+        if user.guild.me.guild_permissions.manage_roles is False:
+            return
 
         # Grab data
         role_data_dict = self.bot.guild_settings[user.guild.id]['role_gain']
         remove_old_roles = self.bot.guild_settings[user.guild.id]['remove_old_roles']
         role_data = sorted([(role_id, threshold) for role_id, threshold in role_data_dict.items()], key=lambda x: x[1], reverse=True)
+
+        # See if they even have any roles worth worrying about
+        if only_check_for_descending and not any([i for i in user._roles if i in role_data_dict.keys()]):
+            return
+
+        # Okay cool now it's time to actually look at their roles
+        self.logger.info(f"Pinging attempted role updates to user {user.id} in guild {user.guild.id}")
 
         # Work out an average for the time
         text_points = utils.CachedMessage.get_messages_between(user.id, user.guild.id, before={'days': 0}, after={'days': 7})

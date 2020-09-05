@@ -84,7 +84,7 @@ class UserMessageHandler(utils.Cog):
         )
 
         # Dispatch points event
-        self.bot.dispatch('user_points_receive', message.author, message.channel)
+        self.bot.dispatch('user_points_receive', message.author)
 
 
 def setup(bot:utils.Bot):
