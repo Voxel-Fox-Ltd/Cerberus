@@ -28,7 +28,7 @@ class LeaderboardSource(menus.ListPageSource):
 
 class Information(utils.Cog):
 
-    @commands.command(cls=utils.Command, cooldown_after_parsing=True)
+    @commands.command(aliases=['g', 'graph'], cls=utils.Command, cooldown_after_parsing=True)
     @commands.bot_has_permissions(send_messages=True, embed_links=True)
     @utils.cooldown.cooldown(1, 60, commands.BucketType.user, cls=utils.cooldown.Cooldown(mapping=utils.cooldown.GroupedCooldownMapping("graph")))
     @commands.guild_only()
