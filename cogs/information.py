@@ -28,7 +28,7 @@ class LeaderboardSource(menus.ListPageSource):
 
 class Information(utils.Cog):
 
-    @commands.command(aliases=['g', 'graph'], cls=utils.Command, cooldown_after_parsing=True)
+    @commands.command(aliases=['g'], cls=utils.Command, cooldown_after_parsing=True)
     @commands.bot_has_permissions(send_messages=True, embed_links=True)
     @utils.cooldown.cooldown(1, 60, commands.BucketType.user, cls=utils.cooldown.Cooldown(mapping=utils.cooldown.GroupedCooldownMapping("graph")))
     @commands.guild_only()
@@ -38,7 +38,7 @@ class Information(utils.Cog):
         user = user or ctx.author
         return await self.make_graph(ctx, [user.id], window_days, colours={user.id: "000000"}, segments=segments_per_window_datapoint)
 
-    @commands.command(cls=utils.Command, hidden=True, cooldown_after_parsing=True)
+    @commands.command(aliases=['mg'], cls=utils.Command, hidden=True, cooldown_after_parsing=True)
     @commands.bot_has_permissions(send_messages=True, embed_links=True)
     @utils.cooldown.cooldown(1, 60, commands.BucketType.user, cls=utils.cooldown.Cooldown(mapping=utils.cooldown.GroupedCooldownMapping("graph")))
     @commands.guild_only()
@@ -51,7 +51,7 @@ class Information(utils.Cog):
             users = users + [ctx.author.id]
         await self.make_graph(ctx, users, window_days, segments=segments_per_window_datapoint)
 
-    @commands.command(cls=utils.Command, hidden=True, cooldown_after_parsing=True)
+    @commands.command(aliases=['mgr'], cls=utils.Command, hidden=True, cooldown_after_parsing=True)
     @commands.bot_has_permissions(send_messages=True, embed_links=True)
     @utils.cooldown.cooldown(1, 60, commands.BucketType.user, cls=utils.cooldown.Cooldown(mapping=utils.cooldown.GroupedCooldownMapping("graph")))
     @commands.guild_only()
@@ -60,7 +60,7 @@ class Information(utils.Cog):
 
         await self.make_graph(ctx, [i.id for i in role.members], window_days, segments=segments_per_window_datapoint)
 
-    @commands.command(aliases=['dynamicleaderboard', 'dlb', 'dylb', 'dynlb', 'lb'], cls=utils.Command)
+    @commands.command(aliases=['dynamicleaderboard', 'dlb', 'dylb', 'dynlb', 'lb', 'l'], cls=utils.Command)
     @commands.bot_has_permissions(send_messages=True, embed_links=True)
     @commands.guild_only()
     async def leaderboard(self, ctx:utils.Context, pages:int=1):
