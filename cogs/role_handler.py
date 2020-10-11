@@ -56,9 +56,26 @@ class RoleHandler(utils.Cog):
         self.logger.info(f"Pinging attempted role updates to user {user.id} in guild {user.guild.id}")
 
         # Work out an average for the time
-        text_points = utils.CachedMessage.get_messages_between(user.id, user.guild.id, before={'days': 0}, after={'days': 7})
-        vc_points = utils.CachedVCMinute.get_minutes_between(user.id, user.guild.id, before={'days': 0}, after={'days': 7})
-        points_in_week = len(text_points) + (len(vc_points) // 5)  # Add how many points they got in that week
+        async with self.bot.database() as db:
+            message_rows = await db(
+                """SELECT user_id, COUNT(timestamp) FROM user_messages WHERE guild_id=$1 AND user_id=$2
+                AND timestamp > TIMEZONE('UTC', NOW()) - CAST(CONCAT($3 * 1, ' days') AS INTERVAL) GROUP BY user_id""",
+                user.guild.id, user.id, 7,
+            )
+            vc_rows = await db(
+                """SELECT user_id, COUNT(timestamp) FROM user_vc_activity WHERE guild_id=$1 AND user_id=$2
+                AND timestamp > TIMEZONE('UTC', NOW()) - CAST(CONCAT($3 * 1, ' days') AS INTERVAL) GROUP BY user_id""",
+                user.guild.id, user.id, 7,
+            )
+        try:
+            text_points = message_rows[0]['count']
+        except IndexError:
+            text_points = 0
+        try:
+            vc_points = vc_rows[0]['count']
+        except IndexError:
+            vc_points = 0
+        points_in_week = text_points + (vc_points // 5)  # Add how many points they got in that week
 
         # Run for each role
         added_top_role = False

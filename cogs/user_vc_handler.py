@@ -41,7 +41,7 @@ class UserVCHandler(utils.Cog):
         voice_members: typing.List[typing.Tuple[int, int]] = []  # (uid, gid)...
         for vc in voice_channels:
             if len(vc.voice_states) > 1:
-                voice_members.extend([(user_id, vc.guild.id. vc.id) for user_id, state in vc.voice_states.items() if self.valid_voice_state(state)])
+                voice_members.extend([(user_id, vc.guild.id, vc.id) for user_id, state in vc.voice_states.items() if self.valid_voice_state(state)])
 
         # Filter out the bastards
         for user_id, guild_id, channel_id in voice_members.copy():
@@ -54,8 +54,8 @@ class UserVCHandler(utils.Cog):
         records: typing.List[typing.Tuple[int, int, dt, int]] = [(i, o, dt.utcnow(), p) for i, o, p in voice_members]  # (uid, gid, timestamp, cid)...
 
         # Let's cache the static VC minutes, just for fun
-        for uid, gid, timestamp, cid in records:
-            utils.CachedVCMinute(user_id=uid, guild_id=gid, timestamp=timestamp, channel_id=cid)
+        # for uid, gid, timestamp, cid in records:
+        #     utils.CachedVCMinute(user_id=uid, guild_id=gid, timestamp=timestamp, channel_id=cid)
 
         # Only save messages if there _were_ any
         if len(records) == 0:

@@ -91,8 +91,8 @@ class CustomBot(commands.AutoShardedBot):
         self.logger.debug("Clearing caches")
         self.guild_settings.clear()
         self.user_settings.clear()
-        CachedMessage.all_messages.clear()
-        CachedVCMinute.all_minutes.clear()
+        # CachedMessage.all_messages.clear()
+        # CachedVCMinute.all_minutes.clear()
 
         # Get database connection
         db = await self.database.get_connection()
@@ -109,15 +109,15 @@ class CustomBot(commands.AutoShardedBot):
             for key, value in row.items():
                 self.user_settings[row['user_id']][key] = value
 
-        # Get cached messages
-        data = await self.get_all_table_data(db, "user_messages")
-        for row in data:
-            CachedMessage(**row)
+        # # Get cached messages
+        # data = await self.get_all_table_data(db, "user_messages")
+        # for row in data:
+        #     CachedMessage(**row)
 
-        # Get cached VC minutes
-        data = await self.get_all_table_data(db, "user_vc_activity")
-        for row in data:
-            CachedVCMinute(**row)
+        # # Get cached VC minutes
+        # data = await self.get_all_table_data(db, "user_vc_activity")
+        # for row in data:
+        #     CachedVCMinute(**row)
 
         # Get role settings
         data = await self.get_list_table_data(db, "role_list", "RoleGain")

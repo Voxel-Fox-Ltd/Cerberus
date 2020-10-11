@@ -77,12 +77,7 @@ class UserMessageHandler(utils.Cog):
 
         # Cache for dynamic role handles
         self.cached_for_saving.append(message)
-        utils.CachedMessage(
-            user_id=message.author.id,
-            guild_id=message.guild.id,
-            timestamp=message.created_at,
-            channel_id=message.channel.id,
-        )
+        # utils.CachedMessage(user_id=message.author.id,guild_id=message.guild.id,timestamp=message.created_at,channel_id=message.channel.id)
 
         # Dispatch points event
         self.bot.dispatch('user_points_receive', message.author)

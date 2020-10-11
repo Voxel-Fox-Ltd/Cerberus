@@ -67,24 +67,33 @@ class Information(utils.Cog):
         """Gives you the leaderboard users for the server"""
 
         # Get all their valid user IDs
-        all_keys_for_guild = [i for i in utils.CachedMessage.all_messages.keys() if i[1] == ctx.guild.id]
-        all_data_for_guild = []  # (uid: int)
+        async with self.bot.database() as db:
+            message_rows = await db(
+                """SELECT user_id, COUNT(timestamp) FROM user_messages WHERE guild_id=$1 AND
+                timestamp > TIMEZONE('UTC', NOW()) - INTERVAL '7 days' GROUP BY user_id""",
+                ctx.guild.id,
+            )
+            vc_rows = await db(
+                """SELECT user_id, COUNT(timestamp) FROM user_vc_activity WHERE guild_id=$1 AND
+                timestamp > TIMEZONE('UTC', NOW()) - INTERVAL '7 days' GROUP BY user_id""",
+                ctx.guild.id,
+            )
 
-        # Get the user's points
-        for key in all_keys_for_guild:
-            all_data_for_guild.append((
-                key[0],
-                len(utils.CachedMessage.get_messages_after(key[0], ctx.guild, days=7)),
-                len(utils.CachedVCMinute.get_minutes_after(key[0], ctx.guild, days=7)),
-            ))
+        # Sort that into more formattable data
+        user_data_dict = collections.defaultdict({'message_count': 0, 'vc_minute_count': 0}.copy)  # uid: {message_count: int, vc_minute_count: int}
+        for row in message_rows:
+            user_data_dict[row['user_id']]['message_count'] = row['count']
+        for row in vc_rows:
+            user_data_dict[row['user_id']]['vc_minute_count'] = row['count']
 
-        # Order em
-        valid_user_data = [i for i in all_data_for_guild if getattr(self.bot.get_user(i[0]), 'bot', False) is False and ctx.guild.get_member(i[0])]
-        ordered_user_data = sorted(valid_user_data, key=lambda k: k[1] + (k[2] // 5), reverse=True)
+        # And now make it into something we can sort
+        guild_user_data = [(uid, d['message_count'], d['vc_minute_count']) for uid, d in user_data_dict.items()]
+        valid_guild_user_data = [i for i in guild_user_data if getattr(self.bot.get_user(i[0]), 'bot', False) is False and ctx.guild.get_member(i[0])]
+        ordered_guild_user_data = sorted(valid_guild_user_data, key=lambda k: k[1] + (k[2] // 5), reverse=True)
 
         # Make menu
         pages = menus.MenuPages(
-            source=LeaderboardSource(self.bot, ordered_user_data, "Tracked Points over 7 days"),
+            source=LeaderboardSource(self.bot, ordered_guild_user_data, "Tracked Points over 7 days"),
             clear_reactions_after=True
         )
         return await pages.start(ctx)
@@ -97,8 +106,25 @@ class Information(utils.Cog):
 
         days = days if days > 0 else 7
         user = user or ctx.author
-        text = len(utils.CachedMessage.get_messages_after(user.id, ctx.guild.id, days=days))
-        vc = len(utils.CachedVCMinute.get_minutes_after(user.id, ctx.guild.id, days=days))
+        async with self.bot.database() as db:
+            message_rows = await db(
+                """SELECT user_id, COUNT(timestamp) FROM user_messages WHERE guild_id=$1 AND user_id=$2
+                AND timestamp > TIMEZONE('UTC', NOW()) - CAST(CONCAT($3 * 1, ' days') AS INTERVAL) GROUP BY user_id""",
+                ctx.guild.id, user.id, days,
+            )
+            vc_rows = await db(
+                """SELECT user_id, COUNT(timestamp) FROM user_vc_activity WHERE guild_id=$1 AND user_id=$2
+                AND timestamp > TIMEZONE('UTC', NOW()) - CAST(CONCAT($3 * 1, ' days') AS INTERVAL) GROUP BY user_id""",
+                ctx.guild.id, user.id, days,
+            )
+        try:
+            text = message_rows[0]['count']
+        except IndexError:
+            text = 0
+        try:
+            vc = vc_rows[0]['count']
+        except IndexError:
+            vc = 0
         await ctx.send(f"Over the past {days} days, {user.mention} has gained **{text:,}** tracked messages and been in VC for **{utils.TimeValue(vc * 60).clean or '0m'}**, giving them a total of **{text + (vc // 5):,}** points.", allowed_mentions=discord.AllowedMentions(users=[ctx.author]))
 
     @commands.command(aliases=['dynamicroles', 'dyroles', 'dynroles', 'droles'], cls=utils.Command, hidden=True)
