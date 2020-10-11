@@ -18,12 +18,13 @@ class CachedVCMinute(object):
     """
 
     all_minutes: typing.Dict[typing.List[int], typing.List['CachedVCMinute']] = collections.defaultdict(list)
-    __slots__ = ('user_id', 'guild_id', 'timestamp')
+    __slots__ = ('user_id', 'guild_id', 'timestamp', 'channel_id')
 
-    def __init__(self, user_id:int, guild_id:int, timestamp:dt):
+    def __init__(self, user_id:int, guild_id:int, timestamp:dt, channel_id:int=None):
         self.user_id = user_id
         self.guild_id = guild_id
         self.timestamp = timestamp
+        self.channel_id = channel_id
         self.all_minutes[(self.user_id, self.guild_id)].append(self)
 
     def minute_cached_after(self, **kwargs) -> bool:

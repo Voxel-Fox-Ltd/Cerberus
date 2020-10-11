@@ -8,14 +8,16 @@ CREATE TABLE guild_settings(
 CREATE TABLE user_messages(
     timestamp TIMESTAMP,
     user_id BIGINT,
-    guild_id BIGINT
+    guild_id BIGINT,
+    channel_id BIGINT
 );
 
 
 CREATE TABLE user_vc_activity(
     user_id BIGINT,
     guild_id BIGINT,
-    timestamp TIMESTAMP
+    timestamp TIMESTAMP,
+    channel_id BIGINT
 );
 
 

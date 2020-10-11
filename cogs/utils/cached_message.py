@@ -20,12 +20,13 @@ class CachedMessage(object):
     """
 
     all_messages: typing.Dict[typing.List[int], typing.List['CachedMessage']] = collections.defaultdict(list)
-    __slots__ = ('user_id', 'guild_id', 'timestamp')
+    __slots__ = ('user_id', 'guild_id', 'timestamp', 'channel_id')
 
-    def __init__(self, user_id:int, guild_id:int, timestamp:dt, message_id:int=None):
+    def __init__(self, user_id:int, guild_id:int, timestamp:dt, message_id:int=None, channel_id:int=None):
         self.user_id = user_id
         self.guild_id = guild_id
         self.timestamp = timestamp
+        self.channel_id = channel_id
         self.all_messages[(self.user_id, self.guild_id)].append(self)
 
     def message_posted_after(self, **kwargs) -> bool:
