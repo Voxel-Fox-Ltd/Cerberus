@@ -43,22 +43,22 @@ class RoleHandler(utils.Cog):
         """
 
         # Get role settings
-        data = await self._get_list_table_data(db, "role_list", "RoleGain")
+        data = await self.bot._get_list_table_data(db, "role_list", "RoleGain")
         for row in data:
             self.bot.guild_settings[row['guild_id']].setdefault('role_gain', dict())[int(row['role_id'])] = int(row['value'])
 
         # Get blacklisted channel settings
-        data = await self._get_list_table_data(db, "channel_list", "BlacklistedChannel")
+        data = await self.bot._get_list_table_data(db, "channel_list", "BlacklistedChannel")
         for row in data:
             self.bot.guild_settings[row['guild_id']].setdefault('blacklisted_channels', list()).append(int(row['channel_id']))
 
         # Get blacklisted role settings
-        data = await self._get_list_table_data(db, "role_list", "BlacklistedRoles")
+        data = await self.bot._get_list_table_data(db, "role_list", "BlacklistedRoles")
         for row in data:
             self.bot.guild_settings[row['guild_id']].setdefault('blacklisted_text_roles', list()).append(int(row['role_id']))
 
         # Get blacklisted role settings
-        data = await self._get_list_table_data(db, "role_list", "BlacklistedVCRoles")
+        data = await self.bot._get_list_table_data(db, "role_list", "BlacklistedVCRoles")
         for row in data:
             self.bot.guild_settings[row['guild_id']].setdefault('blacklisted_vc_roles', list()).append(int(row['role_id']))
 
