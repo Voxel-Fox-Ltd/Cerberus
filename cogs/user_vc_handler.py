@@ -3,8 +3,7 @@ from datetime import datetime as dt
 
 import discord
 from discord.ext import tasks
-
-from cogs import utils
+import voxelbotutils as utils
 
 
 class UserVCHandler(utils.Cog):
@@ -18,7 +17,9 @@ class UserVCHandler(utils.Cog):
 
     @staticmethod
     def valid_voice_state(voice_state:discord.VoiceState) -> bool:
-        """Returns whether or not a voice state is unmuted, undeafened, etc"""
+        """
+        Returns whether or not a voice state is unmuted, undeafened, etc.
+        """
 
         return not any([
             voice_state.deaf,
@@ -30,7 +31,9 @@ class UserVCHandler(utils.Cog):
 
     @tasks.loop(minutes=1)
     async def user_vc_databaser(self):
-        """Saves all VC points into the database"""
+        """
+        Saves all VC points into the database.
+        """
 
         # Grab all the VCs
         voice_channels: typing.List[discord.VoiceChannel] = []
@@ -52,10 +55,6 @@ class UserVCHandler(utils.Cog):
 
         # Make our records
         records: typing.List[typing.Tuple[int, int, dt, int]] = [(i, o, dt.utcnow(), p) for i, o, p in voice_members]  # (uid, gid, timestamp, cid)...
-
-        # Let's cache the static VC minutes, just for fun
-        # for uid, gid, timestamp, cid in records:
-        #     utils.CachedVCMinute(user_id=uid, guild_id=gid, timestamp=timestamp, channel_id=cid)
 
         # Only save messages if there _were_ any
         if len(records) == 0:

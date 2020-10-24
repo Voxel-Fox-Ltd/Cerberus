@@ -8,8 +8,7 @@ import discord
 from discord.ext import commands
 from discord.ext import menus
 from matplotlib import pyplot as plt
-
-from cogs import utils
+import voxelbotutils as utils
 
 
 class LeaderboardSource(menus.ListPageSource):
@@ -33,7 +32,9 @@ class Information(utils.Cog):
     @utils.cooldown.cooldown(1, 60, commands.BucketType.user, cls=utils.cooldown.Cooldown(mapping=utils.cooldown.GroupedCooldownMapping("graph")))
     @commands.guild_only()
     async def graph(self, ctx:utils.Context, user:typing.Optional[discord.Member], window_days:typing.Optional[int]=7, segments_per_window_datapoint:typing.Optional[int]=None):
-        """Graphs your points over a given time"""
+        """
+        Graphs your points over a given time.
+        """
 
         user = user or ctx.author
         return await self.make_graph(ctx, [user.id], window_days, colours={user.id: "000000"}, segments=segments_per_window_datapoint)
@@ -43,7 +44,9 @@ class Information(utils.Cog):
     @utils.cooldown.cooldown(1, 60, commands.BucketType.user, cls=utils.cooldown.Cooldown(mapping=utils.cooldown.GroupedCooldownMapping("graph")))
     @commands.guild_only()
     async def multigraph(self, ctx:utils.Context, users:commands.Greedy[utils.converters.UserID], window_days:typing.Optional[int]=7, segments_per_window_datapoint:typing.Optional[int]=None):
-        """Graphs your points over a given time"""
+        """
+        Graphs your points over a given time.
+        """
 
         if not users:
             return await ctx.send("You haven't given any users to look at.")
@@ -56,7 +59,9 @@ class Information(utils.Cog):
     @utils.cooldown.cooldown(1, 60, commands.BucketType.user, cls=utils.cooldown.Cooldown(mapping=utils.cooldown.GroupedCooldownMapping("graph")))
     @commands.guild_only()
     async def multigraphrole(self, ctx:utils.Context, role:discord.Role, window_days:typing.Optional[int]=7, segments_per_window_datapoint:typing.Optional[int]=None):
-        """Graphs the points of a role over a given time"""
+        """
+        Graphs the points of a role over a given time.
+        """
 
         await self.make_graph(ctx, [i.id for i in role.members], window_days, segments=segments_per_window_datapoint)
 
@@ -64,7 +69,9 @@ class Information(utils.Cog):
     @commands.bot_has_permissions(send_messages=True, embed_links=True)
     @commands.guild_only()
     async def leaderboard(self, ctx:utils.Context, pages:int=1):
-        """Gives you the leaderboard users for the server"""
+        """
+        Gives you the leaderboard users for the server.
+        """
 
         # Get all their valid user IDs
         async with self.bot.database() as db:
@@ -102,7 +109,9 @@ class Information(utils.Cog):
     @commands.bot_has_permissions(send_messages=True)
     @commands.guild_only()
     async def points(self, ctx:utils.Context, user:typing.Optional[discord.Member]=None, days:int=7):
-        """Shows you your message amount over 7 days"""
+        """
+        Shows you your message amount over 7 days.
+        """
 
         days = days if days > 0 else 7
         user = user or ctx.author
@@ -131,7 +140,9 @@ class Information(utils.Cog):
     @commands.bot_has_permissions(send_messages=True)
     @commands.guild_only()
     async def roles(self, ctx:utils.Context):
-        """Shows you the roles that have been set up for the guild"""
+        """
+        Shows you the roles that have been set up for the guild.
+        """
 
         # Get roles
         role_data = self.bot.guild_settings[ctx.guild.id]['role_gain']
@@ -146,7 +157,9 @@ class Information(utils.Cog):
         return await ctx.send('\n'.join(output))
 
     async def make_graph(self, ctx, users:typing.List[int], window_days:int, *, colours:dict=None, segments:int=None):
-        """Makes the actual graph for the thing innit mate"""
+        """
+        Makes the actual graph for the thing innit mate.
+        """
 
         # Make sure there's people
         if not users:
@@ -264,7 +277,9 @@ class Information(utils.Cog):
     @commands.is_owner()
     @commands.guild_only()
     async def ograph(self, ctx:utils.Context, user:typing.Optional[discord.Member], window_days:typing.Optional[int]=7, segments_per_window_datapoint:typing.Optional[int]=None):
-        """Graphs your points over a given time"""
+        """
+        Graphs your points over a given time.
+        """
 
         user = user or ctx.author
         return await self.online_make_graph(ctx, [user.id], window_days, colours={user.id: "00ff00"}, segments=segments_per_window_datapoint)
@@ -275,12 +290,16 @@ class Information(utils.Cog):
     @commands.is_owner()
     @commands.guild_only()
     async def multiograph(self, ctx:utils.Context, users:commands.Greedy[utils.converters.UserID], window_days:typing.Optional[int]=7, segments_per_window_datapoint:typing.Optional[int]=None):
-        """Graphs your points over a given time"""
+        """
+        Graphs your points over a given time.
+        """
 
         return await self.online_make_graph(ctx, users, window_days, segments=segments_per_window_datapoint)
 
     async def online_make_graph(self, ctx, users:typing.List[int], window_days:int, *, colours:dict=None, segments:int=None):
-        """Makes the actual graph for the thing innit mate"""
+        """
+        Makes the actual graph for the thing innit mate.
+        """
 
         # Make sure there's people
         if not users:

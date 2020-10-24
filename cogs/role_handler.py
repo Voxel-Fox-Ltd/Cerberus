@@ -1,7 +1,6 @@
 import discord
 from discord.ext import tasks
-
-from cogs import utils
+import voxelbotutils as utils
 
 
 class RoleHandler(utils.Cog):
@@ -15,25 +14,59 @@ class RoleHandler(utils.Cog):
 
     @tasks.loop(hours=1)
     async def user_role_looper(self):
-        """Loop every hour to remove roles from everyone who might have talked"""
+        """
+        Loop every hour to remove roles from everyone who might have talked.
+        """
 
         # TODO chunk this by guild, maybe
-        if self.user_role_looper.current_loop == 0:
-            return
+        # if self.user_role_looper.current_loop == 0:
+        #     return
         self.logger.info("Pinging every guild member with an update")
-        for guild in self.bot.guilds:
-            for member in guild.members:
-                if member.bot:
+        async with self.bot.database() as db:
+            for guild in self.bot.guilds:
+                bot_user = guild.get_member(self.bot.user.id) or await self.bot.fetch_member(self.bot.user.id)
+                if not bot_user.guild_permissions.manage_roles:
                     continue
-                self.bot.dispatch('user_points_receive', member)
+                for member in guild.members:
+                    if member.bot:
+                        continue
+                    self.bot.dispatch('user_points_receive', member, db)
+        self.logger.info("Done pinging every guild member")
 
     @user_role_looper.before_loop
     async def before_user_role_looper(self):
         await self.bot.wait_until_ready()
 
+    async def cache_setup(self, db):
+        """
+        Set up the roles and blacklisted items.
+        """
+
+        # Get role settings
+        data = await self._get_list_table_data(db, "role_list", "RoleGain")
+        for row in data:
+            self.bot.guild_settings[row['guild_id']].setdefault('role_gain', dict())[int(row['role_id'])] = int(row['value'])
+
+        # Get blacklisted channel settings
+        data = await self._get_list_table_data(db, "channel_list", "BlacklistedChannel")
+        for row in data:
+            self.bot.guild_settings[row['guild_id']].setdefault('blacklisted_channels', list()).append(int(row['channel_id']))
+
+        # Get blacklisted role settings
+        data = await self._get_list_table_data(db, "role_list", "BlacklistedRoles")
+        for row in data:
+            self.bot.guild_settings[row['guild_id']].setdefault('blacklisted_text_roles', list()).append(int(row['role_id']))
+
+        # Get blacklisted role settings
+        data = await self._get_list_table_data(db, "role_list", "BlacklistedVCRoles")
+        for row in data:
+            self.bot.guild_settings[row['guild_id']].setdefault('blacklisted_vc_roles', list()).append(int(row['role_id']))
+
     @utils.Cog.listener("on_user_points_receive")
-    async def user_role_handler(self, user:discord.Member, only_check_for_descending:bool=False):
-        """Looks for when a user passes the threshold of points and then handles their roles accordingly"""
+    async def user_role_handler(self, user:discord.Member, only_check_for_descending:bool=False, db:utils.DatabaseConnection=None):
+        """
+        Looks for when a user passes the threshold of points and then handles their roles accordingly.
+        """
 
         # Don't add roles to bots
         if user.bot:
@@ -55,18 +88,25 @@ class RoleHandler(utils.Cog):
         # Okay cool now it's time to actually look at their roles
         self.logger.info(f"Pinging attempted role updates to user {user.id} in guild {user.guild.id}")
 
-        # Work out an average for the time
-        async with self.bot.database() as db:
-            message_rows = await db(
-                """SELECT user_id, COUNT(timestamp) FROM user_messages WHERE guild_id=$1 AND user_id=$2
-                AND timestamp > TIMEZONE('UTC', NOW()) - CAST(CONCAT($3 * 1, ' days') AS INTERVAL) GROUP BY user_id""",
-                user.guild.id, user.id, 7,
-            )
-            vc_rows = await db(
-                """SELECT user_id, COUNT(timestamp) FROM user_vc_activity WHERE guild_id=$1 AND user_id=$2
-                AND timestamp > TIMEZONE('UTC', NOW()) - CAST(CONCAT($3 * 1, ' days') AS INTERVAL) GROUP BY user_id""",
-                user.guild.id, user.id, 7,
-            )
+        # Grab data from the db
+        close_db = False
+        if db is None:
+            db = await self.bot.database.get_connection()
+            close_db = True
+        message_rows = await db(
+            """SELECT user_id, COUNT(timestamp) FROM user_messages WHERE guild_id=$1 AND user_id=$2
+            AND timestamp > TIMEZONE('UTC', NOW()) - CAST(CONCAT($3 * 1, ' days') AS INTERVAL) GROUP BY user_id""",
+            user.guild.id, user.id, 7,
+        )
+        vc_rows = await db(
+            """SELECT user_id, COUNT(timestamp) FROM user_vc_activity WHERE guild_id=$1 AND user_id=$2
+            AND timestamp > TIMEZONE('UTC', NOW()) - CAST(CONCAT($3 * 1, ' days') AS INTERVAL) GROUP BY user_id""",
+            user.guild.id, user.id, 7,
+        )
+        if close_db:
+            await db.disconnect()
+
+        # Work out the user points
         try:
             text_points = message_rows[0]['count']
         except IndexError:

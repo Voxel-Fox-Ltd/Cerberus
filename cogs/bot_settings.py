@@ -1,33 +1,17 @@
 from discord.ext import commands
-
-from cogs import utils
+import voxelbotutils as utils
 
 
 class BotSettings(utils.Cog):
-
-    @commands.command(cls=utils.Command)
-    @commands.has_permissions(manage_guild=True)
-    @commands.bot_has_permissions(send_messages=True)
-    @commands.guild_only()
-    async def prefix(self, ctx:utils.Context, *, new_prefix:str):
-        """Changes the prefix that the bot uses"""
-
-        # Validate prefix
-        if len(new_prefix) > 30:
-            return await ctx.send("The maximum length a prefix can be is 30 characters.")
-
-        # Store setting
-        self.bot.guild_settings[ctx.guild.id]['prefix'] = new_prefix
-        async with self.bot.database() as db:
-            await db("INSERT INTO guild_settings (guild_id, prefix) VALUES ($1, $2) ON CONFLICT (guild_id) DO UPDATE SET prefix=excluded.prefix", ctx.guild.id, new_prefix)
-        await ctx.send(f"My prefix has been updated to `{new_prefix}`.")
 
     @commands.group(cls=utils.Group)
     @commands.has_permissions(manage_guild=True)
     @commands.bot_has_permissions(send_messages=True, embed_links=True, add_reactions=True)
     @commands.guild_only()
     async def setup(self, ctx:utils.Context):
-        """Run the bot setup"""
+        """
+        Run the bot setup.
+        """
 
         # Make sure it's only run as its own command, not a parent
         if ctx.invoked_subcommand is not None:
@@ -69,7 +53,9 @@ class BotSettings(utils.Cog):
     @setup.command(cls=utils.Command)
     @utils.checks.meta_command()
     async def roles(self, ctx:utils.Context):
-        """Run the bot setup"""
+        """
+        Run the bot setup.
+        """
 
         # Create settings menu
         key_display_function = lambda k: getattr(ctx.guild.get_role(k), 'mention', 'none')
@@ -87,7 +73,9 @@ class BotSettings(utils.Cog):
     @setup.command(cls=utils.Command)
     @utils.checks.meta_command()
     async def blacklistedchannels(self, ctx:utils.Context):
-        """Run the bot setup"""
+        """
+        Run the bot setup.
+        """
 
         # Create settings menu
         key_display_function = lambda k: getattr(ctx.bot.get_channel(k), 'mention', 'none')
@@ -104,7 +92,9 @@ class BotSettings(utils.Cog):
     @setup.command(cls=utils.Command)
     @utils.checks.meta_command()
     async def blacklistedroles(self, ctx:utils.Context):
-        """Run the bot setup"""
+        """
+        Run the bot setup.
+        """
 
         # Create settings menu
         key_display_function = lambda k: getattr(ctx.guild.get_role(k), 'mention', 'none')
@@ -121,7 +111,9 @@ class BotSettings(utils.Cog):
     @setup.command(cls=utils.Command)
     @utils.checks.meta_command()
     async def blacklistedvcroles(self, ctx:utils.Context):
-        """Run the bot setup"""
+        """
+        Run the bot setup.
+        """
 
         # Create settings menu
         key_display_function = lambda k: getattr(ctx.guild.get_role(k), 'mention', 'none')
@@ -140,7 +132,9 @@ class BotSettings(utils.Cog):
     @utils.cooldown.cooldown(1, 60, commands.BucketType.member)
     @commands.guild_only()
     async def usersettings(self, ctx:utils.Context):
-        """Run the bot setup"""
+        """
+        Run the bot setup.
+        """
 
         # Make sure it's only run as its own command, not a parent
         if ctx.invoked_subcommand is not None:

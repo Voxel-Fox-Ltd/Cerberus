@@ -4,8 +4,7 @@ import collections
 
 import discord
 from discord.ext import tasks
-
-from cogs import utils
+import voxelbotutils as utils
 
 
 class UserMessageHandler(utils.Cog):
@@ -17,13 +16,17 @@ class UserMessageHandler(utils.Cog):
         self.user_message_databaser.start()
 
     def cog_unload(self):
-        """Stop the databaser loop very gently so it stores everything in cache first"""
+        """
+        Stop the databaser loop very gently so it stores everything in cache first.
+        """
 
         self.user_message_databaser.stop()
 
     @tasks.loop(minutes=1)
     async def user_message_databaser(self):
-        """Saves all messages stored in self.cached_for_saving to db"""
+        """
+        Saves all messages stored in self.cached_for_saving to db.
+        """
 
         # Only save messages if there _were_ any
         if len(self.cached_for_saving) == 0:
@@ -52,8 +55,10 @@ class UserMessageHandler(utils.Cog):
 
     @utils.Cog.listener("on_message")
     async def user_message_cacher(self, message:discord.Message):
-        """Listens for a user sending a message, and then saves that message as a point
-        into the db should their last message be long enough ago"""
+        """
+        Listens for a user sending a message, and then saves that message as a point
+        into the db should their last message be long enough ago.
+        """
 
         # Filter out DMs
         if not isinstance(message.author, discord.Member):
@@ -77,7 +82,6 @@ class UserMessageHandler(utils.Cog):
 
         # Cache for dynamic role handles
         self.cached_for_saving.append(message)
-        # utils.CachedMessage(user_id=message.author.id,guild_id=message.guild.id,timestamp=message.created_at,channel_id=message.channel.id)
 
         # Dispatch points event
         self.bot.dispatch('user_points_receive', message.author)
