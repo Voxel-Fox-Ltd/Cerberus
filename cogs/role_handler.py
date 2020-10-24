@@ -77,7 +77,7 @@ class RoleHandler(utils.Cog):
             return
 
         # Grab data
-        role_data_dict = self.bot.guild_settings[user.guild.id]['role_gain']
+        role_data_dict = self.bot.guild_settings[user.guild.id].setdefault('role_gain', dict())
         remove_old_roles = self.bot.guild_settings[user.guild.id]['remove_old_roles']
         role_data = sorted([(role_id, threshold) for role_id, threshold in role_data_dict.items()], key=lambda x: x[1], reverse=True)
 
