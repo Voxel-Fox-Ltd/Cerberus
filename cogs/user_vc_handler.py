@@ -52,7 +52,8 @@ class UserVCHandler(utils.Cog):
             guild = self.bot.get_guild(guild_id)
             try:
                 member = guild.get_member(user_id) or await guild.fetch_member(user_id)
-            except discord.HTTPException:
+                assert member is not None
+            except (AssertionError, discord.HTTPException):
                 voice_members.remove((user_id, guild_id, channel_id))
                 continue
             if set(member._roles).intersection(blacklisted_roles):
