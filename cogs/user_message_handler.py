@@ -65,12 +65,12 @@ class UserMessageHandler(utils.Cog):
             return
 
         # Filter out blacklisted roles
-        blacklisted_roles = self.bot.guild_settings[message.guild.id]['blacklisted_text_roles']
+        blacklisted_roles = self.bot.guild_settings[message.guild.id].setdefault('blacklisted_text_roles', list())
         if set(message.author._roles).intersection(blacklisted_roles):
             return
 
         # Filter blacklisted channels
-        if message.channel.id in self.bot.guild_settings[message.guild.id]['blacklisted_channels']:
+        if message.channel.id in self.bot.guild_settings[message.guild.id].setdefault('blacklisted_channels', list()):
             return
 
         # Make sure it's in the time we want
