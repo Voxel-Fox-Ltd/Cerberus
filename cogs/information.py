@@ -198,8 +198,8 @@ class Information(utils.Cog):
                     FROM user_messages, generate_series(1, $3)
                     WHERE
                         user_id=$1 AND guild_id=$2
-                        AND timestamp > TIMEZONE('UTC', NOW()) - CAST(CONCAT($3, ' days') AS INTERVAL) + (INTERVAL '1 day' * generate_series) - INTERVAL '7 days'
-                        AND timestamp <= TIMEZONE('UTC', NOW()) - CAST(CONCAT($3, ' days') AS INTERVAL) + (INTERVAL '1 day' * generate_series)
+                        AND timestamp > TIMEZONE('UTC', NOW()) - MAKE_INTERVAL(days => $3) + (MAKE_INTERVAL(days => 1) * generate_series) - MAKE_INTERVAL(days => 7)
+                        AND timestamp <= TIMEZONE('UTC', NOW()) - MAKE_INTERVAL(days => $3) + (MAKE_INTERVAL(days => 1) * generate_series)
                     GROUP BY generate_series ORDER BY generate_series ASC""",
                     user_id, ctx.guild.id, window_days,
                 )
@@ -210,8 +210,8 @@ class Information(utils.Cog):
                     FROM user_vc_activity, generate_series(1, $3)
                     WHERE
                         user_id=$1 AND guild_id=$2
-                        AND timestamp > TIMEZONE('UTC', NOW()) - CAST(CONCAT($3, ' days') AS INTERVAL) + (INTERVAL '1 day' * generate_series) - INTERVAL '7 days'
-                        AND timestamp <= TIMEZONE('UTC', NOW()) - CAST(CONCAT($3, ' days') AS INTERVAL) + (INTERVAL '1 day' * generate_series)
+                        AND timestamp > TIMEZONE('UTC', NOW()) - MAKE_INTERVAL(days => $3) + (MAKE_INTERVAL(days => 1) * generate_series) - MAKE_INTERVAL(days => 7)
+                        AND timestamp <= TIMEZONE('UTC', NOW()) - MAKE_INTERVAL(days => $3) + (MAKE_INTERVAL(days => 1) * generate_series)
                     GROUP BY generate_series ORDER BY generate_series ASC""",
                     user_id, ctx.guild.id, window_days,
                 )
@@ -339,8 +339,8 @@ class Information(utils.Cog):
                     FROM user_messages, generate_series(1, $3)
                     WHERE
                         user_id=$1 AND guild_id=$2
-                        AND timestamp > TIMEZONE('UTC', NOW()) - CAST(CONCAT($3 * 15, ' minutes') AS INTERVAL) + (INTERVAL '15 minutes' * generate_series)
-                        AND timestamp <= TIMEZONE('UTC', NOW()) - CAST(CONCAT($3 * 15, ' minutes') AS INTERVAL) + (INTERVAL '15 minutes' * (generate_series + 1))
+                        AND timestamp > TIMEZONE('UTC', NOW()) - MAKE_INTERVAL(mins => $3 * 15) + (MAKE_INTERVAL(mins => 15) * generate_series)
+                        AND timestamp <= TIMEZONE('UTC', NOW()) - MAKE_INTERVAL(mins => $3 * 15) + (MAKE_INTERVAL(mins => 15) * (generate_series + 1))
                     GROUP BY generate_series ORDER BY generate_series ASC""",
                     user_id, ctx.guild.id, window_days * 24 * 4,
                 )
@@ -352,8 +352,8 @@ class Information(utils.Cog):
                     FROM user_vc_activity, generate_series(1, $3)
                     WHERE
                         user_id=$1 AND guild_id=$2
-                        AND timestamp > TIMEZONE('UTC', NOW()) - CAST(CONCAT($3 * 15, ' minutes') AS INTERVAL) + (INTERVAL '15 minutes' * generate_series)
-                        AND timestamp <= TIMEZONE('UTC', NOW()) - CAST(CONCAT($3 * 15, ' minutes') AS INTERVAL) + (INTERVAL '15 minutes' * (generate_series + 1))
+                        AND timestamp > TIMEZONE('UTC', NOW()) - MAKE_INTERVAL(mins => $3 * 15) + (MAKE_INTERVAL(mins => 15) * generate_series)
+                        AND timestamp <= TIMEZONE('UTC', NOW()) - MAKE_INTERVAL(mins => $3 * 15) + (MAKE_INTERVAL(mins => 15) * (generate_series + 1))
                     GROUP BY generate_series ORDER BY generate_series ASC""",
                     user_id, ctx.guild.id, window_days * 24 * 4,
                 )
