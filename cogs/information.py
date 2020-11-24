@@ -19,10 +19,13 @@ class LeaderboardSource(menus.ListPageSource):
         self.header = header
 
     async def format_page(self, menu, entries):
-        clean_rows = [(self.bot.get_user(i), o, j) for i, o, j in entries]
-        text = '\n'.join(f"**{i!s}** - `{o + (j // 5):,}` (`{o:,}` text, `{utils.TimeValue(j * 60).clean or '0m'}` VC)" for i, o, j in clean_rows)
+        clean_rows = [(i, o, j) for i, o, j in entries]
+        text = '\n'.join(f"**<@{i}>** - `{o + (j // 5):,}` (`{o:,}` text, `{utils.TimeValue(j * 60).clean or '0m'}` VC)" for i, o, j in clean_rows)
         max_page = math.ceil(len(self.entries) / self.per_page)
-        return f'__{self.header}:__\n' + text + f'\n\nPage {menu.current_page + 1} of {max_page}'
+        return {
+            "content": f"""__{self.header}:__\n{text}\n\nPage {menu.current_page + 1} of {max_page}""",
+            "allowed_mentions": discord.AllowedMentions.none()
+        }
 
 
 class Information(utils.Cog):
@@ -77,12 +80,14 @@ class Information(utils.Cog):
         async with self.bot.database() as db:
             message_rows = await db(
                 """SELECT user_id, COUNT(timestamp) FROM user_messages WHERE guild_id=$1 AND
-                timestamp > TIMEZONE('UTC', NOW()) - INTERVAL '7 days' GROUP BY user_id""",
+                timestamp > TIMEZONE('UTC', NOW()) - INTERVAL '7 days' GROUP BY user_id
+                ORDER BY COUNT(timestamp) DESC LIMIT 30;""",
                 ctx.guild.id,
             )
             vc_rows = await db(
                 """SELECT user_id, COUNT(timestamp) FROM user_vc_activity WHERE guild_id=$1 AND
-                timestamp > TIMEZONE('UTC', NOW()) - INTERVAL '7 days' GROUP BY user_id""",
+                timestamp > TIMEZONE('UTC', NOW()) - INTERVAL '7 days' GROUP BY user_id
+                ORDER BY COUNT(timestamp) DESC LIMIT 30;""",
                 ctx.guild.id,
             )
 
@@ -95,7 +100,7 @@ class Information(utils.Cog):
 
         # And now make it into something we can sort
         guild_user_data = [(uid, d['message_count'], d['vc_minute_count']) for uid, d in user_data_dict.items()]
-        valid_guild_user_data = [i for i in guild_user_data if getattr(self.bot.get_user(i[0]), 'bot', False) is False and ctx.guild.get_member(i[0])]
+        valid_guild_user_data = [i for i in guild_user_data if ctx.guild.get_member(i[0]) or await ctx.guild.fetch_member(i[0])]
         ordered_guild_user_data = sorted(valid_guild_user_data, key=lambda k: k[1] + (k[2] // 5), reverse=True)
 
         # Make menu
