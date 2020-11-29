@@ -71,10 +71,15 @@ class Information(utils.Cog):
     @commands.command(aliases=['dynamicleaderboard', 'dlb', 'dylb', 'dynlb', 'lb'], cls=utils.Command)
     @commands.bot_has_permissions(send_messages=True, embed_links=True)
     @commands.guild_only()
-    async def leaderboard(self, ctx:utils.Context, pages:int=1):
+    async def leaderboard(self, ctx:utils.Context, days:int=7):
         """
         Gives you the leaderboard users for the server.
         """
+
+        if days <= 0:
+            days = 7
+        if days > 365:
+            days = 365
 
         # This takes a while
         async with ctx.typing():
@@ -83,15 +88,15 @@ class Information(utils.Cog):
             async with self.bot.database() as db:
                 message_rows = await db(
                     """SELECT user_id, COUNT(timestamp) FROM user_messages WHERE guild_id=$1 AND
-                    timestamp > TIMEZONE('UTC', NOW()) - INTERVAL '7 days' GROUP BY user_id
+                    timestamp > TIMEZONE('UTC', NOW()) - MAKE_INTERVAL(days => $2) GROUP BY user_id
                     ORDER BY COUNT(timestamp) DESC LIMIT 30;""",
-                    ctx.guild.id,
+                    ctx.guild.id, days,
                 )
                 vc_rows = await db(
                     """SELECT user_id, COUNT(timestamp) FROM user_vc_activity WHERE guild_id=$1 AND
-                    timestamp > TIMEZONE('UTC', NOW()) - INTERVAL '7 days' GROUP BY user_id
+                    timestamp > TIMEZONE('UTC', NOW()) - MAKE_INTERVAL(days => $2) GROUP BY user_id
                     ORDER BY COUNT(timestamp) DESC LIMIT 30;""",
-                    ctx.guild.id,
+                    ctx.guild.id, days,
                 )
 
             # Sort that into more formattable data
@@ -114,7 +119,7 @@ class Information(utils.Cog):
 
         # Make menu
         pages = menus.MenuPages(
-            source=LeaderboardSource(self.bot, ordered_guild_user_data, "Tracked Points over 7 days"),
+            source=LeaderboardSource(self.bot, ordered_guild_user_data, f"Tracked Points over {days} days"),
             clear_reactions_after=True
         )
         return await pages.start(ctx)
@@ -132,12 +137,12 @@ class Information(utils.Cog):
         async with self.bot.database() as db:
             message_rows = await db(
                 """SELECT user_id, COUNT(timestamp) FROM user_messages WHERE guild_id=$1 AND user_id=$2
-                AND timestamp > TIMEZONE('UTC', NOW()) - CAST(CONCAT($3 * 1, ' days') AS INTERVAL) GROUP BY user_id""",
+                AND timestamp > TIMEZONE('UTC', NOW()) - MAKE_INTERVAL(days => $3 * 1) GROUP BY user_id""",
                 ctx.guild.id, user.id, days,
             )
             vc_rows = await db(
                 """SELECT user_id, COUNT(timestamp) FROM user_vc_activity WHERE guild_id=$1 AND user_id=$2
-                AND timestamp > TIMEZONE('UTC', NOW()) - CAST(CONCAT($3 * 1, ' days') AS INTERVAL) GROUP BY user_id""",
+                AND timestamp > TIMEZONE('UTC', NOW()) - MAKE_INTERVAL(days => $3 * 1) GROUP BY user_id""",
                 ctx.guild.id, user.id, days,
             )
         try:
