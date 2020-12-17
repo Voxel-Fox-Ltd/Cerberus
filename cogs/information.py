@@ -34,20 +34,20 @@ class Information(utils.Cog):
     @commands.bot_has_permissions(send_messages=True, embed_links=True)
     @utils.cooldown.cooldown(1, 60, commands.BucketType.user, cls=utils.cooldown.Cooldown(mapping=utils.cooldown.GroupedCooldownMapping("graph")))
     @commands.guild_only()
-    async def graph(self, ctx:utils.Context, user:typing.Optional[discord.Member], window_days:typing.Optional[int]=None, segments_per_window_datapoint:typing.Optional[int]=None):
+    async def graph(self, ctx:utils.Context, user:typing.Optional[discord.Member], window_days:typing.Optional[int]=None):
         """
         Graphs your points over a given time.
         """
 
         user = user or ctx.author
         window_days = window_days or self.bot.guild_settings[ctx.guild.id]['activity_window_days']
-        return await self.make_graph(ctx, [user.id], window_days, colours={user.id: "000000"}, segments=segments_per_window_datapoint)
+        return await self.make_graph(ctx, [user.id], window_days, colours={user.id: "000000"}, segments=None)
 
     @commands.command(cls=utils.Command, hidden=True, cooldown_after_parsing=True, add_slash_command=False)
     @commands.bot_has_permissions(send_messages=True, embed_links=True)
     @utils.cooldown.cooldown(1, 60, commands.BucketType.user, cls=utils.cooldown.Cooldown(mapping=utils.cooldown.GroupedCooldownMapping("graph")))
     @commands.guild_only()
-    async def multigraph(self, ctx:utils.Context, users:commands.Greedy[utils.converters.UserID], window_days:typing.Optional[int]=None, segments_per_window_datapoint:typing.Optional[int]=None):
+    async def multigraph(self, ctx:utils.Context, users:commands.Greedy[utils.converters.UserID], window_days:typing.Optional[int]=None):
         """
         Graphs your points over a given time.
         """
@@ -57,19 +57,19 @@ class Information(utils.Cog):
         if len(users) == 1:
             users = users + [ctx.author.id]
         window_days = window_days or self.bot.guild_settings[ctx.guild.id]['activity_window_days']
-        await self.make_graph(ctx, users, window_days, segments=segments_per_window_datapoint)
+        await self.make_graph(ctx, users, window_days, segments=None)
 
     @commands.command(cls=utils.Command, hidden=True, cooldown_after_parsing=True, add_slash_command=False)
     @commands.bot_has_permissions(send_messages=True, embed_links=True)
     @utils.cooldown.cooldown(1, 60, commands.BucketType.user, cls=utils.cooldown.Cooldown(mapping=utils.cooldown.GroupedCooldownMapping("graph")))
     @commands.guild_only()
-    async def multigraphrole(self, ctx:utils.Context, role:discord.Role, window_days:typing.Optional[int]=None, segments_per_window_datapoint:typing.Optional[int]=None):
+    async def multigraphrole(self, ctx:utils.Context, role:discord.Role, window_days:typing.Optional[int]=None):
         """
         Graphs the points of a role over a given time.
         """
 
         window_days = window_days or self.bot.guild_settings[ctx.guild.id]['activity_window_days']
-        await self.make_graph(ctx, [i.id for i in role.members], window_days, segments=segments_per_window_datapoint)
+        await self.make_graph(ctx, [i.id for i in role.members], window_days, segments=None)
 
     @commands.command(aliases=['dynamicleaderboard', 'dlb', 'dylb', 'dynlb', 'lb'], cls=utils.Command)
     @commands.bot_has_permissions(send_messages=True, embed_links=True)
