@@ -71,14 +71,16 @@ class Information(utils.Cog):
     @commands.command(aliases=['dynamicleaderboard', 'dlb', 'dylb', 'dynlb', 'lb'], cls=utils.Command)
     @commands.bot_has_permissions(send_messages=True, embed_links=True)
     @commands.guild_only()
-    async def leaderboard(self, ctx:utils.Context, days:int=7):
+    async def leaderboard(self, ctx:utils.Context, days:int=None):
         """
         Gives you the leaderboard users for the server.
         """
 
-        if days <= 0:
+        if days is None:
+            days = self.bot.guild_settings[ctx.guild.id]['activity_window_days']
+        elif days <= 0:
             days = 7
-        if days > 365:
+        elif days > 365:
             days = 365
 
         # This takes a while
@@ -127,12 +129,13 @@ class Information(utils.Cog):
     @commands.command(aliases=['dynamic', 'dyn', 'dy', 'd', 'dpoints', 'dpoint', 'rank'], cls=utils.Command)
     @commands.bot_has_permissions(send_messages=True)
     @commands.guild_only()
-    async def points(self, ctx:utils.Context, user:typing.Optional[discord.Member]=None, days:int=7):
+    async def points(self, ctx:utils.Context, user:typing.Optional[discord.Member]=None, days:int=None):
         """
         Shows you your message amount over 7 days.
         """
 
-        days = days if days > 0 else 7
+        default_days = self.bot.guild_settings[ctx.guild.id]['activity_window_days']
+        days = days if days > 0 else default_days
         user = user or ctx.author
         async with self.bot.database() as db:
             message_rows = await db(
@@ -172,7 +175,7 @@ class Information(utils.Cog):
         # Output nicely
         output = []
         for threshold, role in role_object_data:
-            output.append(f"**{role.name}** :: `{threshold}` tracked messages every 7 days")
+            output.append(f"**{role.name}** :: `{threshold}` tracked messages every {self.bot.guild_settings[ctx.guild.id]['activity_window_days']} days")
         return await ctx.send('\n'.join(output))
 
     async def make_graph(self, ctx, users:typing.List[int], window_days:int, *, colours:dict=None, segments:int=None):
@@ -217,10 +220,10 @@ class Information(utils.Cog):
                     FROM user_messages, generate_series(1, $3)
                     WHERE
                         user_id=$1 AND guild_id=$2
-                        AND timestamp > TIMEZONE('UTC', NOW()) - MAKE_INTERVAL(days => $3) + (MAKE_INTERVAL(days => 1) * generate_series) - MAKE_INTERVAL(days => 7)
+                        AND timestamp > TIMEZONE('UTC', NOW()) - MAKE_INTERVAL(days => $3) + (MAKE_INTERVAL(days => 1) * generate_series) - MAKE_INTERVAL(days => $4)
                         AND timestamp <= TIMEZONE('UTC', NOW()) - MAKE_INTERVAL(days => $3) + (MAKE_INTERVAL(days => 1) * generate_series)
                     GROUP BY generate_series ORDER BY generate_series ASC""",
-                    user_id, ctx.guild.id, window_days,
+                    user_id, ctx.guild.id, window_days, self.bot.guild_settings[ctx.guild.id]['activity_window_days'],
                 )
                 for row in message_rows:
                     points_per_week[user_id][row['generate_series'] - 1] += row['count']
@@ -229,10 +232,10 @@ class Information(utils.Cog):
                     FROM user_vc_activity, generate_series(1, $3)
                     WHERE
                         user_id=$1 AND guild_id=$2
-                        AND timestamp > TIMEZONE('UTC', NOW()) - MAKE_INTERVAL(days => $3) + (MAKE_INTERVAL(days => 1) * generate_series) - MAKE_INTERVAL(days => 7)
+                        AND timestamp > TIMEZONE('UTC', NOW()) - MAKE_INTERVAL(days => $3) + (MAKE_INTERVAL(days => 1) * generate_series) - MAKE_INTERVAL(days => $4)
                         AND timestamp <= TIMEZONE('UTC', NOW()) - MAKE_INTERVAL(days => $3) + (MAKE_INTERVAL(days => 1) * generate_series)
                     GROUP BY generate_series ORDER BY generate_series ASC""",
-                    user_id, ctx.guild.id, window_days,
+                    user_id, ctx.guild.id, window_days, self.bot.guild_settings[ctx.guild.id]['activity_window_days'],
                 )
                 for row in vc_rows:
                     points_per_week[user_id][row['generate_series'] - 1] += row['count'] // 5
@@ -286,9 +289,9 @@ class Information(utils.Cog):
         with utils.Embed() as embed:
             embed.set_image(url="attachment://activity.png")
         if len(points_per_week) > 1:
-            await ctx.send(f"Activity graph in a {window_days} day window{(' (' + truncation + ')') if truncation else ''}, showing average activity over each 7 day period.", embed=embed, file=discord.File("activity.png"))
+            await ctx.send(f"Activity graph in a {window_days} day window{(' (' + truncation + ')') if truncation else ''}, showing average activity over each {self.bot.guild_settings[ctx.guild.id]['activity_window_days']} day period.", embed=embed, file=discord.File("activity.png"))
         else:
-            await ctx.send(f"<@!{users[0]}>'s graph in a {window_days} day window{(' (' + truncation + ')') if truncation else ''}, showing average activity over each 7 day period.", embed=embed, file=discord.File("activity.png"), allowed_mentions=discord.AllowedMentions(users=False))
+            await ctx.send(f"<@!{users[0]}>'s graph in a {window_days} day window{(' (' + truncation + ')') if truncation else ''}, showing average activity over each {self.bot.guild_settings[ctx.guild.id]['activity_window_days']} day period.", embed=embed, file=discord.File("activity.png"), allowed_mentions=discord.AllowedMentions(users=False))
 
     @commands.command(cls=utils.Command, cooldown_after_parsing=True)
     @commands.bot_has_permissions(send_messages=True, embed_links=True)

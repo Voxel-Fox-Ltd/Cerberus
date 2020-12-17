@@ -12,31 +12,6 @@ class RoleHandler(utils.Cog):
     def cog_unload(self):
         self.user_role_looper.cancel()
 
-    @tasks.loop(hours=1)
-    async def user_role_looper(self):
-        """
-        Loop every hour to remove roles from everyone who might have talked.
-        """
-
-        # TODO chunk this by guild, maybe
-        # if self.user_role_looper.current_loop == 0:
-        #     return
-        self.logger.info("Pinging every guild member with an update")
-        async with self.bot.database() as db:
-            for guild in self.bot.guilds:
-                bot_user = guild.get_member(self.bot.user.id) or await self.bot.fetch_member(self.bot.user.id)
-                if not bot_user.guild_permissions.manage_roles:
-                    continue
-                for member in guild.members:
-                    if member.bot:
-                        continue
-                    self.bot.dispatch('user_points_receive', member, db)
-        self.logger.info("Done pinging every guild member")
-
-    @user_role_looper.before_loop
-    async def before_user_role_looper(self):
-        await self.bot.wait_until_ready()
-
     async def cache_setup(self, db):
         """
         Set up the roles and blacklisted items.
@@ -61,6 +36,31 @@ class RoleHandler(utils.Cog):
         data = await self.bot._get_list_table_data(db, "role_list", "BlacklistedVCRoles")
         for row in data:
             self.bot.guild_settings[row['guild_id']].setdefault('blacklisted_vc_roles', list()).append(int(row['role_id']))
+
+    @tasks.loop(hours=1)
+    async def user_role_looper(self):
+        """
+        Loop every hour to remove roles from everyone who might have talked.
+        """
+
+        # TODO chunk this by guild, maybe
+        # if self.user_role_looper.current_loop == 0:
+        #     return
+        self.logger.info("Pinging every guild member with an update")
+        async with self.bot.database() as db:
+            for guild in self.bot.guilds:
+                bot_user = guild.get_member(self.bot.user.id) or await self.bot.fetch_member(self.bot.user.id)
+                if not bot_user.guild_permissions.manage_roles:
+                    continue
+                for member in guild.members:
+                    if member.bot:
+                        continue
+                    self.bot.dispatch('user_points_receive', member, db)
+        self.logger.info("Done pinging every guild member")
+
+    @user_role_looper.before_loop
+    async def before_user_role_looper(self):
+        await self.bot.wait_until_ready()
 
     @utils.Cog.listener("on_user_points_receive")
     async def user_role_handler(self, user:discord.Member, only_check_for_descending:bool=False, db:utils.DatabaseConnection=None):
@@ -95,13 +95,13 @@ class RoleHandler(utils.Cog):
             close_db = True
         message_rows = await db(
             """SELECT user_id, COUNT(timestamp) FROM user_messages WHERE guild_id=$1 AND user_id=$2
-            AND timestamp > TIMEZONE('UTC', NOW()) - CAST(CONCAT($3 * 1, ' days') AS INTERVAL) GROUP BY user_id""",
-            user.guild.id, user.id, 7,
+            AND timestamp > TIMEZONE('UTC', NOW()) - MAKE_INTERVAL(days => $3) GROUP BY user_id""",
+            user.guild.id, user.id, self.bot.guild_settings[user.guild.id]['activity_window_days'],
         )
         vc_rows = await db(
             """SELECT user_id, COUNT(timestamp) FROM user_vc_activity WHERE guild_id=$1 AND user_id=$2
-            AND timestamp > TIMEZONE('UTC', NOW()) - CAST(CONCAT($3 * 1, ' days') AS INTERVAL) GROUP BY user_id""",
-            user.guild.id, user.id, 7,
+            AND timestamp > TIMEZONE('UTC', NOW()) - MAKE_INTERVAL(days => $3) GROUP BY user_id""",
+            user.guild.id, user.id, self.bot.guild_settings[user.guild.id]['activity_window_days'],
         )
         if close_db:
             await db.disconnect()
