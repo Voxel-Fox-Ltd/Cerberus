@@ -43,7 +43,7 @@ class Information(utils.Cog):
         window_days = window_days or self.bot.guild_settings[ctx.guild.id]['activity_window_days']
         return await self.make_graph(ctx, [user.id], window_days, colours={user.id: "000000"}, segments=segments_per_window_datapoint)
 
-    @commands.command(cls=utils.Command, hidden=True, cooldown_after_parsing=True)
+    @commands.command(cls=utils.Command, hidden=True, cooldown_after_parsing=True, add_slash_command=False)
     @commands.bot_has_permissions(send_messages=True, embed_links=True)
     @utils.cooldown.cooldown(1, 60, commands.BucketType.user, cls=utils.cooldown.Cooldown(mapping=utils.cooldown.GroupedCooldownMapping("graph")))
     @commands.guild_only()
@@ -59,7 +59,7 @@ class Information(utils.Cog):
         window_days = window_days or self.bot.guild_settings[ctx.guild.id]['activity_window_days']
         await self.make_graph(ctx, users, window_days, segments=segments_per_window_datapoint)
 
-    @commands.command(cls=utils.Command, hidden=True, cooldown_after_parsing=True)
+    @commands.command(cls=utils.Command, hidden=True, cooldown_after_parsing=True, add_slash_command=False)
     @commands.bot_has_permissions(send_messages=True, embed_links=True)
     @utils.cooldown.cooldown(1, 60, commands.BucketType.user, cls=utils.cooldown.Cooldown(mapping=utils.cooldown.GroupedCooldownMapping("graph")))
     @commands.guild_only()
@@ -297,7 +297,7 @@ class Information(utils.Cog):
         else:
             await ctx.send(f"<@!{users[0]}>'s graph in a {window_days} day window{(' (' + truncation + ')') if truncation else ''}, showing average activity over each {self.bot.guild_settings[ctx.guild.id]['activity_window_days']} day period.", embed=embed, file=discord.File("activity.png"), allowed_mentions=discord.AllowedMentions(users=False))
 
-    @commands.command(cls=utils.Command, cooldown_after_parsing=True)
+    @commands.command(cls=utils.Command, cooldown_after_parsing=True, add_slash_command=False)
     @commands.bot_has_permissions(send_messages=True, embed_links=True)
     @utils.cooldown.cooldown(1, 60, commands.BucketType.user, cls=utils.cooldown.Cooldown(mapping=utils.cooldown.GroupedCooldownMapping("graph")))
     @commands.is_owner()
@@ -310,7 +310,7 @@ class Information(utils.Cog):
         user = user or ctx.author
         return await self.online_make_graph(ctx, [user.id], window_days, colours={user.id: "00ff00"}, segments=segments_per_window_datapoint)
 
-    @commands.command(cls=utils.Command, cooldown_after_parsing=True)
+    @commands.command(cls=utils.Command, cooldown_after_parsing=True, add_slash_command=False)
     @commands.bot_has_permissions(send_messages=True, embed_links=True)
     @utils.cooldown.cooldown(1, 60, commands.BucketType.user, cls=utils.cooldown.Cooldown(mapping=utils.cooldown.GroupedCooldownMapping("graph")))
     @commands.is_owner()
