@@ -135,6 +135,7 @@ class Information(utils.Cog):
         """
 
         default_days = self.bot.guild_settings[ctx.guild.id]['activity_window_days']
+        days = days or default_days
         days = days if days > 0 else default_days
         user = user or ctx.author
         async with self.bot.database() as db:
