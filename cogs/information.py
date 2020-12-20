@@ -193,7 +193,7 @@ class Information(utils.Cog):
         # Output nicely
         output = []
         activity_window_days = self.bot.guild_settings[ctx.guild.id]['activity_window_days']
-        for threshold, role, counter in role_object_data:
+        for threshold, role, counter in role_object_data_with_counts:
             output.append(f"**{role.name}** :: `{threshold}` tracked messages every {activity_window_days} days ({counter} current members)")
         return await ctx.send('\n'.join(output))
 
