@@ -176,10 +176,25 @@ class Information(utils.Cog):
             return await ctx.send("There are no roles set up for this guild.")
         role_object_data = sorted([(threshold, ctx.guild.get_role(role_id)) for role_id, threshold in role_data.items() if ctx.guild.get_role(role_id)], key=lambda x: x[0], reverse=True)
 
+        # Get roles with member counts
+        role_object_data_with_counts = []
+        for index, (threshold, role) in enumerate(role_object_data):
+            counter = 0
+            for member in role.members:
+                should_count_member = True
+                for _, future_role in role_object_data[index + 1:]:
+                    if member in future_role.members:
+                        should_count_member = False
+                        break
+                if should_count_member:
+                    counter += 1
+            role_object_data_with_counts.append((threshold, role, counter))
+
         # Output nicely
         output = []
-        for threshold, role in role_object_data:
-            output.append(f"**{role.name}** :: `{threshold}` tracked messages every {self.bot.guild_settings[ctx.guild.id]['activity_window_days']} days")
+        activity_window_days = self.bot.guild_settings[ctx.guild.id]['activity_window_days']
+        for threshold, role, counter in role_object_data:
+            output.append(f"**{role.name}** :: `{threshold}` tracked messages every {activity_window_days} days ({counter} current members)")
         return await ctx.send('\n'.join(output))
 
     async def make_graph(self, ctx, users:typing.List[int], window_days:int, *, colours:dict=None, segments:int=None):
