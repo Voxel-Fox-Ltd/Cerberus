@@ -13,14 +13,21 @@ import voxelbotutils as utils
 
 class LeaderboardSource(menus.ListPageSource):
 
-    def __init__(self, bot, data, header):
+    def __init__(self, bot, guild_id, data, header):
         super().__init__(data, per_page=10)
         self.bot = bot
+        self.guild_id = guild_id
         self.header = header
 
     async def format_page(self, menu, entries):
-        clean_rows = [(i, o, j) for i, o, j in entries]
-        text = '\n'.join(f"**<@{i}>** - `{o + (j // 5):,}` (`{o:,}` text, `{utils.TimeValue(j * 60).clean or '0m'}` VC)" for i, o, j in clean_rows)
+        text = ""
+        for row in entries:
+            total_points = row[1] + (row[2] // 5) + (row[3] // 5)
+            vc_time = utils.TimeValue(row[2] * 60).clean or '0m'
+            if self.bot.guild_settings[self.guild_id]['minecraft_srv_authorization']:
+                text += f"**<@{row[0]}>** - `{total_points:,}` (`{row[1]:,}` text, `{vc_time}` VC, `{row[3]}` Minecraft)\n"
+            else:
+                text += f"**<@{row[0]}>** - `{total_points:,}` (`{row[1]:,}` text, `{vc_time}` VC)\n"
         max_page = math.ceil(len(self.entries) / self.per_page)
         return {
             "content": f"""__{self.header}:__\n{text}\n\nPage {menu.current_page + 1} of {max_page}""",
@@ -103,16 +110,27 @@ class Information(utils.Cog):
                     ORDER BY COUNT(timestamp) DESC LIMIT 30;""",
                     ctx.guild.id, days,
                 )
+                if self.bot.guild_settings[ctx.guild.id]['minecraft_srv_authorization']:
+                    minecraft_rows = await db(
+                        """SELECT user_id, COUNT(timestamp) FROM minecraft_server_activity WHERE guild_id=$1 AND
+                        timestamp > TIMEZONE('UTC', NOW()) - MAKE_INTERVAL(days => $2) GROUP BY user_id
+                        ORDER BY COUNT(timestamp) DESC LIMIT 30;""",
+                        ctx.guild.id, days,
+                    )
+                else:
+                    minecraft_rows = []
 
             # Sort that into more formattable data
-            user_data_dict = collections.defaultdict({'message_count': 0, 'vc_minute_count': 0}.copy)  # uid: {message_count: int, vc_minute_count: int}
+            user_data_dict = collections.defaultdict({'message_count': 0, 'vc_minute_count': 0, 'minecraft_minute_count': 0}.copy)  # uid: {message_count: int, vc_minute_count: int}
             for row in message_rows:
                 user_data_dict[row['user_id']]['message_count'] = row['count']
             for row in vc_rows:
                 user_data_dict[row['user_id']]['vc_minute_count'] = row['count']
+            for row in minecraft_rows:
+                user_data_dict[row['user_id']]['minecraft_minute_count'] = row['count']
 
             # And now make it into something we can sort
-            guild_user_data = [(uid, d['message_count'], d['vc_minute_count']) for uid, d in user_data_dict.items()]
+            guild_user_data = [(uid, d['message_count'], d['vc_minute_count'], d['minecraft_minute_count']) for uid, d in user_data_dict.items()]
             valid_guild_user_data = []
             for i in guild_user_data:
                 try:
@@ -120,11 +138,11 @@ class Information(utils.Cog):
                         valid_guild_user_data.append(i)
                 except discord.HTTPException:
                     pass
-            ordered_guild_user_data = sorted(valid_guild_user_data, key=lambda k: k[1] + (k[2] // 5), reverse=True)
+            ordered_guild_user_data = sorted(valid_guild_user_data, key=lambda k: k[1] + (k[2] // 5) + (k[3] // 5), reverse=True)
 
         # Make menu
         pages = menus.MenuPages(
-            source=LeaderboardSource(self.bot, ordered_guild_user_data, f"Tracked Points over {days} days"),
+            source=LeaderboardSource(self.bot, ctx.guild.id, ordered_guild_user_data, f"Tracked Points over {days} days"),
             clear_reactions_after=True
         )
         return await pages.start(ctx)
@@ -152,6 +170,14 @@ class Information(utils.Cog):
                 AND timestamp > TIMEZONE('UTC', NOW()) - MAKE_INTERVAL(days => $3 * 1) GROUP BY user_id""",
                 ctx.guild.id, user.id, days,
             )
+            if self.bot.guild_settings[ctx.guild.id]['minecraft_srv_authorization']:
+                minecraft_rows = await db(
+                    """SELECT user_id, COUNT(timestamp) FROM minecraft_server_activity WHERE guild_id=$1 AND user_id=$2
+                    AND timestamp > TIMEZONE('UTC', NOW()) - MAKE_INTERVAL(days => $3 * 1) GROUP BY user_id""",
+                    ctx.guild.id, user.id, days,
+                )
+            else:
+                minecraft_rows = []
         try:
             text = message_rows[0]['count']
         except IndexError:
@@ -160,7 +186,14 @@ class Information(utils.Cog):
             vc = vc_rows[0]['count']
         except IndexError:
             vc = 0
-        await ctx.send(f"Over the past {days} days, {user.mention} has gained **{text:,}** tracked messages and been in VC for **{utils.TimeValue(vc * 60).clean or '0m'}**, giving them a total of **{text + (vc // 5):,}** points.", allowed_mentions=discord.AllowedMentions(users=[ctx.author]))
+        try:
+            mc = minecraft_rows[0]['count']
+        except IndexError:
+            mc = 0
+        if self.bot.guild_settings[ctx.guild.id]['minecraft_srv_authorization']:
+            await ctx.send(f"Over the past {days} days, {user.mention} has gained **{text:,}** tracked messages, has been in VC for **{utils.TimeValue(vc * 60).clean or '0m'}**, and has been on the Minecraft server for **{utils.TimeValue(mc * 60).clean or '0m'}**, giving them a total of **{text + (vc // 5) + (mc // 5):,}** points.", allowed_mentions=discord.AllowedMentions(users=[ctx.author]))
+        else:
+            await ctx.send(f"Over the past {days} days, {user.mention} has gained **{text:,}** tracked messages and been in VC for **{utils.TimeValue(vc * 60).clean or '0m'}**, giving them a total of **{text + (vc // 5):,}** points.", allowed_mentions=discord.AllowedMentions(users=[ctx.author]))
 
     @commands.command(aliases=['dynamicroles', 'dyroles', 'dynroles', 'droles'], cls=utils.Command, hidden=True)
     @commands.bot_has_permissions(send_messages=True)
