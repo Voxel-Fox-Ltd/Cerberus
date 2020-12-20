@@ -227,7 +227,7 @@ class Information(utils.Cog):
         output = []
         activity_window_days = self.bot.guild_settings[ctx.guild.id]['activity_window_days']
         for threshold, role, counter in role_object_data_with_counts:
-            output.append(f"**{role.name}** :: `{threshold}` tracked messages every {activity_window_days} days ({counter} current members)")
+            output.append(f"**{role.name}** :: `{threshold}` tracked activity every {activity_window_days} days ({counter} current members)")
         return await ctx.send('\n'.join(output))
 
     async def make_graph(self, ctx, users:typing.List[int], window_days:int, *, colours:dict=None, segments:int=None):
@@ -291,7 +291,18 @@ class Information(utils.Cog):
                 )
                 for row in vc_rows:
                     points_per_week[user_id][row['generate_series'] - 1] += row['count'] // 5
-                self.logger.info(points_per_week[user_id])
+                mc_rows = await db(
+                    """SELECT COUNT(timestamp) AS count, generate_series
+                    FROM minecraft_server_activity, generate_series(1, $3)
+                    WHERE
+                        user_id=$1 AND guild_id=$2
+                        AND timestamp > TIMEZONE('UTC', NOW()) - MAKE_INTERVAL(days => $3) + (MAKE_INTERVAL(days => 1) * generate_series) - MAKE_INTERVAL(days => $4)
+                        AND timestamp <= TIMEZONE('UTC', NOW()) - MAKE_INTERVAL(days => $3) + (MAKE_INTERVAL(days => 1) * generate_series)
+                    GROUP BY generate_series ORDER BY generate_series ASC""",
+                    user_id, ctx.guild.id, window_days, self.bot.guild_settings[ctx.guild.id]['activity_window_days'],
+                )
+                for row in mc_rows:
+                    points_per_week[user_id][row['generate_series'] - 1] += row['count'] // 5
 
         # Don't bother uploading if they've not got any data
         if sum([sum(user_points) for user_points in points_per_week.values()]) == 0:

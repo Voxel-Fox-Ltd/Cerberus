@@ -103,6 +103,11 @@ class RoleHandler(utils.Cog):
             AND timestamp > TIMEZONE('UTC', NOW()) - MAKE_INTERVAL(days => $3) GROUP BY user_id""",
             user.guild.id, user.id, self.bot.guild_settings[user.guild.id]['activity_window_days'],
         )
+        mc_rows = await db(
+            """SELECT user_id, COUNT(timestamp) FROM minecraft_server_activity WHERE guild_id=$1 AND user_id=$2
+            AND timestamp > TIMEZONE('UTC', NOW()) - MAKE_INTERVAL(days => $3) GROUP BY user_id""",
+            user.guild.id, user.id, self.bot.guild_settings[user.guild.id]['activity_window_days'],
+        )
         if close_db:
             await db.disconnect()
 
@@ -115,7 +120,11 @@ class RoleHandler(utils.Cog):
             vc_points = vc_rows[0]['count']
         except IndexError:
             vc_points = 0
-        points_in_week = text_points + (vc_points // 5)  # Add how many points they got in that week
+        try:
+            mc_points = mc_rows[0]['count']
+        except IndexError:
+            mc_points = 0
+        points_in_week = text_points + (vc_points // 5) + (mc_points // 5)  # Add how many points they got in that week
 
         # Run for each role
         added_top_role = False
