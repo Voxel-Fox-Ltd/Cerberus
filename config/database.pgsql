@@ -2,7 +2,8 @@ CREATE TABLE IF NOT EXISTS guild_settings(
     guild_id BIGINT PRIMARY KEY,
     prefix VARCHAR(30),
     remove_old_roles BOOLEAN NOT NULL DEFAULT FALSE,
-    activity_window_days SMALLINT NOT NULL DEFAULT 7
+    activity_window_days SMALLINT NOT NULL DEFAULT 7,
+    minecraft_srv_authorization TEXT
 );
 
 
@@ -19,6 +20,13 @@ CREATE TABLE IF NOT EXISTS user_vc_activity(
     guild_id BIGINT,
     timestamp TIMESTAMP,
     channel_id BIGINT
+);
+
+
+CREATE TABLE IF NOT EXISTS minecraft_server_activity(
+    user_id BIGINT,
+    guild_id BIGINT,
+    timestamp TIMESTAMP
 );
 
 
