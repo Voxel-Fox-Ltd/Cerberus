@@ -207,7 +207,7 @@ class Information(utils.Cog):
         role_data = self.bot.guild_settings[ctx.guild.id]['role_gain']
         if not role_data:
             return await ctx.send("There are no roles set up for this guild.")
-        role_object_data = sorted([(threshold, ctx.guild.get_role(role_id)) for role_id, threshold in role_data.items() if ctx.guild.get_role(role_id)], key=lambda x: x[0])
+        role_object_data = sorted([(threshold, ctx.guild.get_role(role_id)) for role_id, threshold in role_data.items() if ctx.guild.get_role(role_id)], key=lambda x: x[0], reverse=True)
 
         # Get roles with member counts
         counted_users = set()
@@ -220,7 +220,7 @@ class Information(utils.Cog):
         # Output nicely
         output = []
         activity_window_days = self.bot.guild_settings[ctx.guild.id]['activity_window_days']
-        for threshold, role, counter in role_object_data_with_counts[::-1]:
+        for threshold, role, counter in role_object_data_with_counts:
             output.append(f"**{role.name}** :: `{threshold}` tracked activity every {activity_window_days} days ({counter} current members)")
         return await ctx.send('\n'.join(output))
 
