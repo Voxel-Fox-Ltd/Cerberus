@@ -210,17 +210,11 @@ class Information(utils.Cog):
         role_object_data = sorted([(threshold, ctx.guild.get_role(role_id)) for role_id, threshold in role_data.items() if ctx.guild.get_role(role_id)], key=lambda x: x[0])
 
         # Get roles with member counts
+        counted_users = set()
         role_object_data_with_counts = []
         for index, (threshold, role) in enumerate(role_object_data):
-            counter = 0
-            for member in role.members:
-                should_count_member = True
-                for _, future_role in role_object_data[index + 1:]:
-                    if member in future_role.members:
-                        should_count_member = False
-                        break
-                if should_count_member:
-                    counter += 1
+            counter = len([i for i in role.members if i not in counted_users])
+            counted_users.update(role.members)
             role_object_data_with_counts.append((threshold, role, counter))
 
         # Output nicely
