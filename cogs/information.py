@@ -37,7 +37,7 @@ class LeaderboardSource(menus.ListPageSource):
 
 class Information(utils.Cog):
 
-    @commands.command(cls=utils.Command, cooldown_after_parsing=True)
+    @utils.command(cooldown_after_parsing=True)
     @commands.bot_has_permissions(send_messages=True, embed_links=True)
     @utils.cooldown.cooldown(1, 60, commands.BucketType.user, cls=utils.cooldown.Cooldown(mapping=utils.cooldown.GroupedCooldownMapping("graph")))
     @commands.guild_only()
@@ -50,7 +50,7 @@ class Information(utils.Cog):
         window_days = window_days or self.bot.guild_settings[ctx.guild.id]['activity_window_days']
         return await self.make_graph(ctx, [user.id], window_days, colours={user.id: "000000"}, segments=None)
 
-    @commands.command(cls=utils.Command, hidden=True, cooldown_after_parsing=True, add_slash_command=False)
+    @utils.command(hidden=True, cooldown_after_parsing=True, add_slash_command=False)
     @commands.bot_has_permissions(send_messages=True, embed_links=True)
     @utils.cooldown.cooldown(1, 60, commands.BucketType.user, cls=utils.cooldown.Cooldown(mapping=utils.cooldown.GroupedCooldownMapping("graph")))
     @commands.guild_only()
@@ -66,7 +66,7 @@ class Information(utils.Cog):
         window_days = window_days or self.bot.guild_settings[ctx.guild.id]['activity_window_days']
         await self.make_graph(ctx, users, window_days, segments=None)
 
-    @commands.command(cls=utils.Command, hidden=True, cooldown_after_parsing=True, add_slash_command=False)
+    @utils.command(hidden=True, cooldown_after_parsing=True, add_slash_command=False)
     @commands.bot_has_permissions(send_messages=True, embed_links=True)
     @utils.cooldown.cooldown(1, 60, commands.BucketType.user, cls=utils.cooldown.Cooldown(mapping=utils.cooldown.GroupedCooldownMapping("graph")))
     @commands.guild_only()
@@ -78,7 +78,7 @@ class Information(utils.Cog):
         window_days = window_days or self.bot.guild_settings[ctx.guild.id]['activity_window_days']
         await self.make_graph(ctx, [i.id for i in role.members], window_days, segments=None)
 
-    @commands.command(aliases=['dynamicleaderboard', 'dlb', 'dylb', 'dynlb', 'lb'], cls=utils.Command)
+    @utils.command(aliases=['dynamicleaderboard', 'dlb', 'dylb', 'dynlb', 'lb'])
     @commands.bot_has_permissions(send_messages=True, embed_links=True)
     @commands.guild_only()
     async def leaderboard(self, ctx:utils.Context, days:int=None):
@@ -147,7 +147,7 @@ class Information(utils.Cog):
         )
         return await pages.start(ctx)
 
-    @commands.command(aliases=['dynamic', 'dyn', 'dy', 'd', 'dpoints', 'dpoint', 'rank'], cls=utils.Command)
+    @utils.command(aliases=['dynamic', 'dyn', 'dy', 'd', 'dpoints', 'dpoint', 'rank'])
     @commands.bot_has_permissions(send_messages=True)
     @commands.guild_only()
     async def points(self, ctx:utils.Context, user:typing.Optional[discord.Member]=None, days:int=None):
@@ -195,7 +195,7 @@ class Information(utils.Cog):
         else:
             await ctx.send(f"Over the past {days} days, {user.mention} has gained **{text:,}** tracked messages and been in VC for **{utils.TimeValue(vc * 60).clean or '0m'}**, giving them a total of **{text + (vc // 5):,}** points.", allowed_mentions=discord.AllowedMentions(users=[ctx.author]))
 
-    @commands.command(aliases=['dynamicroles', 'dyroles', 'dynroles', 'droles'], cls=utils.Command, hidden=True)
+    @utils.command(aliases=['dynamicroles', 'dyroles', 'dynroles', 'droles'])
     @commands.bot_has_permissions(send_messages=True)
     @commands.guild_only()
     async def roles(self, ctx:utils.Context):
@@ -350,7 +350,7 @@ class Information(utils.Cog):
         else:
             await ctx.send(f"<@!{users[0]}>'s graph in a {window_days} day window{(' (' + truncation + ')') if truncation else ''}, showing average activity over each {self.bot.guild_settings[ctx.guild.id]['activity_window_days']} day period.", embed=embed, file=discord.File("activity.png"), allowed_mentions=discord.AllowedMentions(users=False))
 
-    @commands.command(cls=utils.Command, cooldown_after_parsing=True, add_slash_command=False)
+    @utils.command(cooldown_after_parsing=True, add_slash_command=False)
     @commands.bot_has_permissions(send_messages=True, embed_links=True)
     @utils.cooldown.cooldown(1, 60, commands.BucketType.user, cls=utils.cooldown.Cooldown(mapping=utils.cooldown.GroupedCooldownMapping("graph")))
     @commands.is_owner()
@@ -363,7 +363,7 @@ class Information(utils.Cog):
         user = user or ctx.author
         return await self.online_make_graph(ctx, [user.id], window_days, colours={user.id: "00ff00"}, segments=segments_per_window_datapoint)
 
-    @commands.command(cls=utils.Command, cooldown_after_parsing=True, add_slash_command=False)
+    @utils.command(cooldown_after_parsing=True, add_slash_command=False)
     @commands.bot_has_permissions(send_messages=True, embed_links=True)
     @utils.cooldown.cooldown(1, 60, commands.BucketType.user, cls=utils.cooldown.Cooldown(mapping=utils.cooldown.GroupedCooldownMapping("graph")))
     @commands.is_owner()

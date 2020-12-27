@@ -4,7 +4,7 @@ import voxelbotutils as utils
 
 class BotSettings(utils.Cog):
 
-    @commands.group(cls=utils.Group)
+    @utils.group()
     @commands.has_permissions(manage_guild=True)
     @commands.bot_has_permissions(send_messages=True, embed_links=True, add_reactions=True)
     @commands.guild_only()
@@ -50,7 +50,7 @@ class BotSettings(utils.Cog):
         except utils.errors.InvokedMetaCommand:
             pass
 
-    @setup.command(cls=utils.Command)
+    @setup.command()
     @utils.checks.meta_command()
     async def roles(self, ctx:utils.Context):
         """
@@ -70,7 +70,7 @@ class BotSettings(utils.Cog):
         )
         await menu.start(ctx)
 
-    @setup.command(cls=utils.Command)
+    @setup.command()
     @utils.checks.meta_command()
     async def blacklistedchannels(self, ctx:utils.Context):
         """
@@ -89,7 +89,7 @@ class BotSettings(utils.Cog):
         )
         await menu.start(ctx)
 
-    @setup.command(cls=utils.Command)
+    @setup.command()
     @utils.checks.meta_command()
     async def blacklistedroles(self, ctx:utils.Context):
         """
@@ -108,7 +108,7 @@ class BotSettings(utils.Cog):
         )
         await menu.start(ctx)
 
-    @setup.command(cls=utils.Command)
+    @setup.command()
     @utils.checks.meta_command()
     async def blacklistedvcroles(self, ctx:utils.Context):
         """
@@ -127,7 +127,7 @@ class BotSettings(utils.Cog):
         )
         await menu.start(ctx)
 
-    @commands.group(cls=utils.Group, enabled=False)
+    @utils.group(enabled=False)
     @commands.bot_has_permissions(send_messages=True, embed_links=True, add_reactions=True)
     @utils.cooldown.cooldown(1, 60, commands.BucketType.member)
     @commands.guild_only()
