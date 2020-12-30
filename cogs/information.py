@@ -345,6 +345,7 @@ class Information(utils.Cog):
         fig.savefig('activity.png', bbox_inches='tight', pad_inches=0)
         with utils.Embed() as embed:
             embed.set_image(url="attachment://activity.png")
+        ctx._set_footer(embed)
         if len(points_per_week) > 1:
             await ctx.send(f"Activity graph in a {window_days} day window{(' (' + truncation + ')') if truncation else ''}, showing average activity over each {self.bot.guild_settings[ctx.guild.id]['activity_window_days']} day period.", embed=embed, file=discord.File("activity.png"))
         else:
