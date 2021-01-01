@@ -222,7 +222,7 @@ class Information(utils.Cog):
         activity_window_days = self.bot.guild_settings[ctx.guild.id]['activity_window_days']
         for threshold, role, counter in role_object_data_with_counts:
             output.append(f"**{role.mention}** :: `{threshold:,}` tracked activity every {activity_window_days} days ({counter:,} current members)")
-        return await ctx.send('\n'.join(output), allowed_mentions=discord.AllowedMentions(everyone=False, users=False, roles=False))
+        return await ctx.send('\n'.join(output), allowed_mentions=discord.AllowedMentions.none())
 
     async def make_graph(self, ctx, users:typing.List[int], window_days:int, *, colours:dict=None, segments:int=None):
         """
