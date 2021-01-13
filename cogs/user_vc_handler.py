@@ -43,6 +43,11 @@ class UserVCHandler(utils.Cog):
         # Grab VCs where there's multiple people in them
         voice_members: typing.List[typing.Tuple[int, int]] = []  # (uid, gid)...
         for vc in voice_channels:
+            try:
+                _ = vc.id
+                _ = vc.guild.id
+            except AttributeError:
+                continue
             non_bot_users = [(user_id, state) for user_id, state in vc.voice_states.items() if self.bot.get_user(user_id) and self.bot.get_user(user_id).bot is False]
             if len(non_bot_users) > 1:
                 voice_members.extend([(user_id, vc.guild.id, vc.id) for user_id, state in non_bot_users if self.valid_voice_state(state)])
