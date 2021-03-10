@@ -246,10 +246,10 @@ class Information(utils.Cog):
                     FROM user_messages, generate_series(1, $3)
                     WHERE
                         user_id=$1 AND guild_id=$2
-                        AND timestamp > TIMEZONE('UTC', NOW()) - MAKE_INTERVAL({interval} => $3) + (MAKE_INTERVAL({interval} => 1) * generate_series) - MAKE_INTERVAL({interval} => $4)
+                        AND timestamp > TIMEZONE('UTC', NOW()) - MAKE_INTERVAL({interval} => $3) + (MAKE_INTERVAL({interval} => 1) * generate_series) - MAKE_INTERVAL(days => $4)
                         AND timestamp <= TIMEZONE('UTC', NOW()) - MAKE_INTERVAL({interval} => $3) + (MAKE_INTERVAL({interval} => 1) * generate_series)
                     GROUP BY generate_series ORDER BY generate_series ASC""".format(interval=window_interval[0]),
-                    user_id, ctx.guild.id, window_days, self.bot.guild_settings[ctx.guild.id]['activity_window_days'],
+                    user_id, ctx.guild.id, window_days * window_interval[1], self.bot.guild_settings[ctx.guild.id]['activity_window_days'],
                 )
                 for row in message_rows:
                     points_per_week[user_id][row['generate_series'] - 1] += row['count']
@@ -258,10 +258,10 @@ class Information(utils.Cog):
                     FROM user_vc_activity, generate_series(1, $3)
                     WHERE
                         user_id=$1 AND guild_id=$2
-                        AND timestamp > TIMEZONE('UTC', NOW()) - MAKE_INTERVAL({interval} => $3) + (MAKE_INTERVAL({interval} => 1) * generate_series) - MAKE_INTERVAL({interval} => $4)
+                        AND timestamp > TIMEZONE('UTC', NOW()) - MAKE_INTERVAL({interval} => $3) + (MAKE_INTERVAL({interval} => 1) * generate_series) - MAKE_INTERVAL(days => $4)
                         AND timestamp <= TIMEZONE('UTC', NOW()) - MAKE_INTERVAL({interval} => $3) + (MAKE_INTERVAL({interval} => 1) * generate_series)
                     GROUP BY generate_series ORDER BY generate_series ASC""".format(interval=window_interval[0]),
-                    user_id, ctx.guild.id, window_days, self.bot.guild_settings[ctx.guild.id]['activity_window_days'],
+                    user_id, ctx.guild.id, window_days * window_interval[1], self.bot.guild_settings[ctx.guild.id]['activity_window_days'],
                 )
                 for row in vc_rows:
                     points_per_week[user_id][row['generate_series'] - 1] += row['count'] // 5
@@ -270,10 +270,10 @@ class Information(utils.Cog):
                     FROM minecraft_server_activity, generate_series(1, $3)
                     WHERE
                         user_id=$1 AND guild_id=$2
-                        AND timestamp > TIMEZONE('UTC', NOW()) - MAKE_INTERVAL({interval} => $3) + (MAKE_INTERVAL({interval} => 1) * generate_series) - MAKE_INTERVAL({interval} => $4)
+                        AND timestamp > TIMEZONE('UTC', NOW()) - MAKE_INTERVAL({interval} => $3) + (MAKE_INTERVAL({interval} => 1) * generate_series) - MAKE_INTERVAL(days => $4)
                         AND timestamp <= TIMEZONE('UTC', NOW()) - MAKE_INTERVAL({interval} => $3) + (MAKE_INTERVAL({interval} => 1) * generate_series)
                     GROUP BY generate_series ORDER BY generate_series ASC""".format(interval=window_interval[0]),
-                    user_id, ctx.guild.id, window_days, self.bot.guild_settings[ctx.guild.id]['activity_window_days'],
+                    user_id, ctx.guild.id, window_days * window_interval[1], self.bot.guild_settings[ctx.guild.id]['activity_window_days'],
                 )
                 for row in mc_rows:
                     points_per_week[user_id][row['generate_series'] - 1] += row['count'] // 5
