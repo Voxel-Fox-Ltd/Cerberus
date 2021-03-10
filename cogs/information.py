@@ -231,11 +231,13 @@ class Information(utils.Cog):
             truncation = f"shortened from your original request of {original} days as I haven't been in the guild that long"
 
         # Make sure there's actually a day
-        if window_days == 0:
-            window_days = 1
+        window_interval = ('days', 1,)
+        if window_days <= 2:
+            window_days = 2
+            window_interval = ('hours', 24,)
 
         # Go through each day and work out how many points it has
-        points_per_week_base = [0 for _ in range(window_days)]  # A list of the amount of points the user have in each given day (index)
+        points_per_week_base = [0 for _ in range(window_days * window_interval[1])]  # A list of the amount of points the user have in each given day (index)
         points_per_week = collections.defaultdict(points_per_week_base.copy)
         async with self.bot.database() as db:
             for user_id in users:
@@ -244,9 +246,9 @@ class Information(utils.Cog):
                     FROM user_messages, generate_series(1, $3)
                     WHERE
                         user_id=$1 AND guild_id=$2
-                        AND timestamp > TIMEZONE('UTC', NOW()) - MAKE_INTERVAL(days => $3) + (MAKE_INTERVAL(days => 1) * generate_series) - MAKE_INTERVAL(days => $4)
-                        AND timestamp <= TIMEZONE('UTC', NOW()) - MAKE_INTERVAL(days => $3) + (MAKE_INTERVAL(days => 1) * generate_series)
-                    GROUP BY generate_series ORDER BY generate_series ASC""",
+                        AND timestamp > TIMEZONE('UTC', NOW()) - MAKE_INTERVAL({interval} => $3) + (MAKE_INTERVAL({interval} => 1) * generate_series) - MAKE_INTERVAL({interval} => $4)
+                        AND timestamp <= TIMEZONE('UTC', NOW()) - MAKE_INTERVAL({interval} => $3) + (MAKE_INTERVAL({interval} => 1) * generate_series)
+                    GROUP BY generate_series ORDER BY generate_series ASC""".format(interval=window_interval[0]),
                     user_id, ctx.guild.id, window_days, self.bot.guild_settings[ctx.guild.id]['activity_window_days'],
                 )
                 for row in message_rows:
@@ -256,9 +258,9 @@ class Information(utils.Cog):
                     FROM user_vc_activity, generate_series(1, $3)
                     WHERE
                         user_id=$1 AND guild_id=$2
-                        AND timestamp > TIMEZONE('UTC', NOW()) - MAKE_INTERVAL(days => $3) + (MAKE_INTERVAL(days => 1) * generate_series) - MAKE_INTERVAL(days => $4)
-                        AND timestamp <= TIMEZONE('UTC', NOW()) - MAKE_INTERVAL(days => $3) + (MAKE_INTERVAL(days => 1) * generate_series)
-                    GROUP BY generate_series ORDER BY generate_series ASC""",
+                        AND timestamp > TIMEZONE('UTC', NOW()) - MAKE_INTERVAL({interval} => $3) + (MAKE_INTERVAL({interval} => 1) * generate_series) - MAKE_INTERVAL({interval} => $4)
+                        AND timestamp <= TIMEZONE('UTC', NOW()) - MAKE_INTERVAL({interval} => $3) + (MAKE_INTERVAL({interval} => 1) * generate_series)
+                    GROUP BY generate_series ORDER BY generate_series ASC""".format(interval=window_interval[0]),
                     user_id, ctx.guild.id, window_days, self.bot.guild_settings[ctx.guild.id]['activity_window_days'],
                 )
                 for row in vc_rows:
@@ -268,9 +270,9 @@ class Information(utils.Cog):
                     FROM minecraft_server_activity, generate_series(1, $3)
                     WHERE
                         user_id=$1 AND guild_id=$2
-                        AND timestamp > TIMEZONE('UTC', NOW()) - MAKE_INTERVAL(days => $3) + (MAKE_INTERVAL(days => 1) * generate_series) - MAKE_INTERVAL(days => $4)
-                        AND timestamp <= TIMEZONE('UTC', NOW()) - MAKE_INTERVAL(days => $3) + (MAKE_INTERVAL(days => 1) * generate_series)
-                    GROUP BY generate_series ORDER BY generate_series ASC""",
+                        AND timestamp > TIMEZONE('UTC', NOW()) - MAKE_INTERVAL({interval} => $3) + (MAKE_INTERVAL({interval} => 1) * generate_series) - MAKE_INTERVAL({interval} => $4)
+                        AND timestamp <= TIMEZONE('UTC', NOW()) - MAKE_INTERVAL({interval} => $3) + (MAKE_INTERVAL({interval} => 1) * generate_series)
+                    GROUP BY generate_series ORDER BY generate_series ASC""".format(interval=window_interval[0]),
                     user_id, ctx.guild.id, window_days, self.bot.guild_settings[ctx.guild.id]['activity_window_days'],
                 )
                 for row in mc_rows:
@@ -295,7 +297,7 @@ class Information(utils.Cog):
             else:
                 colour = format(hex(random.randint(0, 0xffffff))[2:], "0>6")
             rgb_colour = tuple(int(colour[x:x + 2], 16) / 255 for x in (0, 2, 4))
-            ax.plot(list(range(window_days)), points, 'k-', label=str(self.bot.get_user(user)) or user, color=rgb_colour)
+            ax.plot(list(range(window_days * window_interval[1])), points, 'k-', label=str(self.bot.get_user(user)) or user, color=rgb_colour)
         if len(points_per_week) > 1:
             fig.legend(loc="upper left")
 
@@ -305,7 +307,7 @@ class Information(utils.Cog):
             graph_height = max([role_object_data[-1][0] + MINOR_AXIS_STOP, math.ceil((max([max(i) for i in points_per_week.values()]) + 1) / MINOR_AXIS_STOP) * MINOR_AXIS_STOP])
         else:
             graph_height = math.ceil((max([max(i) for i in points_per_week.values()]) + 1) / MINOR_AXIS_STOP) * MINOR_AXIS_STOP
-        ax.axis([0, window_days, 0, graph_height])
+        ax.axis([0, window_days * window_interval[1], 0, graph_height])
 
         # Fix axies
         ax.axis('off')
