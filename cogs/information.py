@@ -110,7 +110,7 @@ class Information(utils.Cog):
                 for uid, d in user_data_dict.items()
                 if ctx.guild.get_member(uid)
             ]
-            ordered_guild_user_data = sorted(valid_guild_user_data, key=lambda k: k[1] + (k[2] // 5) + (k[3] // 5), reverse=True)
+            ordered_guild_user_data = sorted(valid_guild_user_data, key=lambda k: k['m'] + (k['vc'] // 5) + (k['mc'] // 5), reverse=True)
 
             # And now make it into strings
             ordered_guild_user_strings = []
