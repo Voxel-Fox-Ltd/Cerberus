@@ -6,33 +6,8 @@ from datetime import datetime as dt, timedelta
 
 import discord
 from discord.ext import commands
-from discord.ext import menus
 from matplotlib import pyplot as plt
 import voxelbotutils as utils
-
-
-class LeaderboardSource(menus.ListPageSource):
-
-    def __init__(self, bot, guild_id, data, header):
-        super().__init__(data, per_page=10)
-        self.bot = bot
-        self.guild_id = guild_id
-        self.header = header
-
-    async def format_page(self, menu, entries):
-        text = ""
-        for row in entries:
-            total_points = row[1] + (row[2] // 5) + (row[3] // 5)
-            vc_time = utils.TimeValue(row[2] * 60).clean or '0m'
-            if self.bot.guild_settings[self.guild_id]['minecraft_srv_authorization']:
-                text += f"**<@{row[0]}>** - `{total_points:,}` (`{row[1]:,}` text, `{vc_time}` VC, `{row[3]}` Minecraft)\n"
-            else:
-                text += f"**<@{row[0]}>** - `{total_points:,}` (`{row[1]:,}` text, `{vc_time}` VC)\n"
-        max_page = math.ceil(len(self.entries) / self.per_page)
-        return {
-            "content": f"""__{self.header}:__\n{text}\n\nPage {menu.current_page + 1} of {max_page}""",
-            "allowed_mentions": discord.AllowedMentions.none()
-        }
 
 
 class Information(utils.Cog):
@@ -130,22 +105,25 @@ class Information(utils.Cog):
                 user_data_dict[row['user_id']]['minecraft_minute_count'] = row['count']
 
             # And now make it into something we can sort
-            guild_user_data = [(uid, d['message_count'], d['vc_minute_count'], d['minecraft_minute_count']) for uid, d in user_data_dict.items()]
-            valid_guild_user_data = []
-            for i in guild_user_data:
-                try:
-                    if ctx.guild.get_member(i[0]) or await ctx.guild.fetch_member(i[0]):
-                        valid_guild_user_data.append(i)
-                except discord.HTTPException:
-                    pass
+            valid_guild_user_data = [
+                {'id': uid, 'm': d['message_count'], 'vc': d['vc_minute_count'], 'mc': d['minecraft_minute_count']}
+                for uid, d in user_data_dict.items()
+                if ctx.guild.get_member(uid)
+            ]
             ordered_guild_user_data = sorted(valid_guild_user_data, key=lambda k: k[1] + (k[2] // 5) + (k[3] // 5), reverse=True)
 
+            # And now make it into strings
+            ordered_guild_user_strings = []
+            for d in ordered_guild_user_data:
+                total_points = d['m'] + (d['vc'] // 5) + (d['mc'] // 5)
+                vc_time = utils.TimeValue(row['vc'] * 60).clean or '0m'
+                if self.bot.guild_settings[self.guild_id]['minecraft_srv_authorization']:
+                    ordered_guild_user_strings.append(f"**<@{d['id']}>** - `{total_points:,}` (`{d['m']:,}` text, `{vc_time}` VC, `{d['mc']:,}` Minecraft)\n")
+                else:
+                    ordered_guild_user_strings.append(f"**<@{d['id']}>** - `{total_points:,}` (`{d['m']:,}` text, `{vc_time}` VC)\n")
+
         # Make menu
-        pages = menus.MenuPages(
-            source=LeaderboardSource(self.bot, ctx.guild.id, ordered_guild_user_data, f"Tracked Points over {days} days"),
-            clear_reactions_after=True
-        )
-        return await pages.start(ctx)
+        return await utils.Paginator(ordered_guild_user_strings).start(ctx)
 
     @utils.command(aliases=['dynamic', 'dyn', 'dy', 'd', 'dpoints', 'dpoint', 'rank'])
     @commands.bot_has_permissions(send_messages=True)
