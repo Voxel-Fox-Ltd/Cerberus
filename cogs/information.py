@@ -118,12 +118,12 @@ class Information(utils.Cog):
                 total_points = d['m'] + (d['vc'] // 5) + (d['mc'] // 5)
                 vc_time = utils.TimeValue(d['vc'] * 60).clean or '0m'
                 if self.bot.guild_settings[ctx.guild.id]['minecraft_srv_authorization']:
-                    ordered_guild_user_strings.append(f"**<@{d['id']}>** - `{total_points:,}` (`{d['m']:,}` text, `{vc_time}` VC, `{d['mc']:,}` Minecraft)\n")
+                    ordered_guild_user_strings.append(f"**<@{d['id']}>** - **{total_points:,}** (**{d['m']:,}** text, **{vc_time}** VC, **{d['mc']:,}** Minecraft)")
                 else:
-                    ordered_guild_user_strings.append(f"**<@{d['id']}>** - `{total_points:,}` (`{d['m']:,}` text, `{vc_time}` VC)\n")
+                    ordered_guild_user_strings.append(f"**<@{d['id']}>** - **{total_points:,}** (**{d['m']:,}** text, **{vc_time}** VC)")
 
         # Make menu
-        return await utils.Paginator(ordered_guild_user_strings).start(ctx)
+        return await utils.Paginator(ordered_guild_user_strings, formatter=utils.Paginator.default_ranked_list_formatter).start(ctx)
 
     @utils.command(aliases=['dynamic', 'dyn', 'dy', 'd', 'dpoints', 'dpoint', 'rank'])
     @commands.bot_has_permissions(send_messages=True)
