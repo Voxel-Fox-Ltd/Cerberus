@@ -28,6 +28,11 @@ class BotSettings(utils.Cog):
                 'callback': utils.SettingsMenuOption.get_set_guild_settings_callback('guild_settings', 'remove_old_roles'),
             },
             {
+                'display': lambda c: "Set role interval time (currently {0} days)".format(settings_mention(c, 'activity_window_days')),
+                'converter_args': [("How many days should activity be tracked over?", "activity window", int)],
+                'callback': utils.SettingsMenuOption.get_set_guild_settings_callback('guild_settings', 'activity_window_days'),
+            },
+            {
                 'display': "Role gain settings",
                 'callback': self.bot.get_command("setup roles"),
             },
