@@ -76,20 +76,20 @@ class Information(utils.Cog):
                 message_rows = await db(
                     """SELECT user_id, COUNT(timestamp) FROM user_messages WHERE guild_id=$1 AND
                     timestamp > TIMEZONE('UTC', NOW()) - MAKE_INTERVAL(days => $2) GROUP BY user_id
-                    ORDER BY COUNT(timestamp) DESC LIMIT 30;""",
+                    ORDER BY COUNT(timestamp) DESC;""",
                     ctx.guild.id, days,
                 )
                 vc_rows = await db(
                     """SELECT user_id, COUNT(timestamp) FROM user_vc_activity WHERE guild_id=$1 AND
                     timestamp > TIMEZONE('UTC', NOW()) - MAKE_INTERVAL(days => $2) GROUP BY user_id
-                    ORDER BY COUNT(timestamp) DESC LIMIT 30;""",
+                    ORDER BY COUNT(timestamp) DESC;""",
                     ctx.guild.id, days,
                 )
                 if self.bot.guild_settings[ctx.guild.id]['minecraft_srv_authorization']:
                     minecraft_rows = await db(
                         """SELECT user_id, COUNT(timestamp) FROM minecraft_server_activity WHERE guild_id=$1 AND
                         timestamp > TIMEZONE('UTC', NOW()) - MAKE_INTERVAL(days => $2) GROUP BY user_id
-                        ORDER BY COUNT(timestamp) DESC LIMIT 30;""",
+                        ORDER BY COUNT(timestamp) DESC;""",
                         ctx.guild.id, days,
                     )
                 else:
