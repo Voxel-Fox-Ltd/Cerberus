@@ -18,37 +18,56 @@ class BotSettings(utils.Cog):
             return
 
         # Create settings menu
-        menu = utils.SettingsMenu()
         settings_mention = utils.SettingsMenuOption.get_guild_settings_mention
-        menu.bulk_add_options(
-            ctx,
-            {
-                'display': lambda c: "Remove old roles (currently {0})".format(settings_mention(c, 'remove_old_roles')),
-                'converter_args': [("Do you want to remove old roles when you get a new one?", "old role removal", utils.converters.BooleanConverter)],
-                'callback': utils.SettingsMenuOption.get_set_guild_settings_callback('guild_settings', 'remove_old_roles'),
-            },
-            {
-                'display': lambda c: "Set role interval time (currently {0} days)".format(settings_mention(c, 'activity_window_days')),
-                'converter_args': [("How many days should activity be tracked over?", "activity window", int)],
-                'callback': utils.SettingsMenuOption.get_set_guild_settings_callback('guild_settings', 'activity_window_days'),
-            },
-            {
-                'display': "Role gain settings",
-                'callback': self.bot.get_command("setup roles"),
-            },
-            {
-                'display': "Blacklisted channel settings",
-                'callback': self.bot.get_command("setup blacklistedchannels"),
-            },
-            {
-                'display': "Blacklisted role settings",
-                'callback': self.bot.get_command("setup blacklistedroles"),
-            },
-            {
-                'display': "Blacklisted VC role settings",
-                'callback': self.bot.get_command("setup blacklistedvcroles"),
-            },
+        menu = utils.SettingsMenu()
+        menu.add_multiple_options(
+            utils.SettingsMenuOption(
+                ctx=ctx,
+                display=lambda c: "Remove old roles (currently {0})".format(settings_mention(c, 'remove_old_roles')),
+                converter_args=(
+                    utils.SettingsMenuConverter(
+                        "Do you want to remove old roles when you get a new one?",
+                        "old role removal",
+                        utils.converters.BooleanConverter,
+                    ),
+                ),
+                callback=utils.SettingsMenuOption.get_set_guild_settings_callback('guild_settings', 'remove_old_roles'),
+            ),
+            utils.SettingsMenuOption(
+                ctx=ctx,
+                display=lambda c: "Set role interval time (currently {0} days)".format(settings_mention(c, 'activity_window_days')),
+                converter_args=(
+                    utils.SettingsMenuConverter(
+                        "How many days should activity be tracked over?",
+                        "activity window",
+                        int,
+                    ),
+                ),
+                callback=utils.SettingsMenuOption.get_set_guild_settings_callback('guild_settings', 'activity_window_days'),
+            ),
+            utils.SettingsMenuOption(
+                ctx=ctx,
+                display="Role gain settings",
+                callback=self.bot.get_command("setup roles"),
+            ),
+            utils.SettingsMenuOption(
+                ctx=ctx,
+                display="Blacklisted channel settings",
+                callback=self.bot.get_command("setup blacklistedchannels"),
+            ),
+            utils.SettingsMenuOption(
+                ctx=ctx,
+                display="Blacklisted role settings",
+                callback=self.bot.get_command("setup blacklistedroles"),
+            ),
+            utils.SettingsMenuOption(
+                ctx=ctx,
+                display="Blacklisted VC role settings",
+                callback=self.bot.get_command("setup blacklistedvcroles"),
+            ),
         )
+
+        # Run the menu
         try:
             await menu.start(ctx)
             await ctx.send("Done setting up!")
@@ -62,16 +81,25 @@ class BotSettings(utils.Cog):
         Run the bot setup.
         """
 
-        # Create settings menu
-        key_display_function = lambda k: getattr(ctx.guild.get_role(k), 'mention', 'none')
-        menu = utils.SettingsMenuIterableBase(cache_key='role_gain', key_display_function=key_display_function, value_display_function=str)
-        menu.add_convertable_value("What activity role would you like to add?", commands.RoleConverter)
-        menu.add_convertable_value("How many tracked messages does a user have to send over 7 days to get that role?", int)
-        menu.iterable_add_callback = utils.SettingsMenuOption.get_set_iterable_add_callback(
-            table_name="role_list", column_name="role_id", cache_key="role_gain", database_key="RoleGain"
-        )
-        menu.iterable_delete_callback = utils.SettingsMenuOption.get_set_iterable_delete_callback(
-            table_name="role_list", column_name="role_id", cache_key="role_gain", database_key="RoleGain"
+        menu = utils.SettingsMenuIterable(
+            table_name='role_list',
+            column_name='role_id',
+            cache_key='role_gain',
+            database_key='RoleGain',
+            key_display_function=lambda k: getattr(ctx.guild.get_role(k), 'mention', 'none'),
+            value_display_function=int,
+            converters=(
+                utils.SettingsMenuConverter(
+                    prompt="What activity role would you like to add?",
+                    asking_for="activity role",
+                    converter=commands.RoleConverter,
+                ),
+                utils.SettingsMenuConverter(
+                    prompt="How many tracked points does a user have earn to get that role?",
+                    asking_for="point amount",
+                    converter=int,
+                ),
+            ),
         )
         await menu.start(ctx)
 
@@ -82,15 +110,19 @@ class BotSettings(utils.Cog):
         Run the bot setup.
         """
 
-        # Create settings menu
-        key_display_function = lambda k: getattr(ctx.bot.get_channel(k), 'mention', 'none')
-        menu = utils.SettingsMenuIterableBase(cache_key='blacklisted_channels', key_display_function=key_display_function)
-        menu.add_convertable_value("What channel would you like to blacklist?", commands.TextChannelConverter)
-        menu.iterable_add_callback = utils.SettingsMenuOption.get_set_iterable_add_callback(
-            table_name="channel_list", column_name="channel_id", cache_key="blacklisted_channels", database_key="BlacklistedChannel"
-        )
-        menu.iterable_delete_callback = utils.SettingsMenuOption.get_set_iterable_delete_callback(
-            table_name="channel_list", column_name="channel_id", cache_key="blacklisted_channels", database_key="BlacklistedChannel"
+        menu = utils.SettingsMenuIterable(
+            table_name='channel_list',
+            column_name='channel_id',
+            cache_key='blacklisted_channels',
+            database_key='BlacklistedChannel',
+            key_display_function=lambda k: getattr(ctx.bot.get_channel(k), 'mention', 'none'),
+            converters=(
+                utils.SettingsMenuConverter(
+                    prompt="What channel would you like to blacklist users getting points in?",
+                    asking_for="blacklist channel",
+                    converter=commands.TextChannelConverter,
+                ),
+            ),
         )
         await menu.start(ctx)
 
@@ -101,15 +133,19 @@ class BotSettings(utils.Cog):
         Run the bot setup.
         """
 
-        # Create settings menu
-        key_display_function = lambda k: getattr(ctx.guild.get_role(k), 'mention', 'none')
-        menu = utils.SettingsMenuIterableBase(cache_key='blacklisted_text_roles', key_display_function=key_display_function)
-        menu.add_convertable_value("What channel would you like to blacklist?", commands.RoleConverter)
-        menu.iterable_add_callback = utils.SettingsMenuOption.get_set_iterable_add_callback(
-            table_name="role_list", column_name="role_id", cache_key="blacklisted_text_roles", database_key="BlacklistedRoles"
-        )
-        menu.iterable_delete_callback = utils.SettingsMenuOption.get_set_iterable_delete_callback(
-            table_name="role_list", column_name="role_id", cache_key="blacklisted_text_roles", database_key="BlacklistedRoles"
+        menu = utils.SettingsMenuIterable(
+            table_name='role_list',
+            column_name='role_id',
+            cache_key='blacklisted_text_roles',
+            database_key='BlacklistedRoles',
+            key_display_function=lambda k: getattr(ctx.guild.get_role(k), 'mention', 'none'),
+            converters=(
+                utils.SettingsMenuConverter(
+                    prompt="What role would you like to blacklist users getting points with?",
+                    asking_for="blacklist role",
+                    converter=commands.RoleConverter,
+                ),
+            ),
         )
         await menu.start(ctx)
 
@@ -120,15 +156,19 @@ class BotSettings(utils.Cog):
         Run the bot setup.
         """
 
-        # Create settings menu
-        key_display_function = lambda k: getattr(ctx.guild.get_role(k), 'mention', 'none')
-        menu = utils.SettingsMenuIterableBase(cache_key='blacklisted_vc_roles', key_display_function=key_display_function)
-        menu.add_convertable_value("What channel would you like to blacklist?", commands.RoleConverter)
-        menu.iterable_add_callback = utils.SettingsMenuOption.get_set_iterable_add_callback(
-            table_name="role_list", column_name="role_id", cache_key="blacklisted_vc_roles", database_key="BlacklistedVCRoles"
-        )
-        menu.iterable_delete_callback = utils.SettingsMenuOption.get_set_iterable_delete_callback(
-            table_name="role_list", column_name="role_id", cache_key="blacklisted_vc_roles", database_key="BlacklistedVCRoles"
+        menu = utils.SettingsMenuIterable(
+            table_name='role_list',
+            column_name='role_id',
+            cache_key='blacklisted_vc_roles',
+            database_key='BlacklistedVCRoles',
+            key_display_function=lambda k: getattr(ctx.guild.get_role(k), 'mention', 'none'),
+            converters=(
+                utils.SettingsMenuConverter(
+                    prompt="What role would you like to blacklist users getting VC points with?",
+                    asking_for="blacklist role",
+                    converter=commands.RoleConverter,
+                ),
+            ),
         )
         await menu.start(ctx)
 
