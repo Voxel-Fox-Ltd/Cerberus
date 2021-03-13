@@ -116,7 +116,7 @@ class Information(utils.Cog):
             ordered_guild_user_strings = []
             for d in ordered_guild_user_data:
                 total_points = d['m'] + (d['vc'] // 5) + (d['mc'] // 5)
-                vc_time = utils.TimeValue(d['vc'] * 60).clean or '0m'
+                vc_time = utils.TimeValue(d['vc'] * 60).clean_spaced or '0m'
                 if self.bot.guild_settings[ctx.guild.id]['minecraft_srv_authorization']:
                     ordered_guild_user_strings.append(f"**<@{d['id']}>** - **{total_points:,}** (**{d['m']:,}** text, **{vc_time}** VC, **{d['mc']:,}** Minecraft)")
                 else:
