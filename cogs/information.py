@@ -130,7 +130,7 @@ class Information(utils.Cog):
     @commands.guild_only()
     async def points(self, ctx:utils.Context, user:typing.Optional[discord.Member]=None, days:int=None):
         """
-        Shows you your message amount over 7 days.
+        Shows you how many points you've achieved over a period of time.
         """
 
         default_days = self.bot.guild_settings[ctx.guild.id]['activity_window_days']
