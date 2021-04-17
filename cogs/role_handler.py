@@ -93,19 +93,9 @@ class RoleHandler(utils.Cog):
         if db is None:
             db = await self.bot.database.get_connection()
             close_db = True
-        message_rows = await db(
-            """SELECT user_id, COUNT(timestamp) FROM user_messages WHERE guild_id=$1 AND user_id=$2
-            AND timestamp > TIMEZONE('UTC', NOW()) - MAKE_INTERVAL(days => $3) GROUP BY user_id""",
-            user.guild.id, user.id, self.bot.guild_settings[user.guild.id]['activity_window_days'],
-        )
-        vc_rows = await db(
-            """SELECT user_id, COUNT(timestamp) FROM user_vc_activity WHERE guild_id=$1 AND user_id=$2
-            AND timestamp > TIMEZONE('UTC', NOW()) - MAKE_INTERVAL(days => $3) GROUP BY user_id""",
-            user.guild.id, user.id, self.bot.guild_settings[user.guild.id]['activity_window_days'],
-        )
-        mc_rows = await db(
-            """SELECT user_id, COUNT(timestamp) FROM minecraft_server_activity WHERE guild_id=$1 AND user_id=$2
-            AND timestamp > TIMEZONE('UTC', NOW()) - MAKE_INTERVAL(days => $3) GROUP BY user_id""",
+        all_points = await db(
+            """SELECT user_id, origin, COUNT(timestamp) FROM user_points WHERE guild_id=$1 AND user_id=$2
+            AND timestamp > TIMEZONE('UTC', NOW()) - MAKE_INTERVAL(days => $3) GROUP BY user_id, origin""",
             user.guild.id, user.id, self.bot.guild_settings[user.guild.id]['activity_window_days'],
         )
         if close_db:
@@ -113,16 +103,22 @@ class RoleHandler(utils.Cog):
 
         # Work out the user points
         try:
-            text_points = message_rows[0]['count']
+            row = all_points[0]
+            try:
+                text_points = [i['count'] for i in row if i['origin'] == 'text'][0]
+            except IndexError:
+                text_points = 0
+            try:
+                vc_points = [i['count'] for i in row if i['origin'] == 'vc'][0]
+            except IndexError:
+                vc_points = 0
+            try:
+                mc_points = [i['count'] for i in row if i['origin'] == 'minecraft'][0]
+            except IndexError:
+                mc_points = 0
         except IndexError:
             text_points = 0
-        try:
-            vc_points = vc_rows[0]['count']
-        except IndexError:
             vc_points = 0
-        try:
-            mc_points = mc_rows[0]['count']
-        except IndexError:
             mc_points = 0
         points_in_week = text_points + (vc_points // 5) + (mc_points // 5)  # Add how many points they got in that week
 

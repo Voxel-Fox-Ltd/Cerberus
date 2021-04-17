@@ -66,7 +66,7 @@ class UserVCHandler(utils.Cog):
                 voice_members.remove((user_id, guild_id, channel_id))
 
         # Make our records
-        records: typing.List[typing.Tuple[int, int, dt, int]] = [(i, o, dt.utcnow(), p) for i, o, p in voice_members]  # (uid, gid, timestamp, cid)...
+        records: typing.List[typing.Tuple[int, int, dt, int]] = [(i, o, dt.utcnow(), p, 'vc') for i, o, p in voice_members]  # (uid, gid, timestamp, cid)...
 
         # Only save messages if there _were_ any
         if len(records) == 0:
@@ -77,8 +77,8 @@ class UserVCHandler(utils.Cog):
         self.logger.info(f"Storing {len(records)} cached VC minutes in database")
         async with self.bot.database() as db:
             await db.conn.copy_records_to_table(
-                'user_vc_activity',
-                columns=('user_id', 'guild_id', 'timestamp', 'channel_id'),
+                'user_points',
+                columns=('user_id', 'guild_id', 'timestamp', 'channel_id', 'origin',),
                 records=records
             )
 

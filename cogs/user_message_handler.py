@@ -42,14 +42,14 @@ class UserMessageHandler(utils.Cog):
                 pass
 
         # Sort them into a nice easy tuple
-        records = [(i.created_at, i.author.id, i.guild.id, i.channel.id) for i in currently_saving if i.author.bot is False and i.guild is not None]
+        records = [(i.created_at, i.author.id, i.guild.id, i.channel.id, 'text') for i in currently_saving if i.author.bot is False and i.guild is not None]
 
         # Copy the records into the db
         self.logger.info(f"Storing {len(records)} cached messages in database")
         async with self.bot.database() as db:
             await db.conn.copy_records_to_table(
-                'user_messages',
-                columns=('timestamp', 'user_id', 'guild_id', 'channel_id'),
+                'user_points',
+                columns=('timestamp', 'user_id', 'guild_id', 'channel_id', 'origin',),
                 records=records
             )
 

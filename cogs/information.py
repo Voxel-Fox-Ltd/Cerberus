@@ -73,36 +73,18 @@ class Information(utils.Cog):
 
             # Get all their valid user IDs
             async with self.bot.database() as db:
-                message_rows = await db(
-                    """SELECT user_id, COUNT(timestamp) FROM user_messages WHERE guild_id=$1 AND
-                    timestamp > TIMEZONE('UTC', NOW()) - MAKE_INTERVAL(days => $2) GROUP BY user_id
+                all_points = await db(
+                    """SELECT user_id, origin, COUNT(timestamp) FROM user_points WHERE guild_id=$1 AND
+                    timestamp > TIMEZONE('UTC', NOW()) - MAKE_INTERVAL(days => $2) GROUP BY user_id, origin
                     ORDER BY COUNT(timestamp) DESC;""",
                     ctx.guild.id, days,
                 )
-                vc_rows = await db(
-                    """SELECT user_id, COUNT(timestamp) FROM user_vc_activity WHERE guild_id=$1 AND
-                    timestamp > TIMEZONE('UTC', NOW()) - MAKE_INTERVAL(days => $2) GROUP BY user_id
-                    ORDER BY COUNT(timestamp) DESC;""",
-                    ctx.guild.id, days,
-                )
-                if self.bot.guild_settings[ctx.guild.id]['minecraft_srv_authorization']:
-                    minecraft_rows = await db(
-                        """SELECT user_id, COUNT(timestamp) FROM minecraft_server_activity WHERE guild_id=$1 AND
-                        timestamp > TIMEZONE('UTC', NOW()) - MAKE_INTERVAL(days => $2) GROUP BY user_id
-                        ORDER BY COUNT(timestamp) DESC;""",
-                        ctx.guild.id, days,
-                    )
-                else:
-                    minecraft_rows = []
 
             # Sort that into more formattable data
             user_data_dict = collections.defaultdict({'message_count': 0, 'vc_minute_count': 0, 'minecraft_minute_count': 0}.copy)  # uid: {message_count: int, vc_minute_count: int}
-            for row in message_rows:
-                user_data_dict[row['user_id']]['message_count'] = row['count']
-            for row in vc_rows:
-                user_data_dict[row['user_id']]['vc_minute_count'] = row['count']
-            for row in minecraft_rows:
-                user_data_dict[row['user_id']]['minecraft_minute_count'] = row['count']
+            for row in all_points:
+                origin_key = {'text': 'message_count', 'vc': 'vc_minute_count', 'minecraft': 'minecraft_minute_count'}[row['origin']]
+                user_data_dict[row['user_id']][origin_key] = row['count']
 
             # And now make it into something we can sort
             valid_guild_user_data = [
@@ -138,35 +120,28 @@ class Information(utils.Cog):
         days = days if days > 0 else default_days
         user = user or ctx.author
         async with self.bot.database() as db:
-            message_rows = await db(
-                """SELECT user_id, COUNT(timestamp) FROM user_messages WHERE guild_id=$1 AND user_id=$2
-                AND timestamp > TIMEZONE('UTC', NOW()) - MAKE_INTERVAL(days => $3 * 1) GROUP BY user_id""",
+            all_points = await db(
+                """SELECT user_id, origin, COUNT(timestamp) FROM user_points WHERE guild_id=$1 AND user_id=$2
+                AND timestamp > TIMEZONE('UTC', NOW()) - MAKE_INTERVAL(days => $3 * 1) GROUP BY user_id, origin""",
                 ctx.guild.id, user.id, days,
             )
-            vc_rows = await db(
-                """SELECT user_id, COUNT(timestamp) FROM user_vc_activity WHERE guild_id=$1 AND user_id=$2
-                AND timestamp > TIMEZONE('UTC', NOW()) - MAKE_INTERVAL(days => $3 * 1) GROUP BY user_id""",
-                ctx.guild.id, user.id, days,
-            )
-            if self.bot.guild_settings[ctx.guild.id]['minecraft_srv_authorization']:
-                minecraft_rows = await db(
-                    """SELECT user_id, COUNT(timestamp) FROM minecraft_server_activity WHERE guild_id=$1 AND user_id=$2
-                    AND timestamp > TIMEZONE('UTC', NOW()) - MAKE_INTERVAL(days => $3 * 1) GROUP BY user_id""",
-                    ctx.guild.id, user.id, days,
-                )
-            else:
-                minecraft_rows = []
         try:
-            text = message_rows[0]['count']
+            row = all_points[0]
+            try:
+                text = [i['count'] for i in row if i['origin'] == 'text'][0]
+            except IndexError:
+                text = 0
+            try:
+                vc = [i['count'] for i in row if i['origin'] == 'vc'][0]
+            except IndexError:
+                vc = 0
+            try:
+                mc = [i['count'] for i in row if i['origin'] == 'minecraft'][0]
+            except IndexError:
+                mc = 0
         except IndexError:
             text = 0
-        try:
-            vc = vc_rows[0]['count']
-        except IndexError:
             vc = 0
-        try:
-            mc = minecraft_rows[0]['count']
-        except IndexError:
             mc = 0
         if self.bot.guild_settings[ctx.guild.id]['minecraft_srv_authorization']:
             await ctx.send(f"Over the past {days} days, {user.mention} has gained **{text:,}** tracked messages, has been in VC for **{utils.TimeValue(vc * 60).clean or '0m'}**, and has been on the Minecraft server for **{utils.TimeValue(mc * 60).clean or '0m'}**, giving them a total of **{text + (vc // 5) + (mc // 5):,}** points.", allowed_mentions=discord.AllowedMentions(users=[ctx.author]))
@@ -241,42 +216,19 @@ class Information(utils.Cog):
         points_per_week = collections.defaultdict(points_per_week_base.copy)
         async with self.bot.database() as db:
             for user_id in users:
-                message_rows = await db(
-                    """SELECT COUNT(timestamp) AS count, generate_series
-                    FROM user_messages, generate_series(1, $3)
+                all_points = await db(
+                    """SELECT COUNT(timestamp) AS count, origin, generate_series
+                    FROM user_points, generate_series(1, $3)
                     WHERE
                         user_id=$1 AND guild_id=$2
                         AND timestamp > TIMEZONE('UTC', NOW()) - MAKE_INTERVAL({interval} => $3) + (MAKE_INTERVAL({interval} => 1) * generate_series) - MAKE_INTERVAL(days => $4)
                         AND timestamp <= TIMEZONE('UTC', NOW()) - MAKE_INTERVAL({interval} => $3) + (MAKE_INTERVAL({interval} => 1) * generate_series)
-                    GROUP BY generate_series ORDER BY generate_series ASC""".format(interval=window_interval[0]),
+                    GROUP BY generate_series, origin ORDER BY generate_series ASC""".format(interval=window_interval[0]),
                     user_id, ctx.guild.id, window_days * window_interval[1], self.bot.guild_settings[ctx.guild.id]['activity_window_days'],
                 )
-                for row in message_rows:
-                    points_per_week[user_id][row['generate_series'] - 1] += row['count']
-                vc_rows = await db(
-                    """SELECT COUNT(timestamp) AS count, generate_series
-                    FROM user_vc_activity, generate_series(1, $3)
-                    WHERE
-                        user_id=$1 AND guild_id=$2
-                        AND timestamp > TIMEZONE('UTC', NOW()) - MAKE_INTERVAL({interval} => $3) + (MAKE_INTERVAL({interval} => 1) * generate_series) - MAKE_INTERVAL(days => $4)
-                        AND timestamp <= TIMEZONE('UTC', NOW()) - MAKE_INTERVAL({interval} => $3) + (MAKE_INTERVAL({interval} => 1) * generate_series)
-                    GROUP BY generate_series ORDER BY generate_series ASC""".format(interval=window_interval[0]),
-                    user_id, ctx.guild.id, window_days * window_interval[1], self.bot.guild_settings[ctx.guild.id]['activity_window_days'],
-                )
-                for row in vc_rows:
-                    points_per_week[user_id][row['generate_series'] - 1] += row['count'] // 5
-                mc_rows = await db(
-                    """SELECT COUNT(timestamp) AS count, generate_series
-                    FROM minecraft_server_activity, generate_series(1, $3)
-                    WHERE
-                        user_id=$1 AND guild_id=$2
-                        AND timestamp > TIMEZONE('UTC', NOW()) - MAKE_INTERVAL({interval} => $3) + (MAKE_INTERVAL({interval} => 1) * generate_series) - MAKE_INTERVAL(days => $4)
-                        AND timestamp <= TIMEZONE('UTC', NOW()) - MAKE_INTERVAL({interval} => $3) + (MAKE_INTERVAL({interval} => 1) * generate_series)
-                    GROUP BY generate_series ORDER BY generate_series ASC""".format(interval=window_interval[0]),
-                    user_id, ctx.guild.id, window_days * window_interval[1], self.bot.guild_settings[ctx.guild.id]['activity_window_days'],
-                )
-                for row in mc_rows:
-                    points_per_week[user_id][row['generate_series'] - 1] += row['count'] // 5
+                for row in all_points:
+                    divider = 1 if row['origin'] == 'text' else 5
+                    points_per_week[user_id][row['generate_series'] - 1] += row['count'] // divider
 
         # Don't bother uploading if they've not got any data
         if sum([sum(user_points) for user_points in points_per_week.values()]) == 0:
@@ -394,9 +346,9 @@ class Information(utils.Cog):
         async with self.bot.database() as db:
             for user_id in users:
                 added_ticks = set()
-                message_rows = await db(
+                all_points = await db(
                     """SELECT COUNT(timestamp) AS count, generate_series
-                    FROM user_messages, generate_series(1, $3)
+                    FROM user_points, generate_series(1, $3)
                     WHERE
                         user_id=$1 AND guild_id=$2
                         AND timestamp > TIMEZONE('UTC', NOW()) - MAKE_INTERVAL(mins => $3 * 15) + (MAKE_INTERVAL(mins => 15) * generate_series)
@@ -404,24 +356,9 @@ class Information(utils.Cog):
                     GROUP BY generate_series ORDER BY generate_series ASC""",
                     user_id, ctx.guild.id, window_days * 24 * 4,
                 )
-                for row in message_rows:
+                for row in all_points:
                     points_per_week[user_id][(row['generate_series'] - 1) % len(points_per_week_base)] += int(bool(row['count']))
                     added_ticks.add(row['generate_series'])
-                vc_rows = await db(
-                    """SELECT COUNT(timestamp) AS count, generate_series
-                    FROM user_vc_activity, generate_series(1, $3)
-                    WHERE
-                        user_id=$1 AND guild_id=$2
-                        AND timestamp > TIMEZONE('UTC', NOW()) - MAKE_INTERVAL(mins => $3 * 15) + (MAKE_INTERVAL(mins => 15) * generate_series)
-                        AND timestamp <= TIMEZONE('UTC', NOW()) - MAKE_INTERVAL(mins => $3 * 15) + (MAKE_INTERVAL(mins => 15) * (generate_series + 1))
-                    GROUP BY generate_series ORDER BY generate_series ASC""",
-                    user_id, ctx.guild.id, window_days * 24 * 4,
-                )
-                for row in vc_rows:
-                    if row['generate_series'] in added_ticks:
-                        continue
-                    points_per_week[user_id][(row['generate_series'] - 1) % len(points_per_week_base)] += int(bool(row['count']))
-                # self.logger.info(points_per_week[user_id])
 
         # Don't bother uploading if they've not got any data
         if sum([sum(user_points) for user_points in points_per_week.values()]) == 0:

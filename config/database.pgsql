@@ -7,26 +7,19 @@ CREATE TABLE IF NOT EXISTS guild_settings(
 );
 
 
-CREATE TABLE IF NOT EXISTS user_messages(
-    timestamp TIMESTAMP,
-    user_id BIGINT,
-    guild_id BIGINT,
-    channel_id BIGINT
-);
+DO $$ BEGIN
+    CREATE TYPE point_origin AS ENUM('text', 'vc', 'minecraft');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
 
 
-CREATE TABLE IF NOT EXISTS user_vc_activity(
-    user_id BIGINT,
-    guild_id BIGINT,
-    timestamp TIMESTAMP,
-    channel_id BIGINT
-);
-
-
-CREATE TABLE IF NOT EXISTS minecraft_server_activity(
-    user_id BIGINT,
-    guild_id BIGINT,
-    timestamp TIMESTAMP
+CREATE TABLE IF NOT EXISTS user_points(
+    timestamp TIMESTAMP NOT NULL,
+    user_id BIGINT NOT NULL,
+    guild_id BIGINT NOT NULL,
+    channel_id BIGINT,
+    origin point_origin NOT NULL
 );
 
 
