@@ -22,7 +22,7 @@ You can also see your activity over a _larger_ period of time if you really want
 
 ![](https://voxelfox.co.uk/static/images/cerberus/180-day-graph.png)
 
-## Sounds sick, how do I use it?
+## How do I use it?
 
 There's only a few commands that are important to Cerberus, but after that it's just plug and play.
 
