@@ -34,5 +34,3 @@ There's only a few commands that are important to Cerberus, but after that it's 
     * Shows you the activity graph of a given user.
 * `'roles`
     * Shows you which roles you'll get at each level of activity.
-* `'prefix new_prefix`
-    * Apostrophe not good enough for you? You can change it with the prefix command. If you manage to _forget_ your prefix, you can always ping the bot (eg `@Cerberus prefix '` will reset the prefix back to an apostrophe).
