@@ -26,24 +26,26 @@ class BotSettings(utils.Cog):
                 display=lambda c: "Remove old roles (currently {0})".format(settings_mention(c, 'remove_old_roles')),
                 converter_args=(
                     utils.SettingsMenuConverter(
-                        "Do you want to remove old roles when you get a new one?",
-                        "old role removal",
-                        utils.converters.BooleanConverter,
+                        prompt="Do you want to remove old roles when you get a new one?",
+                        asking_for="old role removal",
+                        converter=utils.converters.BooleanConverter,
                     ),
                 ),
                 callback=utils.SettingsMenuOption.get_set_guild_settings_callback('guild_settings', 'remove_old_roles'),
+                allow_nullable=False,
             ),
             utils.SettingsMenuOption(
                 ctx=ctx,
                 display=lambda c: "Set role interval time (currently {0} days)".format(settings_mention(c, 'activity_window_days')),
                 converter_args=(
                     utils.SettingsMenuConverter(
-                        "How many days should activity be tracked over?",
-                        "activity window",
-                        int,
+                        prompt="How many days should activity be tracked over?",
+                        asking_for="activity window",
+                        converter=int,
                     ),
                 ),
                 callback=utils.SettingsMenuOption.get_set_guild_settings_callback('guild_settings', 'activity_window_days'),
+                allow_nullable=False,
             ),
             utils.SettingsMenuOption(
                 ctx=ctx,
