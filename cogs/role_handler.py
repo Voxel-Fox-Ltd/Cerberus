@@ -49,10 +49,10 @@ class RoleHandler(utils.Cog):
         async def inner_method(guild, db):
             bot_user = guild.get_member(self.bot.user.id) or await self.bot.fetch_member(self.bot.user.id)
             if not bot_user.guild_permissions.manage_roles:
-                continue
+                return
             for member in guild.members:
                 if member.bot:
-                    continue
+                    return
                 await self.user_points_receive(member, db)
 
         # Ping every guild member
