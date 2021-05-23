@@ -1,3 +1,5 @@
+import asyncio
+
 import discord
 from discord.ext import tasks
 import voxelbotutils as utils
@@ -43,19 +45,23 @@ class RoleHandler(utils.Cog):
         Loop every hour to remove roles from everyone who might have talked.
         """
 
-        # TODO chunk this by guild, maybe
-        # if self.user_role_looper.current_loop == 0:
-        #     return
+        # Set up an inner method so we can try and do all of this at once
+        async def inner_method(guild, db):
+            bot_user = guild.get_member(self.bot.user.id) or await self.bot.fetch_member(self.bot.user.id)
+            if not bot_user.guild_permissions.manage_roles:
+                continue
+            for member in guild.members:
+                if member.bot:
+                    continue
+                await self.user_points_receive(member, db)
+
+        # Ping every guild member
         self.logger.info("Pinging every guild member with an update")
+        tasks = []
         async with self.bot.database() as db:
             for guild in self.bot.guilds:
-                bot_user = guild.get_member(self.bot.user.id) or await self.bot.fetch_member(self.bot.user.id)
-                if not bot_user.guild_permissions.manage_roles:
-                    continue
-                for member in guild.members:
-                    if member.bot:
-                        continue
-                    self.bot.dispatch('user_points_receive', member, db)
+                tasks.append(inner_method(guild, db))
+            await asyncio.gather(tasks)
         self.logger.info("Done pinging every guild member")
 
     @user_role_looper.before_loop
