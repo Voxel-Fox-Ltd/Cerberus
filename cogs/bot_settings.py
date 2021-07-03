@@ -1,210 +1,139 @@
-from discord.ext import commands
-import voxelbotutils as utils
+import discord
+import voxelbotutils as vbu
 
 
-class BotSettings(utils.Cog):
-
-    @utils.group()
-    @commands.has_permissions(manage_guild=True)
-    @commands.bot_has_permissions(send_messages=True, embed_links=True, add_reactions=True)
-    @commands.guild_only()
-    async def setup(self, ctx:utils.Context):
-        """
-        Run the bot setup.
-        """
-
-        # Make sure it's only run as its own command, not a parent
-        if ctx.invoked_subcommand is not None:
-            return
-
-        # Create settings menu
-        settings_mention = utils.SettingsMenuOption.get_guild_settings_mention
-        menu = utils.SettingsMenu()
-        menu.add_multiple_options(
-            utils.SettingsMenuOption(
-                ctx=ctx,
-                display=lambda c: "Remove old roles (currently {0})".format(settings_mention(c, 'remove_old_roles')),
-                converter_args=(
-                    utils.SettingsMenuConverter(
-                        prompt="Do you want to remove old roles when you get a new one?",
-                        asking_for="old role removal",
-                        converter=utils.converters.BooleanConverter,
+settings_menu = vbu.menus.Menu(
+    vbu.menus.Option(
+        display=lambda ctx: f"Remove old roles (currently {ctx.bot.guild_settings[ctx.guild.id]['remove_old_roles']})",
+        component_display="Remove old roles",
+        converters=[
+            vbu.menus.Converter(
+                prompt="Do you want to remove old roles when new ones are gained?",
+                converter=lambda button: button.custom_id == "YES",
+                timeout_message="Timed out asking for old role removal.",
+                components=vbu.MessageComponents.boolean_buttons(),
+            ),
+        ],
+        callback=vbu.menus.Menu.callbacks.set_table_column(vbu.menus.DataLocation.GUILD, "guild_settings", "remove_old_roles"),
+        cache_callback=vbu.menus.Menu.callbacks.set_cache_from_key(vbu.menus.DataLocation.GUILD, "remove_old_roles"),
+    ),
+    vbu.menus.Option(
+        display=lambda ctx: f"Set role interval time (currently {ctx.bot.guild_settings[ctx.guild.id]['activity_window_days']:,} days)",
+        component_display="Role interval time",
+        converters=[
+            vbu.menus.Converter(
+                prompt="How many days should activity be tracked over?",
+                checks=[
+                    vbu.menus.Check(
+                        check=lambda message: message.content.isdigit() and int(message.content) in range(7, 31),
+                        on_failure=vbu.menus.Check.failures.RETRY,
+                        fail_message="You need to give a *number* between **7** and **31**.",
                     ),
+                ],
+                converter=int,
+                timeout_message="Timed out asking for activity window days.",
+            ),
+        ],
+        callback=vbu.menus.Menu.callbacks.set_table_column(vbu.menus.DataLocation.GUILD, "guild_settings", "activity_window_days"),
+        cache_callback=vbu.menus.Menu.callbacks.set_cache_from_key(vbu.menus.DataLocation.GUILD, "activity_window_days"),
+        allow_none=False,
+    ),
+    vbu.menus.Option(
+        display="Role gain settings",
+        callback=vbu.menus.MenuIterable(
+            select_sql="""SELECT * FROM role_list WHERE guild_id=$1 AND key='RoleGain'""",
+            select_sql_args=lambda ctx: (ctx.guild.id,),
+            insert_sql="""INSERT INTO role_list (guild_id, role_id, value, key) VALUES ($1, $2, $3, 'RoleGain')""",
+            insert_sql_args=lambda ctx, data: (ctx.guild.id, data[0].id, str(data[1])),
+            delete_sql="""DELETE FROM role_list WHERE guild_id=$1 AND role_id=$2 AND key='RoleGain'""",
+            delete_sql_args=lambda ctx, row: (ctx.guild.id, row['role_id'],),
+            converters=[
+                vbu.menus.Converter(
+                    prompt="What role do you want to be gainable?",
+                    converter=discord.Role,
                 ),
-                callback=utils.SettingsMenuOption.get_set_guild_settings_callback('guild_settings', 'remove_old_roles'),
-                allow_nullable=False,
-            ),
-            utils.SettingsMenuOption(
-                ctx=ctx,
-                display=lambda c: "Set role interval time (currently {0} days)".format(settings_mention(c, 'activity_window_days')),
-                converter_args=(
-                    utils.SettingsMenuConverter(
-                        prompt="How many days should activity be tracked over?",
-                        asking_for="activity window",
-                        converter=int,
-                    ),
-                ),
-                callback=utils.SettingsMenuOption.get_set_guild_settings_callback('guild_settings', 'activity_window_days'),
-                allow_nullable=False,
-            ),
-            utils.SettingsMenuOption(
-                ctx=ctx,
-                display="Role gain settings",
-                callback=self.bot.get_command("setup roles"),
-            ),
-            utils.SettingsMenuOption(
-                ctx=ctx,
-                display="Blacklisted channel settings",
-                callback=self.bot.get_command("setup blacklistedchannels"),
-            ),
-            utils.SettingsMenuOption(
-                ctx=ctx,
-                display="Blacklisted role settings",
-                callback=self.bot.get_command("setup blacklistedroles"),
-            ),
-            utils.SettingsMenuOption(
-                ctx=ctx,
-                display="Blacklisted VC role settings",
-                callback=self.bot.get_command("setup blacklistedvcroles"),
-            ),
-        )
-
-        # Run the menu
-        try:
-            await menu.start(ctx)
-            await ctx.send("Done setting up!")
-        except utils.errors.InvokedMetaCommand:
-            pass
-
-    @setup.command()
-    @utils.checks.meta_command()
-    async def roles(self, ctx:utils.Context):
-        """
-        Run the bot setup.
-        """
-
-        menu = utils.SettingsMenuIterable(
-            table_name='role_list',
-            column_name='role_id',
-            cache_key='role_gain',
-            database_key='RoleGain',
-            key_display_function=lambda k: getattr(ctx.guild.get_role(k), 'mention', 'none'),
-            value_display_function=int,
-            converters=(
-                utils.SettingsMenuConverter(
-                    prompt="What activity role would you like to add?",
-                    asking_for="activity role",
-                    converter=commands.RoleConverter,
-                ),
-                utils.SettingsMenuConverter(
-                    prompt="How many tracked points does a user have earn to get that role?",
-                    asking_for="point amount",
+                vbu.menus.Converter(
+                    prompt="How many points does this role require to be gainable?",
                     converter=int,
                 ),
-            ),
-        )
-        await menu.start(ctx)
-
-    @setup.command()
-    @utils.checks.meta_command()
-    async def blacklistedchannels(self, ctx:utils.Context):
-        """
-        Run the bot setup.
-        """
-
-        menu = utils.SettingsMenuIterable(
-            table_name='channel_list',
-            column_name='channel_id',
-            cache_key='blacklisted_channels',
-            database_key='BlacklistedChannel',
-            key_display_function=lambda k: getattr(ctx.bot.get_channel(k), 'mention', 'none'),
-            converters=(
-                utils.SettingsMenuConverter(
+            ],
+            row_text_display=lambda ctx, row: f"{ctx.get_mentionable_role(row['role_id']).mention} - {int(row['value']):,}",
+            row_component_display=lambda ctx, row: ctx.get_mentionable_role(row['role_id']).name,
+            cache_callback=vbu.menus.Menu.callbacks.set_iterable_dict_cache(vbu.menus.DataLocation.GUILD, "role_gain"),
+            cache_delete_callback=vbu.menus.Menu.callbacks.delete_iterable_dict_cache(vbu.menus.DataLocation.GUILD, "role_gain"),
+            cache_delete_args=lambda row: (row['role_id'],)
+        ),
+    ),
+    vbu.menus.Option(
+        display="Blacklisted channel settings",
+        callback=vbu.menus.MenuIterable(
+            select_sql="""SELECT * FROM channel_list WHERE guild_id=$1 AND key='BlacklistedChannels'""",
+            select_sql_args=lambda ctx: (ctx.guild.id,),
+            insert_sql="""INSERT INTO channel_list (guild_id, channel_id, key) VALUES ($1, $2, 'BlacklistedChannels')""",
+            insert_sql_args=lambda ctx, data: (ctx.guild.id, data[0].id,),
+            delete_sql="""DELETE FROM channel_list WHERE guild_id=$1 AND channel_id=$2 AND key='BlacklistedChannels'""",
+            delete_sql_args=lambda ctx, row: (ctx.guild.id, row['channel_id'],),
+            converters=[
+                vbu.menus.Converter(
                     prompt="What channel would you like to blacklist users getting points in?",
-                    asking_for="blacklist channel",
-                    converter=commands.TextChannelConverter,
+                    converter=discord.TextChannel,
                 ),
-            ),
-        )
-        await menu.start(ctx)
-
-    @setup.command()
-    @utils.checks.meta_command()
-    async def blacklistedroles(self, ctx:utils.Context):
-        """
-        Run the bot setup.
-        """
-
-        menu = utils.SettingsMenuIterable(
-            table_name='role_list',
-            column_name='role_id',
-            cache_key='blacklisted_text_roles',
-            database_key='BlacklistedRoles',
-            key_display_function=lambda k: getattr(ctx.guild.get_role(k), 'mention', 'none'),
-            converters=(
-                utils.SettingsMenuConverter(
+            ],
+            row_text_display=lambda ctx, row: ctx.get_mentionable_channel(row['channel_id']).mention,
+            row_component_display=lambda ctx, row: ctx.get_mentionable_channel(row['channel_id']).name,
+            cache_callback=vbu.menus.Menu.callbacks.set_iterable_list_cache(vbu.menus.DataLocation.GUILD, "blacklisted_channels"),
+            cache_delete_callback=vbu.menus.Menu.callbacks.delete_iterable_list_cache(vbu.menus.DataLocation.GUILD, "blacklisted_channels"),
+            cache_delete_args=lambda row: (row['channel_id'],)
+        ),
+    ),
+    vbu.menus.Option(
+        display="Blacklisted role settings (text points)",
+        callback=vbu.menus.MenuIterable(
+            select_sql="""SELECT * FROM role_list WHERE guild_id=$1 AND key='BlacklistedRoles'""",
+            select_sql_args=lambda ctx: (ctx.guild.id,),
+            insert_sql="""INSERT INTO role_list (guild_id, role_id, key) VALUES ($1, $2, 'BlacklistedRoles')""",
+            insert_sql_args=lambda ctx, data: (ctx.guild.id, data[0].id),
+            delete_sql="""DELETE FROM role_list WHERE guild_id=$1 AND role_id=$2 AND key='BlacklistedRoles'""",
+            delete_sql_args=lambda ctx, row: (ctx.guild.id, row['role_id'],),
+            converters=[
+                vbu.menus.Converter(
                     prompt="What role would you like to blacklist users getting points with?",
-                    asking_for="blacklist role",
-                    converter=commands.RoleConverter,
+                    converter=discord.Role,
                 ),
-            ),
-        )
-        await menu.start(ctx)
-
-    @setup.command()
-    @utils.checks.meta_command()
-    async def blacklistedvcroles(self, ctx:utils.Context):
-        """
-        Run the bot setup.
-        """
-
-        menu = utils.SettingsMenuIterable(
-            table_name='role_list',
-            column_name='role_id',
-            cache_key='blacklisted_vc_roles',
-            database_key='BlacklistedVCRoles',
-            key_display_function=lambda k: getattr(ctx.guild.get_role(k), 'mention', 'none'),
-            converters=(
-                utils.SettingsMenuConverter(
+            ],
+            row_text_display=lambda ctx, row: ctx.get_mentionable_role(row['role_id']).mention,
+            row_component_display=lambda ctx, row: ctx.get_mentionable_role(row['role_id']).name,
+            cache_callback=vbu.menus.Menu.callbacks.set_iterable_list_cache(vbu.menus.DataLocation.GUILD, "blacklisted_text_roles"),
+            cache_delete_callback=vbu.menus.Menu.callbacks.delete_iterable_list_cache(vbu.menus.DataLocation.GUILD, "blacklisted_text_roles"),
+            cache_delete_args=lambda row: (row['role_id'],)
+        ),
+    ),
+    vbu.menus.Option(
+        display="Blacklisted role settings (VC points)",
+        callback=vbu.menus.MenuIterable(
+            select_sql="""SELECT * FROM role_list WHERE guild_id=$1 AND key='BlacklistedVCRoles'""",
+            select_sql_args=lambda ctx: (ctx.guild.id,),
+            insert_sql="""INSERT INTO role_list (guild_id, role_id, key) VALUES ($1, $2, 'BlacklistedVCRoles')""",
+            insert_sql_args=lambda ctx, data: (ctx.guild.id, data[0].id,),
+            delete_sql="""DELETE FROM role_list WHERE guild_id=$1 AND role_id=$2 AND key='BlacklistedVCRoles'""",
+            delete_sql_args=lambda ctx, row: (ctx.guild.id, row['role_id'],),
+            converters=[
+                vbu.menus.Converter(
                     prompt="What role would you like to blacklist users getting VC points with?",
-                    asking_for="blacklist role",
-                    converter=commands.RoleConverter,
+                    converter=discord.Role,
                 ),
-            ),
-        )
-        await menu.start(ctx)
-
-    @utils.group(enabled=False)
-    @commands.bot_has_permissions(send_messages=True, embed_links=True, add_reactions=True)
-    @utils.cooldown.cooldown(1, 60, commands.BucketType.member)
-    @commands.guild_only()
-    async def usersettings(self, ctx:utils.Context):
-        """
-        Run the bot setup.
-        """
-
-        # Make sure it's only run as its own command, not a parent
-        if ctx.invoked_subcommand is not None:
-            return
-
-        # Create settings menu
-        menu = utils.SettingsMenu()
-        settings_mention = utils.SettingsMenuOption.get_user_settings_mention
-        menu.bulk_add_options(
-            ctx,
-            {
-                'display': lambda c: "Set setting (currently {0})".format(settings_mention(c, 'setting_id')),
-                'converter_args': [("What do you want to set the setting to?", "setting channel", commands.TextChannelConverter)],
-                'callback': utils.SettingsMenuOption.get_set_user_settings_callback('user_settings', 'setting_id'),
-            },
-        )
-        try:
-            await menu.start(ctx)
-            await ctx.send("Done setting up!")
-        except utils.errors.InvokedMetaCommand:
-            pass
+            ],
+            row_text_display=lambda ctx, row: ctx.get_mentionable_role(row['role_id']).mention,
+            row_component_display=lambda ctx, row: ctx.get_mentionable_role(row['role_id']).name,
+            cache_callback=vbu.menus.Menu.callbacks.set_iterable_list_cache(vbu.menus.DataLocation.GUILD, "blacklisted_vc_roles"),
+            cache_delete_callback=vbu.menus.Menu.callbacks.delete_iterable_list_cache(vbu.menus.DataLocation.GUILD, "blacklisted_vc_roles"),
+            cache_delete_args=lambda row: (row['role_id'],)
+        ),
+    ),
+)
 
 
-def setup(bot:utils.Bot):
-    x = BotSettings(bot)
+def setup(bot: vbu.Bot):
+    cog = settings_menu.create_cog()
+    x = cog(bot)
     bot.add_cog(x)
