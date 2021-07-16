@@ -22,8 +22,8 @@ class EmojiStats(vbu.Cog):
         async with self.bot.database() as db:
             for m in matches:
                 await db(
-                    """INSERT INTO emoji_usage (guild_id, emoji_id, timestamp) VALUES ($1, $2, $3)""",
-                    message.guild.id, int(m.group('id')), message.created_at,
+                    """INSERT INTO emoji_usage (guild_id, user_id, emoji_id, timestamp) VALUES ($1, $2, $3, $4)""",
+                    message.guild.id, message.author.id, int(m.group('id')), message.created_at,
                 )
 
 

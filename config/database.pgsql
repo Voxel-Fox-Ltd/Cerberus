@@ -55,6 +55,7 @@ CREATE TABLE IF NOT EXISTS channel_list(
 
 CREATE TABLE IF NOT EXISTS emoji_usage (
     guild_id BIGINT,
+    user_id BIGINT,
     emoji_id BIGINT,
     timestamp TIMESTAMP
 );
