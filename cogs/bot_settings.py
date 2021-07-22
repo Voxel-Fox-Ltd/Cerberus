@@ -67,11 +67,11 @@ settings_menu = vbu.menus.Menu(
     vbu.menus.Option(
         display="Blacklisted channel settings",
         callback=vbu.menus.MenuIterable(
-            select_sql="""SELECT * FROM channel_list WHERE guild_id=$1 AND key='BlacklistedChannels'""",
+            select_sql="""SELECT * FROM channel_list WHERE guild_id=$1 AND key='BlacklistedChannel'""",
             select_sql_args=lambda ctx: (ctx.guild.id,),
-            insert_sql="""INSERT INTO channel_list (guild_id, channel_id, key) VALUES ($1, $2, 'BlacklistedChannels')""",
+            insert_sql="""INSERT INTO channel_list (guild_id, channel_id, key) VALUES ($1, $2, 'BlacklistedChannel')""",
             insert_sql_args=lambda ctx, data: (ctx.guild.id, data[0].id,),
-            delete_sql="""DELETE FROM channel_list WHERE guild_id=$1 AND channel_id=$2 AND key='BlacklistedChannels'""",
+            delete_sql="""DELETE FROM channel_list WHERE guild_id=$1 AND channel_id=$2 AND key='BlacklistedChannel'""",
             delete_sql_args=lambda ctx, row: (ctx.guild.id, row['channel_id'],),
             converters=[
                 vbu.menus.Converter(
