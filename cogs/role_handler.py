@@ -61,7 +61,7 @@ class RoleHandler(utils.Cog):
         async with self.bot.database() as db:
             for guild in self.bot.guilds:
                 tasks.append(inner_method(guild, db))
-            await asyncio.gather(tasks)
+            await asyncio.gather(*tasks)
         self.logger.info("Done pinging every guild member")
 
     @user_role_looper.before_loop
