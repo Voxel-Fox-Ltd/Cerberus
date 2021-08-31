@@ -6,7 +6,7 @@ import voxelbotutils as vbu
 
 class EmojiStats(vbu.Cog):
 
-    EMOJI_REGEX = re.compile(r"<a?:(?P<id>\d+?):(?P<name>.+?)>")
+    EMOJI_REGEX = re.compile(r"<a?:(?P<name>.+?):(?P<id>\d+?)>")
 
     @vbu.Cog.listener()
     async def on_message(self, message: discord.Message):
