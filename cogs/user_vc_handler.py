@@ -68,7 +68,7 @@ class UserVCHandler(vbu.Cog):
                 voice_members.remove((user_id, guild_id, channel_id))
 
         # Make our records
-        records: typing.List[typing.Tuple[int, int, dt, int]] = [(i, o, discord.utils.utcnow(), p) for i, o, p in voice_members]  # (uid, gid, timestamp, cid)...
+        records: typing.List[typing.Tuple[int, int, dt, int]] = [(i, o, discord.utils.naive_dt(discord.utils.utcnow()), p) for i, o, p in voice_members]  # (uid, gid, timestamp, cid)...
 
         # Only save messages if there _were_ any
         if len(records) == 0:

@@ -41,7 +41,11 @@ class UserMessageHandler(vbu.Cog):
                 pass
 
         # Sort them into a nice easy tuple
-        records = [(i.created_at, i.author.id, i.guild.id, i.channel.id) for i in currently_saving if i.author.bot is False and i.guild is not None]
+        records = [
+            (discord.utils.naive_dt(i.created_at), i.author.id, i.guild.id, i.channel.id)
+            for i in currently_saving
+            if i.author.bot is False and i.guild is not None
+        ]
 
         # Copy the records into the db
         self.logger.info(f"Storing {len(records)} cached messages in database")
