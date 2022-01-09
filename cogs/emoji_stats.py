@@ -23,7 +23,7 @@ class EmojiStats(vbu.Cog):
             for m in matches:
                 await db(
                     """INSERT INTO emoji_usage (guild_id, user_id, emoji_id, timestamp) VALUES ($1, $2, $3, $4)""",
-                    message.guild.id, message.author.id, int(m.group('id')), message.created_at,
+                    message.guild.id, message.author.id, int(m.group('id')), discord.utils.naive_dt(message.created_at),
                 )
 
 
