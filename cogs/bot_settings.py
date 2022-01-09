@@ -9,9 +9,9 @@ settings_menu = vbu.menus.Menu(
         converters=[
             vbu.menus.Converter(
                 prompt="Do you want to remove old roles when new ones are gained?",
-                converter=lambda payload: payload.component.custom_id == "YES",
+                converter=lambda payload: payload.custom_id == "YES",
                 timeout_message="Timed out asking for old role removal.",
-                components=vbu.MessageComponents.boolean_buttons(),
+                components=discord.ui.MessageComponents.boolean_buttons(),
             ),
         ],
         callback=vbu.menus.Menu.callbacks.set_table_column(vbu.menus.DataLocation.GUILD, "guild_settings", "remove_old_roles"),

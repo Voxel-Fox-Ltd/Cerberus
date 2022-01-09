@@ -59,3 +59,6 @@ CREATE TABLE IF NOT EXISTS emoji_usage (
     emoji_id BIGINT,
     timestamp TIMESTAMP
 );
+
+
+SELECT emoji_id, COUNT(timestamp) FROM emoji_usage WHERE guild_id={guild} GROUP BY emoji_id ORDER BY COUNT(timestamp) DESC LIMIT 10;

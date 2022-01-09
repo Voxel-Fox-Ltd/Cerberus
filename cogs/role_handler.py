@@ -1,20 +1,20 @@
 import asyncio
+import typing
 
 import discord
-from discord.ext import tasks
-import voxelbotutils as utils
+from discord.ext import tasks, vbu
 
 
-class RoleHandler(utils.Cog):
+class RoleHandler(vbu.Cog):
 
-    def __init__(self, bot:utils.Bot):
+    def __init__(self, bot: vbu.Bot):
         super().__init__(bot)
         self.user_role_looper.start()
 
     def cog_unload(self):
         self.user_role_looper.cancel()
 
-    async def cache_setup(self, db):
+    async def cache_setup(self, db: vbu.Database):
         """
         Set up the roles and blacklisted items.
         """
@@ -47,7 +47,10 @@ class RoleHandler(utils.Cog):
 
         # Set up an inner method so we can try and do all of this at once
         async def inner_method(guild, db):
-            bot_user = guild.get_member(self.bot.user.id) or await self.bot.fetch_member(self.bot.user.id)
+            try:
+                bot_user = guild.get_member(self.bot.user.id) or await guild.fetch_member(self.bot.user.id)
+            except discord.HTTPException:
+                return
             if not bot_user.guild_permissions.manage_roles:
                 return
             for member in guild.members:
@@ -68,8 +71,8 @@ class RoleHandler(utils.Cog):
     async def before_user_role_looper(self):
         await self.bot.wait_until_ready()
 
-    @utils.Cog.listener("on_user_points_receive")
-    async def user_role_handler(self, user:discord.Member, only_check_for_descending:bool=False, db:utils.DatabaseConnection=None):
+    @vbu.Cog.listener("on_user_points_receive")
+    async def user_role_handler(self, user: discord.Member, only_check_for_descending: bool = False, db: vbu.Database = None):
         """
         Looks for when a user passes the threshold of points and then handles their roles accordingly.
         """
@@ -83,8 +86,9 @@ class RoleHandler(utils.Cog):
             return
 
         # Grab data
-        role_data_dict = self.bot.guild_settings[user.guild.id].setdefault('role_gain', dict())
-        remove_old_roles = self.bot.guild_settings[user.guild.id]['remove_old_roles']
+        role_data_dict: dict = self.bot.guild_settings[user.guild.id].setdefault('role_gain', dict())
+        remove_old_roles: bool = self.bot.guild_settings[user.guild.id]['remove_old_roles']
+        role_data: typing.List[typing.Tuple[int, int]]
         role_data = sorted([(role_id, threshold) for role_id, threshold in role_data_dict.items()], key=lambda x: x[1], reverse=True)
 
         # See if they even have any roles worth worrying about
@@ -178,6 +182,6 @@ class RoleHandler(utils.Cog):
                     self.logger.info(f"Can't manage {role_id} role for user {user.id} in guild {user.guild.id} - {e}")
 
 
-def setup(bot:utils.Bot):
+def setup(bot: vbu.Bot):
     x = RoleHandler(bot)
     bot.add_cog(x)

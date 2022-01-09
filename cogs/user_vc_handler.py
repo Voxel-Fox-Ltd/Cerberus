@@ -2,13 +2,12 @@ import typing
 from datetime import datetime as dt
 
 import discord
-from discord.ext import tasks
-import voxelbotutils as utils
+from discord.ext import tasks, vbu
 
 
-class UserVCHandler(utils.Cog):
+class UserVCHandler(vbu.Cog):
 
-    def __init__(self, bot:utils.Bot):
+    def __init__(self, bot: vbu.Bot):
         super().__init__(bot)
         self.user_vc_databaser.start()
 
@@ -16,7 +15,7 @@ class UserVCHandler(utils.Cog):
         self.user_vc_databaser.stop()
 
     @staticmethod
-    def valid_voice_state(voice_state:discord.VoiceState) -> bool:
+    def valid_voice_state(voice_state: discord.VoiceState) -> bool:
         """
         Returns whether or not a voice state is unmuted, undeafened, etc.
         """
@@ -41,7 +40,7 @@ class UserVCHandler(utils.Cog):
             voice_channels.extend(i.voice_channels)
 
         # Grab VCs where there's multiple people in them
-        voice_members: typing.List[typing.Tuple[int, int]] = []  # (uid, gid)...
+        voice_members: typing.List[typing.Tuple[int, int, int]] = []  # (uid, gid, vcid)...
         for vc in voice_channels:
             try:
                 _ = vc.id
@@ -57,7 +56,7 @@ class UserVCHandler(utils.Cog):
 
         # Filter out the bastards
         for user_id, guild_id, channel_id in voice_members.copy():
-            blacklisted_roles = self.bot.guild_settings[guild_id].setdefault('blacklisted_vc_roles', list())
+            blacklisted_roles: typing.List[int] = self.bot.guild_settings[guild_id].setdefault('blacklisted_vc_roles', list())
             guild = self.bot.get_guild(guild_id)
             try:
                 member = guild.get_member(user_id) or await guild.fetch_member(user_id)
@@ -86,6 +85,6 @@ class UserVCHandler(utils.Cog):
             )
 
 
-def setup(bot:utils.Bot):
+def setup(bot: vbu.Bot):
     x = UserVCHandler(bot)
     bot.add_cog(x)

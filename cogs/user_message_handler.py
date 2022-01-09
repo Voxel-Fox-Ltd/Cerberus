@@ -3,13 +3,12 @@ from datetime import datetime as dt, timedelta
 import collections
 
 import discord
-from discord.ext import tasks
-import voxelbotutils as utils
+from discord.ext import tasks, vbu
 
 
-class UserMessageHandler(utils.Cog):
+class UserMessageHandler(vbu.Cog):
 
-    def __init__(self, bot:utils.Bot):
+    def __init__(self, bot: vbu.Bot):
         super().__init__(bot)
         self.last_message: typing.Dict[discord.Member, dt] = collections.defaultdict(lambda: dt(2000, 1, 1, 0, 0))
         self.cached_for_saving: typing.List[discord.Message] = list()
@@ -53,8 +52,8 @@ class UserMessageHandler(utils.Cog):
                 records=records
             )
 
-    @utils.Cog.listener("on_message")
-    async def user_message_cacher(self, message:discord.Message):
+    @vbu.Cog.listener("on_message")
+    async def user_message_cacher(self, message: discord.Message):
         """
         Listens for a user sending a message, and then saves that message as a point
         into the db should their last message be long enough ago.
@@ -87,6 +86,6 @@ class UserMessageHandler(utils.Cog):
         self.bot.dispatch('user_points_receive', message.author)
 
 
-def setup(bot:utils.Bot):
+def setup(bot: vbu.Bot):
     x = UserMessageHandler(bot)
     bot.add_cog(x)
