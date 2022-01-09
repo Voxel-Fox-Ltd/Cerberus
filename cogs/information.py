@@ -308,8 +308,8 @@ class Information(vbu.Cog):
         if window_days > 365:
             window_days = 365
             truncation = f"shortened from your original request of {original} days for going over the 365 day max"
-        if window_days > (dt.utcnow() - ctx.guild.me.joined_at).days:
-            window_days = (dt.utcnow() - ctx.guild.me.joined_at).days
+        if window_days > (discord.utils.utcnow() - ctx.guild.me.joined_at).days:
+            window_days = (discord.utils.utcnow() - ctx.guild.me.joined_at).days
             truncation = f"shortened from your original request of {original} days as I haven't been in the guild that long"
 
         # Make sure there's actually a day
@@ -462,8 +462,8 @@ class Information(vbu.Cog):
     #     if window_days > 365:
     #         window_days = 365
     #         truncation = f"shortened from your original request of {original} days for going over the 365 day max"
-    #     if window_days > (dt.utcnow() - ctx.guild.me.joined_at).days:
-    #         window_days = (dt.utcnow() - ctx.guild.me.joined_at).days
+    #     if window_days > (discord.utils.utcnow() - ctx.guild.me.joined_at).days:
+    #         window_days = (discord.utils.utcnow() - ctx.guild.me.joined_at).days
     #         truncation = f"shortened from your original request of {original} days as I haven't been in the guild that long"
 
     #     # Make sure there's actually a day
@@ -537,7 +537,7 @@ class Information(vbu.Cog):
     #     # Fix axies
     #     plt.xticks(
     #         [i * 4 for i in range(24)],
-    #         [(dt.utcnow() - timedelta(days=1) + timedelta(hours=i)).strftime('%H:%M') for i in range(24)],
+    #         [(discord.utils.utcnow() - timedelta(days=1) + timedelta(hours=i)).strftime('%H:%M') for i in range(24)],
     #         rotation='vertical',
     #     )
     #     # plt.yticks([0, 1], ['Offline', 'Online'])

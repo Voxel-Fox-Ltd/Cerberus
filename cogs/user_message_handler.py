@@ -74,7 +74,7 @@ class UserMessageHandler(vbu.Cog):
 
         # Make sure it's in the time we want
         last_message_from_user = self.last_message[message.author]
-        if last_message_from_user < dt.utcnow() - timedelta(minutes=1):
+        if last_message_from_user < discord.utils.utcnow() - timedelta(minutes=1):
             self.last_message[message.author] = message.created_at
         else:
             return
