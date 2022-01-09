@@ -10,7 +10,7 @@ class UserMessageHandler(vbu.Cog):
 
     def __init__(self, bot: vbu.Bot):
         super().__init__(bot)
-        self.last_message: typing.Dict[discord.Member, dt] = collections.defaultdict(lambda: dt(2000, 1, 1, 0, 0))
+        self.last_message: typing.Dict[discord.Member, dt] = collections.defaultdict(lambda: discord.utils.utcnow() - timedelta(days=69))
         self.cached_for_saving: typing.List[discord.Message] = list()
         self.user_message_databaser.start()
 
