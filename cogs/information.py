@@ -13,7 +13,23 @@ class Information(vbu.Cog):
 
     @commands.command(
         cooldown_after_parsing=True,
-
+        application_command_meta=commands.ApplicationCommandMeta(
+            options=[
+                discord.ApplicationCommandOption(
+                    name="user",
+                    description="The user who you want to graph the activity of.",
+                    type=discord.ApplicationCommandOptionType.user,
+                    required=False,
+                ),
+                discord.ApplicationCommandOption(
+                    name="window_days",
+                    description="The number of days of activity that you want to graph.",
+                    type=discord.ApplicationCommandOptionType.integer,
+                    required=False,
+                    min_value=2,
+                ),
+            ],
+        ),
     )
     @commands.defer()
     @commands.bot_has_permissions(send_messages=True, embed_links=True)
@@ -60,7 +76,20 @@ class Information(vbu.Cog):
     #     window_days = window_days or self.bot.guild_settings[ctx.guild.id]['activity_window_days']
     #     await self.make_graph(ctx, [i.id for i in role.members], window_days, segments=None)
 
-    @commands.command(aliases=['dynamicleaderboard', 'dlb', 'dylb', 'dynlb', 'lb'])
+    @commands.command(
+        aliases=['dynamicleaderboard', 'dlb', 'dylb', 'dynlb', 'lb'],
+        application_command_meta=commands.ApplicationCommandMeta(
+            options=[
+                discord.ApplicationCommandOption(
+                    name="window_days",
+                    description="The number of days of activity that you want to check.",
+                    type=discord.ApplicationCommandOptionType.integer,
+                    required=False,
+                    min_value=2,
+                ),
+            ],
+        ),
+    )
     @commands.defer()
     @commands.bot_has_permissions(send_messages=True, embed_links=True)
     @commands.guild_only()
@@ -138,7 +167,26 @@ class Information(vbu.Cog):
         # Make menu
         return await vbu.Paginator(ordered_guild_user_strings, formatter=vbu.Paginator.default_ranked_list_formatter).start(ctx)
 
-    @commands.command(aliases=['dynamic', 'dyn', 'dy', 'd', 'dpoints', 'dpoint', 'rank'])
+    @commands.command(
+        aliases=['dynamic', 'dyn', 'dy', 'd', 'dpoints', 'dpoint', 'rank'],
+        application_command_meta=commands.ApplicationCommandMeta(
+            options=[
+                discord.ApplicationCommandOption(
+                    name="user",
+                    description="The user who you want to get the activity of.",
+                    type=discord.ApplicationCommandOptionType.user,
+                    required=False,
+                ),
+                discord.ApplicationCommandOption(
+                    name="window_days",
+                    description="The number of days of activity that you want to get.",
+                    type=discord.ApplicationCommandOptionType.integer,
+                    required=False,
+                    min_value=2,
+                ),
+            ],
+        ),
+    )
     @commands.defer()
     @commands.bot_has_permissions(send_messages=True)
     @commands.guild_only()
@@ -198,7 +246,10 @@ class Information(vbu.Cog):
         else:
             await ctx.send(f"Over the past {days} days, {user.mention} has gained **{text:,}** tracked messages and been in VC for **{vbu.TimeValue(vc * 60).clean or '0m'}**, giving them a total of **{text + (vc // 5):,}** points.", allowed_mentions=discord.AllowedMentions(users=[ctx.author]))
 
-    @commands.command(aliases=['dynamicroles', 'dyroles', 'dynroles', 'droles'])
+    @commands.command(
+        aliases=['dynamicroles', 'dyroles', 'dynroles', 'droles'],
+        application_command_meta=commands.ApplicationCommandMeta(),
+    )
     @commands.defer()
     @commands.bot_has_permissions(send_messages=True)
     @commands.guild_only()
