@@ -58,7 +58,7 @@ settings_menu = vbu.menus.Menu(
                 ),
             ],
             row_text_display=lambda ctx, row: f"{ctx.get_mentionable_role(row['role_id']).mention} - {int(row['value']):,}",
-            row_component_display=lambda ctx, row: ctx.get_mentionable_role(row['role_id']).name,
+            row_component_display=lambda ctx, row: (ctx.get_mentionable_role(row['role_id']).name, row['role_id'],),
             cache_callback=vbu.menus.Menu.callbacks.set_iterable_dict_cache(vbu.menus.DataLocation.GUILD, "role_gain"),
             cache_delete_callback=vbu.menus.Menu.callbacks.delete_iterable_dict_cache(vbu.menus.DataLocation.GUILD, "role_gain"),
             cache_delete_args=lambda row: (row['role_id'],)
@@ -80,7 +80,7 @@ settings_menu = vbu.menus.Menu(
                 ),
             ],
             row_text_display=lambda ctx, row: ctx.get_mentionable_channel(row['channel_id']).mention,
-            row_component_display=lambda ctx, row: ctx.get_mentionable_channel(row['channel_id']).name,
+            row_component_display=lambda ctx, row: (ctx.get_mentionable_channel(row['channel_id']).name, row['channel_id']),
             cache_callback=vbu.menus.Menu.callbacks.set_iterable_list_cache(vbu.menus.DataLocation.GUILD, "blacklisted_channels"),
             cache_delete_callback=vbu.menus.Menu.callbacks.delete_iterable_list_cache(vbu.menus.DataLocation.GUILD, "blacklisted_channels"),
             cache_delete_args=lambda row: (row['channel_id'],)
@@ -102,7 +102,7 @@ settings_menu = vbu.menus.Menu(
                 ),
             ],
             row_text_display=lambda ctx, row: ctx.get_mentionable_role(row['role_id']).mention,
-            row_component_display=lambda ctx, row: ctx.get_mentionable_role(row['role_id']).name,
+            row_component_display=lambda ctx, row: (ctx.get_mentionable_role(row['role_id']).name, row['role_id']),
             cache_callback=vbu.menus.Menu.callbacks.set_iterable_list_cache(vbu.menus.DataLocation.GUILD, "blacklisted_text_roles"),
             cache_delete_callback=vbu.menus.Menu.callbacks.delete_iterable_list_cache(vbu.menus.DataLocation.GUILD, "blacklisted_text_roles"),
             cache_delete_args=lambda row: (row['role_id'],)
@@ -124,7 +124,7 @@ settings_menu = vbu.menus.Menu(
                 ),
             ],
             row_text_display=lambda ctx, row: ctx.get_mentionable_role(row['role_id']).mention,
-            row_component_display=lambda ctx, row: ctx.get_mentionable_role(row['role_id']).name,
+            row_component_display=lambda ctx, row: (ctx.get_mentionable_role(row['role_id']).name, row['role_id']),
             cache_callback=vbu.menus.Menu.callbacks.set_iterable_list_cache(vbu.menus.DataLocation.GUILD, "blacklisted_vc_roles"),
             cache_delete_callback=vbu.menus.Menu.callbacks.delete_iterable_list_cache(vbu.menus.DataLocation.GUILD, "blacklisted_vc_roles"),
             cache_delete_args=lambda row: (row['role_id'],)
