@@ -43,7 +43,7 @@ settings_menu = vbu.menus.Menu(
         callback=vbu.menus.MenuIterable(
             select_sql="""SELECT * FROM role_list WHERE guild_id=$1 AND key='RoleGain'""",
             select_sql_args=lambda ctx: (ctx.guild.id,),
-            insert_sql="""INSERT INTO role_list (guild_id, role_id, value, key) VALUES ($1, $2, $3, 'RoleGain')""",
+            insert_sql="""INSERT INTO role_list (guild_id, role_id, value, key) VALUES ($1, $2, $3, 'RoleGain') ON CONFLICT (role_id) DO UPDATE SET value = $3""",
             insert_sql_args=lambda ctx, data: (ctx.guild.id, data[0].id, str(data[1])),
             delete_sql="""DELETE FROM role_list WHERE guild_id=$1 AND role_id=$2 AND key='RoleGain'""",
             delete_sql_args=lambda ctx, row: (ctx.guild.id, row['role_id'],),
