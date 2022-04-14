@@ -58,7 +58,7 @@ class RoleHandler(vbu.Cog):
             for member in guild.members:
                 if member.bot:
                     return
-                await self.user_role_handler(member, True, db)
+                await self.user_role_handler(member, False, db)
 
         # Ping every guild member
         self.logger.info("Pinging every guild member with an update")
