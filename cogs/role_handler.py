@@ -46,10 +46,12 @@ class RoleHandler(vbu.Cog):
         """
 
         # Set up an inner method so we can try and do all of this at once
-        async def inner_method(guild, db):
+        async def inner_method(guild: discord.Guild, db):
             try:
-                bot_user = guild.get_member(self.bot.user.id) or await guild.fetch_member(self.bot.user.id)
+                bot_user = guild.get_member(self.bot.user.id)
             except discord.HTTPException:
+                return
+            if not bot_user:
                 return
             if not bot_user.guild_permissions.manage_roles:
                 return
@@ -60,11 +62,9 @@ class RoleHandler(vbu.Cog):
 
         # Ping every guild member
         self.logger.info("Pinging every guild member with an update")
-        tasks = []
         db = await self.bot.database.get_connection()
         for guild in self.bot.guilds:
-            tasks.append(inner_method(guild, db))
-        await asyncio.gather(*tasks)
+            await inner_method(guild, db)
         await db.disconnect()
         self.logger.info("Done pinging every guild member")
 
