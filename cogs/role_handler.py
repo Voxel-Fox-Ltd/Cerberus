@@ -45,26 +45,33 @@ class RoleHandler(vbu.Cog):
         Loop every hour to remove roles from everyone who might have talked.
         """
 
-        # Set up an inner method so we can try and do all of this at once
-        async def inner_method(guild: discord.Guild, db):
-            try:
-                bot_user = guild.get_member(self.bot.user.id)
-            except discord.HTTPException:
-                return
-            if not bot_user:
-                return
-            if not bot_user.guild_permissions.manage_roles:
-                return
-            for member in guild.members:
-                if member.bot:
-                    return
-                await self.user_role_handler(member, False, db)
-
         # Ping every guild member
         self.logger.info("Pinging every guild member with an update")
+
+        # Open a connection we can use this whole time
         db = await self.bot.database.get_connection()
+
+        # Get all users with an activity role for each of the guilds
         for guild in self.bot.guilds:
-            await inner_method(guild, db)
+
+            # Get the settings for the guild
+            role_data_dict: typing.Dict[int, int]  # roleId: threshold
+            role_data_dict = self.bot.guild_settings[guild.id].setdefault('role_gain', dict())
+            all_users_with_level_roles: typing.Set[discord.Member]
+            all_users_with_level_roles = set()
+
+            # Get each level role, add all of its members
+            for role_id in role_data_dict.keys():
+                role: typing.Optional[discord.Role] = guild.get_role(role_id)
+                if role is None:
+                    continue
+                all_users_with_level_roles.update(role.members)
+
+            # For each user in that role, ping all of the members with an update
+            for user in all_users_with_level_roles:
+                await self.user_role_handler(user, db)
+
+        # And we should be done
         await db.disconnect()
         self.logger.info("Done pinging every guild member")
 
@@ -73,7 +80,7 @@ class RoleHandler(vbu.Cog):
         await asyncio.sleep(30 * len(self.bot.shard_ids))  # Sleep for a minute after cog loading
 
     @vbu.Cog.listener("on_user_points_receive")
-    async def user_role_handler(self, user: discord.Member, only_check_for_descending: bool = False, db: vbu.Database = None):
+    async def user_role_handler(self, user: discord.Member, db: vbu.Database = None):
         """
         Looks for when a user passes the threshold of points and then handles their roles accordingly.
         """
@@ -91,10 +98,6 @@ class RoleHandler(vbu.Cog):
         remove_old_roles: bool = self.bot.guild_settings[user.guild.id]['remove_old_roles']
         role_data: typing.List[typing.Tuple[int, int]]
         role_data = sorted([(role_id, threshold) for role_id, threshold in role_data_dict.items()], key=lambda x: x[1], reverse=True)
-
-        # See if they even have any roles worth worrying about
-        if only_check_for_descending and not any([i for i in user._roles if i in role_data_dict.keys()]):
-            return
 
         # Okay cool now it's time to actually look at their roles
         self.logger.info(f"Pinging attempted role updates to user {user.id} in guild {user.guild.id}")
