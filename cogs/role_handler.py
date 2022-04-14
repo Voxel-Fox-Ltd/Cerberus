@@ -61,15 +61,16 @@ class RoleHandler(vbu.Cog):
         # Ping every guild member
         self.logger.info("Pinging every guild member with an update")
         tasks = []
-        async with self.bot.database() as db:
-            for guild in self.bot.guilds:
-                tasks.append(inner_method(guild, db))
-            await asyncio.gather(*tasks)
+        db = await self.bot.database.get_connection()
+        for guild in self.bot.guilds:
+            tasks.append(inner_method(guild, db))
+        await asyncio.gather(*tasks)
+        await db.disconnect()
         self.logger.info("Done pinging every guild member")
 
     @user_role_looper.before_loop
     async def before_user_role_looper(self):
-        await asyncio.sleep(60 * len(self.bot.shard_ids))  # Sleep for a minute after cog loading
+        await asyncio.sleep(30 * len(self.bot.shard_ids))  # Sleep for a minute after cog loading
 
     @vbu.Cog.listener("on_user_points_receive")
     async def user_role_handler(self, user: discord.Member, only_check_for_descending: bool = False, db: vbu.Database = None):
