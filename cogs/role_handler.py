@@ -69,7 +69,7 @@ class RoleHandler(vbu.Cog):
 
     @user_role_looper.before_loop
     async def before_user_role_looper(self):
-        await self.bot.wait_until_ready()
+        await asyncio.sleep(60 * len(self.bot.shard_ids))  # Sleep for a minute after cog loading
 
     @vbu.Cog.listener("on_user_points_receive")
     async def user_role_handler(self, user: discord.Member, only_check_for_descending: bool = False, db: vbu.Database = None):
