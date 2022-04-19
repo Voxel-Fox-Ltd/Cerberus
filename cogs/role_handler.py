@@ -90,7 +90,11 @@ class RoleHandler(vbu.Cog):
             return
 
         # See if we should care about the guild at all
-        if user.guild.me.guild_permissions.manage_roles is False:
+        me = user.guild.me
+        if me is None:
+            self.logger.warning("Bot does not have the guilds scope - not attempting to manage roles.")
+            return
+        if me.guild_permissions.manage_roles is False:
             return
 
         # Grab data
