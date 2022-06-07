@@ -108,7 +108,7 @@ class RoleHandler(vbu.Cog[vbu.Bot]):
         role_data: typing.List[typing.Tuple[int, int]]
         role_data = sorted(
             [
-                (role_id, threshold)
+                (int(role_id), threshold)
                 for role_id, threshold in role_data_dict.items()
             ],
             key=lambda x: x[1],
