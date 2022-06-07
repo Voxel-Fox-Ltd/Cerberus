@@ -33,5 +33,6 @@ def get_all_points(all_points: dict) -> int:
 
     total = 0
     for source, value in all_points.items():
-        total += get_points(value, source)
+        if source in POINT_DIVISOR:
+            total += get_points(value, source)
     return total
