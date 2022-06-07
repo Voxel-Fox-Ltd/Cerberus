@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS user_points(
     guild_id BIGINT NOT NULL,
     channel_id BIGINT,
     source point_source NOT NULL
-)
+);
 
 
 -- CREATE TABLE IF NOT EXISTS user_messages(
