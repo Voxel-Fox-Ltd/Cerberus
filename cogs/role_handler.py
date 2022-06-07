@@ -156,6 +156,7 @@ class RoleHandler(vbu.Cog[vbu.Bot]):
         for row in points_rows:
             user_points[row['source']] += row['count']
         points_in_week = utils.get_all_points(user_points)
+        self.logger.info(f"Total points in guild {user.guild.id} for user {user.id} is {points_in_week} ({role_data})")
 
         # Run for each role
         added_top_role = False
