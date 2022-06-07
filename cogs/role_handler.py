@@ -123,32 +123,27 @@ class RoleHandler(vbu.Cog[vbu.Bot]):
         if db is None:
             db = await vbu.Database.get_connection()
             close_db = True
-        try:
-            points_rows = await db(
-                """
-                SELECT
-                    source,
-                    COUNT(timestamp)
-                FROM
-                    user_points
-                WHERE
-                    guild_id=$1
-                AND
-                    user_id=$2
-                AND
-                    timestamp > (
-                        TIMEZONE('UTC', NOW()) -
-                        MAKE_INTERVAL(days => $3)
-                    )
-                GROUP BY
-                    source
-                """,
-                user.guild.id, user.id, self.bot.guild_settings[user.guild.id]['activity_window_days'],
-            )
-        except Exception as e:
-            self.logger.error("errored in SQL", exc_info=e)
-            raise
-        self.logger.info(points_rows)
+        points_rows = await db(
+            """
+            SELECT
+                source,
+                COUNT(timestamp)
+            FROM
+                user_points
+            WHERE
+                guild_id=$1
+            AND
+                user_id=$2
+            AND
+                timestamp > (
+                    TIMEZONE('UTC', NOW()) -
+                    MAKE_INTERVAL(days => $3)
+                )
+            GROUP BY
+                source
+            """,
+            user.guild.id, user.id, self.bot.guild_settings[user.guild.id]['activity_window_days'],
+        )
         if close_db:
             await db.disconnect()
 
@@ -161,7 +156,7 @@ class RoleHandler(vbu.Cog[vbu.Bot]):
         for row in points_rows:
             user_points[row['source']] += row['count']
         points_in_week = utils.get_all_points(user_points)
-        self.logger.info(f"Total points in guild {user.guild.id} for user {user.id} is {points_in_week} ({user_points}) ({role_data})")
+        # self.logger.info(f"Total points in guild {user.guild.id} for user {user.id} is {points_in_week} ({user_points}) ({role_data})")
 
         # Run for each role
         added_top_role = False
