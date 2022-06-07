@@ -1,3 +1,5 @@
+import uuid
+
 import discord
 import voxelbotutils as vbu
 
@@ -80,7 +82,7 @@ settings_menu = vbu.menus.Menu(
                 ),
             ],
             row_text_display=lambda ctx, row: ctx.get_mentionable_channel(row['channel_id']).mention,
-            row_component_display=lambda ctx, row: (ctx.get_mentionable_channel(row['channel_id']).name, row['channel_id']),
+            row_component_display=lambda ctx, row: (ctx.get_mentionable_channel(row['channel_id']).name, uuid.uuid4()),
             cache_callback=vbu.menus.Menu.callbacks.set_iterable_list_cache(vbu.menus.DataLocation.GUILD, "blacklisted_channels"),
             cache_delete_callback=vbu.menus.Menu.callbacks.delete_iterable_list_cache(vbu.menus.DataLocation.GUILD, "blacklisted_channels"),
             cache_delete_args=lambda row: (row['channel_id'],)
