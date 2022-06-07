@@ -129,7 +129,7 @@ class RoleHandler(vbu.Cog[vbu.Bot]):
                 source,
                 COUNT(timestamp)
             FROM
-                user_messages
+                user_points
             WHERE
                 guild_id=$1
             AND
