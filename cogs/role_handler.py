@@ -164,6 +164,7 @@ class RoleHandler(vbu.Cog[vbu.Bot]):
             # Shorten variable names
             role = user.guild.get_role(role_id)
             if role is None:
+                self.logger.info(f"Couldn't find role in guild {user.guild.id} with ID {role_id!r}")
                 continue
 
             # Check if we can manage roles
