@@ -1,7 +1,7 @@
 import uuid
 
 import discord
-import voxelbotutils as vbu
+from discord.ext import vbu
 
 
 settings_menu = vbu.menus.Menu(
