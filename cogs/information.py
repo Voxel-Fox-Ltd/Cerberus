@@ -374,7 +374,7 @@ class Information(vbu.Cog[vbu.Bot]):
                     self.bot.guild_settings[ctx.guild.id]['activity_window_days'],
                 )
                 for row in point_rows:
-                    val = utils.get_points(row['count'], row['origin'])
+                    val = utils.get_points(row['count'], row['source'])
                     points_per_week[user_id][row['generate_series'] - 1] += val
 
         # Don't bother uploading if they've not got any data
