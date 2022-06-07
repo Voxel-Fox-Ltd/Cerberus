@@ -335,7 +335,7 @@ class Information(vbu.Cog[vbu.Bot]):
                 point_rows = await db(
                     """
                     SELECT
-                        origin, COUNT(timestamp) AS count, generate_series
+                        source, COUNT(timestamp) AS count, generate_series
                     FROM
                         user_points, generate_series(1, $3)
                     WHERE
@@ -362,7 +362,7 @@ class Information(vbu.Cog[vbu.Bot]):
                             )
                         )
                     GROUP BY
-                        origin,
+                        source,
                         generate_series
                     ORDER BY
                         generate_series

@@ -5,7 +5,7 @@ POINT_DIVISOR = {
 }
 
 
-def get_points(value: int, origin: str) -> int:
+def get_points(value: int, source: str) -> int:
     """
     Get the number of points given a key and a divisor.
 
@@ -13,17 +13,17 @@ def get_points(value: int, origin: str) -> int:
     ----------
     value : int
         The raw number of points.
-    origin : str
-        The origin of the points.
+    source : str
+        The source of the points.
     """
 
-    return value // POINT_DIVISOR[origin]
+    return value // POINT_DIVISOR[source]
 
 
 def get_all_points(all_points: dict) -> int:
     """
     Get the total number of points for a user given a dict
-    of values and origin points.
+    of values and source points.
 
     Parameters
     ----------
@@ -32,6 +32,6 @@ def get_all_points(all_points: dict) -> int:
     """
 
     total = 0
-    for origin, value in all_points.items():
-        total += get_points(value, origin)
+    for source, value in all_points.items():
+        total += get_points(value, source)
     return total
