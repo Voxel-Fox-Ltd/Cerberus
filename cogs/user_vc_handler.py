@@ -48,11 +48,19 @@ class UserVCHandler(vbu.Cog):
             except AttributeError:
                 continue
             try:
-                non_bot_users = [(user_id, state) for user_id, state in vc.voice_states.items() if self.bot.get_user(user_id) and self.bot.get_user(user_id).bot is False]
+                non_bot_users = [
+                    (user_id, state)
+                    for user_id, state in vc.voice_states.items()
+                    if self.bot.get_user(user_id) and self.bot.get_user(user_id).bot is False
+                ]
             except Exception:
                 non_bot_users = []
             if len(non_bot_users) > 1:
-                voice_members.extend([(user_id, vc.guild.id, vc.id) for user_id, state in non_bot_users if self.valid_voice_state(state)])
+                voice_members.extend([
+                    (user_id, vc.guild.id, vc.id)
+                    for user_id, state in non_bot_users
+                    if self.valid_voice_state(state)
+                ])
 
         # Filter out the bastards
         for user_id, guild_id, channel_id in voice_members.copy():
@@ -68,7 +76,17 @@ class UserVCHandler(vbu.Cog):
                 voice_members.remove((user_id, guild_id, channel_id))
 
         # Make our records
-        records: typing.List[typing.Tuple[int, int, dt, int]] = [(i, o, discord.utils.naive_dt(discord.utils.utcnow()), p) for i, o, p in voice_members]  # (uid, gid, timestamp, cid)...
+        records: typing.List[typing.Tuple[int, int, dt, int, typing.Literal["voice"]]]
+        records = [
+            (
+                i,
+                o,
+                discord.utils.naive_dt(discord.utils.utcnow()),
+                p,
+                "voice",
+            )
+            for i, o, p in voice_members
+        ]  # (uid, gid, timestamp, cid, 'voice')...
 
         # Only save messages if there _were_ any
         if len(records) == 0:
@@ -80,7 +98,7 @@ class UserVCHandler(vbu.Cog):
         async with self.bot.database() as db:
             await db.conn.copy_records_to_table(
                 'user_vc_activity',
-                columns=('user_id', 'guild_id', 'timestamp', 'channel_id'),
+                columns=('user_id', 'guild_id', 'timestamp', 'channel_id', 'source'),
                 records=records
             )
 

@@ -4,8 +4,10 @@ import typing
 import discord
 from discord.ext import tasks, vbu
 
+from cogs import utils
 
-class RoleHandler(vbu.Cog):
+
+class RoleHandler(vbu.Cog[vbu.Bot]):
 
     def __init__(self, bot: vbu.Bot):
         super().__init__(bot)
@@ -77,10 +79,13 @@ class RoleHandler(vbu.Cog):
 
     @user_role_looper.before_loop
     async def before_user_role_looper(self):
-        await asyncio.sleep(30 * len(self.bot.shard_ids))  # Sleep for a minute after cog loading
+        await asyncio.sleep(30 * len(self.bot.shard_ids or [0]))  # Sleep for a minute after cog loading
 
     @vbu.Cog.listener("on_user_points_receive")
-    async def user_role_handler(self, user: discord.Member, db: vbu.Database = None):
+    async def user_role_handler(
+            self,
+            user: discord.Member,
+            db: typing.Optional[vbu.Database] = None):
         """
         Looks for when a user passes the threshold of points and then handles their roles accordingly.
         """
@@ -101,7 +106,14 @@ class RoleHandler(vbu.Cog):
         role_data_dict: dict = self.bot.guild_settings[user.guild.id].setdefault('role_gain', dict())
         remove_old_roles: bool = self.bot.guild_settings[user.guild.id]['remove_old_roles']
         role_data: typing.List[typing.Tuple[int, int]]
-        role_data = sorted([(role_id, threshold) for role_id, threshold in role_data_dict.items()], key=lambda x: x[1], reverse=True)
+        role_data = sorted(
+            [
+                (role_id, threshold)
+                for role_id, threshold in role_data_dict.items()
+            ],
+            key=lambda x: x[1],
+            reverse=True,
+        )
 
         # Okay cool now it's time to actually look at their roles
         self.logger.info(f"Pinging attempted role updates to user {user.id} in guild {user.guild.id}")
@@ -109,40 +121,41 @@ class RoleHandler(vbu.Cog):
         # Grab data from the db
         close_db = False
         if db is None:
-            db = await self.bot.database.get_connection()
+            db = await vbu.Database.get_connection()
             close_db = True
-        message_rows = await db(
-            """SELECT user_id, COUNT(timestamp) FROM user_messages WHERE guild_id=$1 AND user_id=$2
-            AND timestamp > TIMEZONE('UTC', NOW()) - MAKE_INTERVAL(days => $3) GROUP BY user_id""",
-            user.guild.id, user.id, self.bot.guild_settings[user.guild.id]['activity_window_days'],
-        )
-        vc_rows = await db(
-            """SELECT user_id, COUNT(timestamp) FROM user_vc_activity WHERE guild_id=$1 AND user_id=$2
-            AND timestamp > TIMEZONE('UTC', NOW()) - MAKE_INTERVAL(days => $3) GROUP BY user_id""",
-            user.guild.id, user.id, self.bot.guild_settings[user.guild.id]['activity_window_days'],
-        )
-        mc_rows = await db(
-            """SELECT user_id, COUNT(timestamp) FROM minecraft_server_activity WHERE guild_id=$1 AND user_id=$2
-            AND timestamp > TIMEZONE('UTC', NOW()) - MAKE_INTERVAL(days => $3) GROUP BY user_id""",
+        points_rows = await db(
+            """
+            SELECT
+                user_id,
+                COUNT(timestamp)
+            FROM
+                user_messages
+            WHERE
+                guild_id=$1
+            AND
+                user_id=$2
+            AND
+                timestamp > (
+                    TIMEZONE('UTC', NOW()) -
+                    MAKE_INTERVAL(days => $3)
+                )
+            GROUP BY
+                user_id
+            """,
             user.guild.id, user.id, self.bot.guild_settings[user.guild.id]['activity_window_days'],
         )
         if close_db:
             await db.disconnect()
 
         # Work out the user points
-        try:
-            text_points = message_rows[0]['count']
-        except IndexError:
-            text_points = 0
-        try:
-            vc_points = vc_rows[0]['count']
-        except IndexError:
-            vc_points = 0
-        try:
-            mc_points = mc_rows[0]['count']
-        except IndexError:
-            mc_points = 0
-        points_in_week = text_points + (vc_points // 5) + (mc_points // 5)  # Add how many points they got in that week
+        user_points = {
+            "message": 0,
+            "voice": 0,
+            "minecraft": 0,
+        }
+        for row in points_rows:
+            user_points[row['source']] += row['count']
+        points_in_week = utils.get_all_points(user_points)
 
         # Run for each role
         added_top_role = False
@@ -155,39 +168,66 @@ class RoleHandler(vbu.Cog):
 
             # Check if we can manage roles
             if not user.guild.me.guild_permissions.manage_roles:
-                self.logger.info(f"Can't manage {role_id} role for user {user.id} in guild {user.guild.id} - no perms")
+                self.logger.info((
+                    f"Can't manage {role_id} role for user "
+                    f"{user.id} in guild {user.guild.id} - no perms"
+                ))
                 continue
             if user.guild.me.top_role.position <= role.position:
-                self.logger.info(f"Can't manage {role_id} role for user {user.id} in guild {user.guild.id} - too low")
+                self.logger.info((
+                    f"Can't manage {role_id} role for user "
+                    f"{user.id} in guild {user.guild.id} - too low"
+                ))
                 continue
 
-            # Add role if they're over the threshold - check for channel make sure users are only GIVEN roles if they actually sent a message
-            # if points_in_week >= threshold and channel is not None:
+            # Add role if they're over the threshold -
+            # check for channel make sure users are only
+            # GIVEN roles if they actually sent a message
             if points_in_week >= threshold:
                 if added_top_role is False or remove_old_roles is False:
                     if role_id not in user._roles:
                         try:
                             await user.add_roles(role)
-                            self.logger.info(f"Added role with ID {role.id} to user {user.id} in guild {user.guild.id}")
+                            self.logger.info((
+                                f"Added role with ID {role.id} to user "
+                                f"{user.id} in guild {user.guild.id}"
+                            ))
                         except Exception as e:
-                            self.logger.info(f"Can't manage {role_id} role for user {user.id} in guild {user.guild.id} - {e}")
+                            self.logger.info((
+                                f"Can't manage {role_id} role for user "
+                                f"{user.id} in guild {user.guild.id} - {e}"
+                            ))
                     added_top_role = True
                 elif remove_old_roles is True:
                     if role_id in user._roles:
                         try:
                             await user.remove_roles(role)
-                            self.logger.info(f"Removed role with ID {role.id} from user {user.id} in guild {user.guild.id}")
+                            self.logger.info((
+                                f"Removed role with ID {role.id} from "
+                                f"user {user.id} in guild {user.guild.id}"
+                            ))
                             added_top_role = True
                         except Exception as e:
-                            self.logger.info(f"Can't manage {role_id} role for user {user.id} in guild {user.guild.id} - {e}")
+                            self.logger.info((
+                                f"Can't manage {role_id} role for user "
+                                f"{user.id} in guild {user.guild.id} - {e}"
+                            ))
 
-            # Remove role if they're under the threshold - no channel check means that too-high roles will always be removed
+            # Remove role if they're under the threshold -
+            # no channel check means that too-high roles
+            # will always be removed
             elif points_in_week < threshold and role_id in user._roles:
                 try:
                     await user.remove_roles(role)
-                    self.logger.info(f"Removed role with ID {role.id} from user {user.id} in guild {user.guild.id}")
+                    self.logger.info((
+                        f"Removed role with ID {role.id} from "
+                        f"user {user.id} in guild {user.guild.id}"
+                    ))
                 except Exception as e:
-                    self.logger.info(f"Can't manage {role_id} role for user {user.id} in guild {user.guild.id} - {e}")
+                    self.logger.info((
+                        f"Can't manage {role_id} role for user "
+                        f"{user.id} in guild {user.guild.id} - {e}"
+                    ))
 
 
 def setup(bot: vbu.Bot):

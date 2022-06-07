@@ -10,7 +10,8 @@ class UserMessageHandler(vbu.Cog):
 
     def __init__(self, bot: vbu.Bot):
         super().__init__(bot)
-        self.last_message: typing.Dict[discord.Member, dt] = collections.defaultdict(lambda: discord.utils.utcnow() - timedelta(days=69))
+        self.last_message: typing.Dict[discord.Member, dt]
+        self.last_message = collections.defaultdict(lambda: discord.utils.utcnow() - timedelta(days=69))
         self.cached_for_saving: typing.List[discord.Message] = list()
         self.user_message_databaser.start()
 
@@ -42,7 +43,13 @@ class UserMessageHandler(vbu.Cog):
 
         # Sort them into a nice easy tuple
         records = [
-            (discord.utils.naive_dt(i.created_at), i.author.id, i.guild.id, i.channel.id)
+            (
+                discord.utils.naive_dt(i.created_at),
+                i.author.id,
+                i.guild.id,
+                i.channel.id,
+                'message',
+            )
             for i in currently_saving
             if i.author.bot is False and i.guild is not None
         ]
@@ -51,8 +58,8 @@ class UserMessageHandler(vbu.Cog):
         self.logger.info(f"Storing {len(records)} cached messages in database")
         async with self.bot.database() as db:
             await db.conn.copy_records_to_table(
-                'user_messages',
-                columns=('timestamp', 'user_id', 'guild_id', 'channel_id'),
+                'user_points',
+                columns=('timestamp', 'user_id', 'guild_id', 'channel_id', 'source'),
                 records=records
             )
 
@@ -64,6 +71,8 @@ class UserMessageHandler(vbu.Cog):
         """
 
         # Filter out DMs
+        if not message.guild:
+            return
         if not isinstance(message.author, discord.Member):
             return
 

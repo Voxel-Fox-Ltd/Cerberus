@@ -6,36 +6,21 @@ event_webhook_url = ""  # Some events will be posted via webhook to this url
 
 # The intents that the bot should start with
 [intents]
-    # Guilds - recommended: true. Used for guild join/remove, channel create/delete/update, Bot.get_channel, Bot.guilds.
-    guilds = true
-    # Members - recommended: false (privileged intent). Used for member join/remove/update, Member.roles, Member.nick, User.name, etc.
-    members = false
-    # Bans - recommended: false. Used for member ban/unban.
-    bans = true
-    # Emojis - recommended: false. Used for guild emojis update, Bot.get_emoji, Guild.emojis.
-    emojis = true
-    # Integrations - recommended: false. Used for guild integrations update.
-    integrations = true
-    # Webhooks - recommended: false. Used for guild webhooks update.
-    webhooks = true
-    # Invites - recommended: false. Used for invite create/delete.
-    invites = true
-    # Voice states - recommended: false. Used for voice state update, VoiceChannel.members, Member.voice.
-    voice_states = true
-    # Presences - recommended: false (privileged intent). Used for member update (for activities and status), Member.status.
-    presences = false
-    # Guild messages - recommended: true. Used for message events in guilds.
-    guild_messages = true
-    # DM messages - recommended: true. Used for message events in DMs.
-    dm_messages = true
-    # Guild reactions - recommended: false. Used for [raw] reaction add/remove/clear events in guilds.
-    guild_reactions = true
-    # DM reactions - recommended: false. Used for [raw] reaction add/remove/clear events in DMs.
-    dm_reactions = true
-    # Guild typing - recommended: false. Used for the typing event in guilds.
-    guild_typing = false
-    # DM typing - recommended: false. Used for the typing event in Dms.
-    dm_typing = false
+    guilds = true  # Guilds - recommended: true. Used for guild join/remove, channel create/delete/update, Bot.get_channel, Bot.guilds.
+    members = true  # Members - recommended: false (privileged intent). Used for member join/remove/update, Member.roles, Member.nick, User.name, etc.
+    bans = true  # Bans - recommended: false. Used for member ban/unban.
+    emojis = true  # Emojis - recommended: false. Used for guild emojis update, Bot.get_emoji, Guild.emojis.
+    integrations = true  # Integrations - recommended: false. Used for guild integrations update.
+    webhooks = true  # Webhooks - recommended: false. Used for guild webhooks update.
+    invites = true  # Invites - recommended: false. Used for invite create/delete.
+    voice_states = true  # Voice states - recommended: false. Used for voice state update, VoiceChannel.members, Member.voice.
+    presences = false  # Presences - recommended: false (privileged intent). Used for member update (for activities and status), Member.status.
+    guild_messages = true  # Guild messages - recommended: true. Used for message events in guilds.
+    dm_messages = true  # DM messages - recommended: true. Used for message events in DMs.
+    guild_reactions = true  # Guild reactions - recommended: false. Used for [raw] reaction add/remove/clear events in guilds.
+    dm_reactions = true  # DM reactions - recommended: false. Used for [raw] reaction add/remove/clear events in DMs.
+    guild_typing = false  # Guild typing - recommended: false. Used for the typing event in guilds.
+    dm_typing = false  # DM typing - recommended: false. Used for the typing event in Dms.
 
 # Data used to send API requests to whatever service
 [bot_listing_api_keys]
