@@ -126,7 +126,7 @@ class RoleHandler(vbu.Cog[vbu.Bot]):
         points_rows = await db(
             """
             SELECT
-                user_id,
+                source,
                 COUNT(timestamp)
             FROM
                 user_messages
@@ -140,7 +140,7 @@ class RoleHandler(vbu.Cog[vbu.Bot]):
                     MAKE_INTERVAL(days => $3)
                 )
             GROUP BY
-                user_id
+                source
             """,
             user.guild.id, user.id, self.bot.guild_settings[user.guild.id]['activity_window_days'],
         )
