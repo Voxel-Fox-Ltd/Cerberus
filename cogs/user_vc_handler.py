@@ -97,7 +97,7 @@ class UserVCHandler(vbu.Cog):
         self.logger.info(f"Storing {len(records)} cached VC minutes in database")
         async with self.bot.database() as db:
             await db.conn.copy_records_to_table(
-                'user_vc_activity',
+                'user_points',
                 columns=('user_id', 'guild_id', 'timestamp', 'channel_id', 'source'),
                 records=records
             )
