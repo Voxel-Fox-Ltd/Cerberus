@@ -127,7 +127,7 @@ class Information(vbu.Cog[vbu.Bot]):
             ordered_guild_user_strings = []
             for d in ordered_guild_user_data:
                 total_points = utils.get_all_points(d)
-                vc_time = vbu.TimeValue(d['vc'] * 60).clean_spaced or '0m'
+                vc_time = vbu.TimeValue(d['voice'] * 60).clean_spaced or '0m'
                 if self.bot.guild_settings[ctx.guild.id]['minecraft_srv_authorization']:
                     text = (
                         "**<@{id}>** - **{total_points:,}** "
