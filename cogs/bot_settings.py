@@ -5,6 +5,8 @@ from discord.ext import vbu
 
 
 settings_menu = vbu.menus.Menu(
+
+    # Remove old roles
     vbu.menus.Option(
         display=lambda ctx: f"Remove old roles (currently {ctx.bot.guild_settings[ctx.guild.id]['remove_old_roles']})",
         component_display="Remove old roles",
@@ -13,12 +15,14 @@ settings_menu = vbu.menus.Menu(
                 prompt="Do you want to remove old roles when new ones are gained?",
                 converter=lambda payload: payload.custom_id == "YES",
                 timeout_message="Timed out asking for old role removal.",
-                components=discord.ui.MessageComponents.boolean_buttons(),
+                components=discord.ui.MessageComponents.boolean_buttons(yes_id="YES"),
             ),
         ],
         callback=vbu.menus.Menu.callbacks.set_table_column(vbu.menus.DataLocation.GUILD, "guild_settings", "remove_old_roles"),
         cache_callback=vbu.menus.Menu.callbacks.set_cache_from_key(vbu.menus.DataLocation.GUILD, "remove_old_roles"),
     ),
+
+    # Role interval time
     vbu.menus.Option(
         display=lambda ctx: f"Set role interval time (currently {ctx.bot.guild_settings[ctx.guild.id]['activity_window_days']:,} days)",
         component_display="Role interval time",
@@ -43,6 +47,8 @@ settings_menu = vbu.menus.Menu(
         cache_callback=vbu.menus.Menu.callbacks.set_cache_from_key(vbu.menus.DataLocation.GUILD, "activity_window_days"),
         allow_none=False,
     ),
+
+    # Role gain settings
     vbu.menus.Option(
         display="Role gain settings",
         callback=vbu.menus.MenuIterable(
@@ -69,6 +75,8 @@ settings_menu = vbu.menus.Menu(
             cache_delete_args=lambda row: (row['role_id'],)
         ),
     ),
+
+    # Blacklisted channel settings
     vbu.menus.Option(
         display="Blacklisted channel settings",
         callback=vbu.menus.MenuIterable(
@@ -91,6 +99,8 @@ settings_menu = vbu.menus.Menu(
             cache_delete_args=lambda row: (row['channel_id'],)
         ),
     ),
+
+    # Blacklisted role settings (text points)
     vbu.menus.Option(
         display="Blacklisted role settings (text points)",
         callback=vbu.menus.MenuIterable(
@@ -113,6 +123,8 @@ settings_menu = vbu.menus.Menu(
             cache_delete_args=lambda row: (row['role_id'],)
         ),
     ),
+
+    # Blacklisted role settings (VC points)
     vbu.menus.Option(
         display="Blacklisted role settings (VC points)",
         callback=vbu.menus.MenuIterable(
