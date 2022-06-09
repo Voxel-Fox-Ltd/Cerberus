@@ -26,8 +26,11 @@ settings_menu = vbu.menus.Menu(
             vbu.menus.Converter(
                 prompt="How many days should activity be tracked over?",
                 checks=[
-                    vbu.menus.Check(
-                        check=lambda message: message.content.isdigit() and int(message.content) in range(7, 31),
+                    vbu.menus.ModalCheck(
+                        check=lambda interaction: (
+                            interaction.components[0].components[0].value.isdigit() and
+                            int(interaction.components[0].components[0].value) in range(7, 31)
+                        ),
                         on_failure=vbu.menus.Check.failures.RETRY,
                         fail_message="You need to give a *number* between **7** and **31**.",
                     ),
