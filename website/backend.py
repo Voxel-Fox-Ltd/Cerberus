@@ -1,4 +1,4 @@
-from aiohttp.web import HTTPFound, Request, Response, RouteTableDef
+from aiohttp.web import HTTPFound, Request, Response, RouteTableDef, json_response
 import aiohttp_session
 from discord.ext import vbu
 
@@ -46,7 +46,7 @@ async def login(request: Request):
 
 
 @routes.post('/webhooks/minecraft_server_activity')
-async def paypal_purchase_complete(request:Request):
+async def minecraft_server_activity(request:Request):
     """
     Handle Cerberus throwing data from the Minecraft server at us.
     """
@@ -155,4 +155,3 @@ async def paypal_purchase_complete(request:Request):
         },
         status=201,
     )
-
