@@ -1,4 +1,12 @@
-from aiohttp.web import HTTPFound, Request, Response, RouteTableDef, json_response
+from datetime import datetime as dt
+
+from aiohttp.web import (
+    HTTPFound,
+    Request,
+    Response,
+    RouteTableDef,
+    json_response,
+)
 import aiohttp_session
 from discord.ext import vbu
 
@@ -46,7 +54,7 @@ async def login(request: Request):
 
 
 @routes.post('/webhooks/minecraft_server_activity')
-async def minecraft_server_activity(request:Request):
+async def minecraft_server_activity(request: Request):
     """
     Handle Cerberus throwing data from the Minecraft server at us.
     """
