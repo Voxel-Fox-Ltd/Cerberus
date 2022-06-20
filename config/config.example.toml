@@ -40,6 +40,7 @@ event_webhook_url = ""  # Some events will be posted via webhook to this url
 
 # This data is passed directly over to asyncpg.connect()
 [database]
+    type = "postgres"
     enabled = true
     user = "database_username"
     password = "database_password"
