@@ -56,7 +56,7 @@ class Information(vbu.Cog[vbu.Bot]):
         application_command_meta=commands.ApplicationCommandMeta(
             options=[
                 discord.ApplicationCommandOption(
-                    name="window_days",
+                    name="days",
                     description="The number of days of activity that you want to check.",
                     type=discord.ApplicationCommandOptionType.integer,
                     required=False,
@@ -159,7 +159,7 @@ class Information(vbu.Cog[vbu.Bot]):
                     required=False,
                 ),
                 discord.ApplicationCommandOption(
-                    name="window_days",
+                    name="days",
                     description="The number of days of activity that you want to get.",
                     type=discord.ApplicationCommandOptionType.integer,
                     required=False,
