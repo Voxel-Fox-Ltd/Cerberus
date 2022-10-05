@@ -19,7 +19,7 @@ remove_old_roles = menus.Option(
     converters=[
         menus.Converter(
             prompt="Do you want to remove old roles when new ones are gained?",
-            converter=lambda payload: payload.custom_id == "YES",
+            converter=lambda payload: payload.custom_id.endswith(" YES"),
             timeout_message="Timed out asking for old role removal.",
             components=discord.ui.MessageComponents.boolean_buttons(
                 yes=("Yes", f"{uuid.uuid4()} YES"),
