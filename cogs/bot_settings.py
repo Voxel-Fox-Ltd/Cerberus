@@ -132,10 +132,21 @@ role_gain_settings = vbu.menus.Option(
         converters=[
             menus.Converter(
                 prompt="What role do you want to be gainable?",
-                converter=discord.Role,
+                converter=lambda interaction: (
+                    None
+                    if interaction.custom_id.endswith("CANCEL")
+                    else
+                    list(interaction.resolved.roles.values())[0]
+                ),
                 components=discord.ui.MessageComponents(
                     discord.ui.ActionRow(
                         discord.ui.RoleSelectMenu(),
+                    ),
+                    discord.ui.ActionRow(
+                        discord.ui.Button(
+                            label="Cancel",
+                            custom_id=f"{uuid.uuid4()} CANCEL",
+                        ),
                     ),
                 ),
             ),

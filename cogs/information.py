@@ -382,7 +382,10 @@ class Information(vbu.Cog[vbu.Bot]):
             return await ctx.send("They've not sent any messages that I can graph.")
 
         # Get roles
-        role_data = self.bot.guild_settings[ctx.guild.id]['role_gain']
+        role_data: dict = (
+            self.bot.guild_settings[ctx.guild.id]
+            .get('role_gain', dict())
+        )  # type: ignore
         role_object_data = sorted(
             [
                 (threshold, ctx.guild.get_role(role_id))
