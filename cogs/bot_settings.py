@@ -19,7 +19,7 @@ remove_old_roles = menus.Option(
     converters=[
         menus.Converter(
             prompt="Do you want to remove old roles when new ones are gained?",
-            converter=lambda payload: payload.custom_id.endswith(" YES"),
+            converter=lambda payload: str(payload.custom_id).endswith(" YES"),
             timeout_message="Timed out asking for old role removal.",
             components=discord.ui.MessageComponents.boolean_buttons(
                 yes=("Yes", f"{uuid.uuid4()} YES"),
@@ -81,25 +81,50 @@ role_gain_settings = vbu.menus.Option(
     display="Role gain settings",
     callback=menus.MenuIterable(
         select_sql="""
-            SELECT * FROM role_list
-            WHERE guild_id=$1
-            AND key='RoleGain'""",
+            SELECT
+                *
+            FROM
+                role_list
+            WHERE
+                guild_id=$1
+            AND
+                key = 'RoleGain'
+            """,
         select_sql_args=lambda ctx: (
             ctx.guild.id,
         ),
         insert_sql="""
-            INSERT INTO role_list (guild_id, role_id, value, key)
-            VALUES ($1, $2, $3, 'RoleGain')""",
+            INSERT INTO
+                role_list
+                (
+                    guild_id,
+                    role_id,
+                    value,
+                    key
+                )
+            VALUES
+                (
+                    $1,
+                    $2,
+                    $3,
+                    'RoleGain'
+                )
+            """,
         insert_sql_args=lambda ctx, data: (
             ctx.guild.id,
             data[0].id,
             str(data[1]),
         ),
         delete_sql="""
-            DELETE FROM role_list
-            WHERE guild_id=$1
-            AND role_id=$2
-            AND key='RoleGain'""",
+            DELETE FROM
+                role_list
+            WHERE
+                guild_id=$1
+            AND
+                role_id=$2
+            AND
+                key = 'RoleGain'
+            """,
         delete_sql_args=lambda ctx, row: (
             ctx.guild.id,
             row['role_id'],
@@ -108,6 +133,11 @@ role_gain_settings = vbu.menus.Option(
             menus.Converter(
                 prompt="What role do you want to be gainable?",
                 converter=discord.Role,
+                components=discord.ui.MessageComponents(
+                    discord.ui.ActionRow(
+                        discord.ui.RoleSelectMenu(),
+                    ),
+                ),
             ),
             menus.Converter(
                 prompt="How many points does this role require to be gainable?",

@@ -51,7 +51,9 @@ class UserVCHandler(vbu.Cog):
                 non_bot_users = [
                     (user_id, state)
                     for user_id, state in vc.voice_states.items()
-                    if self.bot.get_user(user_id) and self.bot.get_user(user_id).bot is False
+                    if
+                        self.bot.get_user(user_id)
+                        and self.bot.get_user(user_id).bot is False
                 ]
             except Exception:
                 non_bot_users = []
@@ -64,7 +66,10 @@ class UserVCHandler(vbu.Cog):
 
         # Filter out the bastards
         for user_id, guild_id, channel_id in voice_members.copy():
-            blacklisted_roles: typing.List[int] = self.bot.guild_settings[guild_id].setdefault('blacklisted_vc_roles', list())
+            blacklisted_roles: typing.List[int] = (
+                self.bot.guild_settings[guild_id]
+                .setdefault('blacklisted_vc_roles', list())
+            )
             guild = self.bot.get_guild(guild_id)
             try:
                 member = guild.get_member(user_id) or await guild.fetch_member(user_id)
