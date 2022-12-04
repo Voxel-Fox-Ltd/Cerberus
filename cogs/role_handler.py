@@ -79,7 +79,7 @@ class RoleHandler(vbu.Cog[vbu.Bot]):
 
     @user_role_looper.before_loop
     async def before_user_role_looper(self):
-        await asyncio.sleep(30 * len(self.bot.shard_ids or [0]))  # Sleep for a minute after cog loading
+        await asyncio.sleep(60 * len(self.bot.shard_ids or [0]))  # Sleep for a minute after cog loading
 
     @vbu.Cog.listener("on_user_points_receive")
     async def user_role_handler(
@@ -89,6 +89,10 @@ class RoleHandler(vbu.Cog[vbu.Bot]):
         """
         Looks for when a user passes the threshold of points and then handles their roles accordingly.
         """
+
+        # Don't do anything until the startup task is completed
+        if self.bot.startup_method and not self.bot.startup_method.done():
+            return
 
         # Don't add roles to bots
         if user.bot:

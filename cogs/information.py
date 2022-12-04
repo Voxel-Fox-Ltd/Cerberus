@@ -30,12 +30,14 @@ class Information(vbu.Cog[vbu.Bot]):
                     min_value=2,
                 ),
             ],
+            guild_only=True,
         ),
     )
     @commands.defer()
     @commands.bot_has_permissions(send_messages=True, embed_links=True)
     @commands.cooldown(1, 60, commands.BucketType.user)
     @commands.guild_only()
+    @vbu.checks.bot_is_ready()
     async def graph(
             self,
             ctx: vbu.Context,
@@ -68,6 +70,7 @@ class Information(vbu.Cog[vbu.Bot]):
     @commands.defer()
     @commands.bot_has_permissions(send_messages=True, embed_links=True)
     @commands.guild_only()
+    @vbu.checks.bot_is_ready()
     async def leaderboard(self, ctx: vbu.Context, days: typing.Optional[int] = None):
         """
         Gives you the leaderboard users for the server.
@@ -171,6 +174,7 @@ class Information(vbu.Cog[vbu.Bot]):
     @commands.defer()
     @commands.bot_has_permissions(send_messages=True)
     @commands.guild_only()
+    @vbu.checks.bot_is_ready()
     async def points(
             self,
             ctx: vbu.Context,
