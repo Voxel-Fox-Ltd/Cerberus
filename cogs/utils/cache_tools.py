@@ -5,7 +5,7 @@ import collections
 import functools
 from typing import ClassVar, Optional
 
-from . import alist
+from .async_iterators import alist
 
 
 __all__ = (
