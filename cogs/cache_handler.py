@@ -3,6 +3,11 @@ from discord.ext import vbu
 from . import utils
 
 
+async def aiterator(iterable):
+    for i in iterable:
+        yield i
+
+
 class CacheHandler(vbu.Cog[vbu.Bot]):
 
     async def cache_setup(self, db: vbu.Database):
@@ -27,7 +32,7 @@ class CacheHandler(vbu.Cog[vbu.Bot]):
 
         # Add them to the cache
         self.logger.info("Adding points to cache")
-        for row in rows:
+        async for row in aiterator(rows):
             utils.cache.PointHolder.add_point(
                 row["user_id"],
                 row["guild_id"],
