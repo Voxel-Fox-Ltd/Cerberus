@@ -90,10 +90,6 @@ class RoleHandler(vbu.Cog[vbu.Bot]):
         Looks for when a user passes the threshold of points and then handles their roles accordingly.
         """
 
-        # Don't do anything until the startup task is completed
-        if self.bot.startup_method and not self.bot.startup_method.done():
-            return
-
         # Don't add roles to bots
         if user.bot:
             return
