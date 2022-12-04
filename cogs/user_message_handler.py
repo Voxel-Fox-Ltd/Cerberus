@@ -5,13 +5,17 @@ import collections
 import discord
 from discord.ext import tasks, vbu
 
+from . import utils
+
 
 class UserMessageHandler(vbu.Cog):
 
     def __init__(self, bot: vbu.Bot):
         super().__init__(bot)
         self.last_message: typing.Dict[discord.Member, dt]
-        self.last_message = collections.defaultdict(lambda: discord.utils.utcnow() - timedelta(days=69))
+        self.last_message = collections.defaultdict(
+            lambda: discord.utils.utcnow() - timedelta(days=69)
+        )
         self.cached_for_saving: typing.List[discord.Message] = list()
         self.user_message_databaser.start()
 
@@ -59,8 +63,23 @@ class UserMessageHandler(vbu.Cog):
         async with self.bot.database() as db:
             await db.conn.copy_records_to_table(
                 'user_points',
-                columns=('timestamp', 'user_id', 'guild_id', 'channel_id', 'source'),
+                columns=(
+                    'timestamp',
+                    'user_id',
+                    'guild_id',
+                    'channel_id',
+                    'source',
+                ),
                 records=records
+            )
+
+        # Store the points in the cache
+        for record in records:
+            utils.cache.PointHolder.add_point(
+                record[1],
+                record[2],
+                utils.cache.PointSource("message"),
+                record[0],
             )
 
     @vbu.Cog.listener("on_message")

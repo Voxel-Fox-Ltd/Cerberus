@@ -4,6 +4,8 @@ from datetime import datetime as dt
 import discord
 from discord.ext import tasks, vbu
 
+from . import utils
+
 
 class UserVCHandler(vbu.Cog):
 
@@ -103,8 +105,23 @@ class UserVCHandler(vbu.Cog):
         async with self.bot.database() as db:
             await db.conn.copy_records_to_table(
                 'user_points',
-                columns=('user_id', 'guild_id', 'timestamp', 'channel_id', 'source'),
+                columns=(
+                    'user_id',
+                    'guild_id',
+                    'timestamp',
+                    'channel_id',
+                    'source',
+                ),
                 records=records
+            )
+
+        # Store the points in the cache
+        for record in records:
+            utils.cache.PointHolder.add_point(
+                record[0],
+                record[1],
+                utils.cache.PointSource("voice"),
+                record[2],
             )
 
 
