@@ -34,16 +34,16 @@ class CachedPoint:
     source: PointSource
     timestamp: dt
 
-    def schedule_deletion(self, container: list[Self]) -> asyncio.Task:
-        """
-        Start a task to remove the current class from the containing element.
-        """
+    # def schedule_deletion(self, container: list[Self]) -> asyncio.Task:
+    #     """
+    #     Start a task to remove the current class from the containing element.
+    #     """
 
-        async def _delete():
-            while self.timestamp > dt.utcnow() - timedelta(days=31):
-                await asyncio.sleep(0)
-            container.remove(self)
-        return asyncio.create_task(_delete())
+    #     async def _delete():
+    #         while self.timestamp > dt.utcnow() - timedelta(days=31):
+    #             await asyncio.sleep(0)
+    #         container.remove(self)
+    #     return asyncio.create_task(_delete())
 
 
 class PointHolder:
@@ -56,7 +56,7 @@ class PointHolder:
     all_points = collections.defaultdict(
         functools.partial(collections.defaultdict, list),
     )
-    _point_removal_tasks: set[asyncio.Task] = set()
+    # _point_removal_tasks: set[asyncio.Task] = set()
 
     @classmethod
     def add_point(
@@ -71,5 +71,5 @@ class PointHolder:
 
         point = CachedPoint(source, timestamp or dt.utcnow())
         cls.all_points[user_id][guild_id].append(point)
-        deletion_task = point.schedule_deletion(cls.all_points[user_id][guild_id])
-        cls._point_removal_tasks.add(deletion_task)
+        # deletion_task = point.schedule_deletion(cls.all_points[user_id][guild_id])
+        # cls._point_removal_tasks.add(deletion_task)
