@@ -12,6 +12,7 @@ class CacheHandler(vbu.Cog[vbu.Bot]):
         """
 
         # Get the last 31 days of points
+        self.logger.info("Getting last 31 days of points from database")
         rows = await db.call(
             """
             SELECT
@@ -22,15 +23,18 @@ class CacheHandler(vbu.Cog[vbu.Bot]):
                 timestamp > (TIMEZONE('UTC', NOW()) - INTERVAL '31 days')
             """,
         )
+        self.logger.info(f"Got {len(rows)} points from database regarding the last 31 days")
 
         # Add them to the cache
+        self.logger.info("Adding points to cache")
         for row in rows:
             utils.cache.PointHolder.add_point(
                 row["user_id"],
                 row["guild_id"],
-                utils.cache.PointSource(row["source"]),
+                utils.cache.PointSource[row["source"]],
                 row["timestamp"],
             )
+        self.logger.info("Added points to cache")
 
 
 

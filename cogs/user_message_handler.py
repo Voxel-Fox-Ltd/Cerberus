@@ -78,7 +78,7 @@ class UserMessageHandler(vbu.Cog):
             utils.cache.PointHolder.add_point(
                 record[1],
                 record[2],
-                utils.cache.PointSource("message"),
+                utils.cache.PointSource["message"],
                 record[0],
             )
 

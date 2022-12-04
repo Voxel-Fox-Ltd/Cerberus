@@ -120,7 +120,7 @@ class UserVCHandler(vbu.Cog):
             utils.cache.PointHolder.add_point(
                 record[0],
                 record[1],
-                utils.cache.PointSource("voice"),
+                utils.cache.PointSource["voice"],
                 record[2],
             )
 
