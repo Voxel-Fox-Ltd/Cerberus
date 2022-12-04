@@ -1,3 +1,5 @@
+import asyncio
+
 from discord.ext import vbu
 
 from . import utils
@@ -5,6 +7,7 @@ from . import utils
 
 async def aiterator(iterable):
     for i in iterable:
+        await asyncio.sleep(0)
         yield i
 
 
