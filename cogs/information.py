@@ -2,6 +2,7 @@ import math
 import typing
 import collections
 import random
+from datetime import timedelta
 
 import discord
 from discord.ext import commands, vbu
@@ -195,14 +196,19 @@ class Information(vbu.Cog[vbu.Bot]):
         assert user
 
         # And now get the points
-        async with self.bot.database() as db:
-            points_rows = await db(
-                """SELECT source, COUNT(timestamp) FROM user_points
-                WHERE guild_id=$1 AND user_id=$2
-                AND timestamp > TIMEZONE('UTC', NOW()) - MAKE_INTERVAL(days => $3 * 1)
-                GROUP BY source""",
-                ctx.guild.id, user.id, days,
-            )
+        # async with self.bot.database() as db:
+        #     points_rows = await db(
+        #         """SELECT source, COUNT(timestamp) FROM user_points
+        #         WHERE guild_id=$1 AND user_id=$2
+        #         AND timestamp > TIMEZONE('UTC', NOW()) - MAKE_INTERVAL(days => $3 * 1)
+        #         GROUP BY source""",
+        #         ctx.guild.id, user.id, days,
+        #     )
+        user_point_objects = utils.cache.PointHolder.get_points_above_age(
+            user.id,
+            ctx.guild.id,
+            timedelta(days=days),
+        )
 
         # Get our counts
         user_points = {
@@ -210,8 +216,8 @@ class Information(vbu.Cog[vbu.Bot]):
             "voice": 0,
             "minecraft": 0,
         }
-        for row in points_rows:
-            user_points[row['source']] += row['count']
+        for up in user_point_objects:
+            user_points[up.source.name] += 1
 
         # And format into a list
         if self.bot.guild_settings[ctx.guild.id]['minecraft_srv_authorization']:

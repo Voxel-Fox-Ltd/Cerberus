@@ -34,16 +34,13 @@ class CachedPoint:
     source: PointSource
     timestamp: dt
 
-    # def schedule_deletion(self, container: list[Self]) -> asyncio.Task:
-    #     """
-    #     Start a task to remove the current class from the containing element.
-    #     """
+    @property
+    def is_old(self) -> bool:
+        """
+        Check if the point is old.
+        """
 
-    #     async def _delete():
-    #         while self.timestamp > dt.utcnow() - timedelta(days=31):
-    #             await asyncio.sleep(0)
-    #         container.remove(self)
-    #     return asyncio.create_task(_delete())
+        return self.timestamp < dt.utcnow() - timedelta(days=31)
 
 
 class PointHolder:
@@ -71,5 +68,30 @@ class PointHolder:
 
         point = CachedPoint(source, timestamp or dt.utcnow())
         cls.all_points[user_id][guild_id].append(point)
-        # deletion_task = point.schedule_deletion(cls.all_points[user_id][guild_id])
-        # cls._point_removal_tasks.add(deletion_task)
+
+    @classmethod
+    def get_points(
+            cls,
+            user_id: int,
+            guild_id: int) -> list[CachedPoint]:
+        """
+        Get all points for a user in a guild.
+        """
+
+        return cls.all_points[user_id][guild_id]
+
+    @classmethod
+    def get_points_above_age(
+            cls,
+            user_id: int,
+            guild_id: int,
+            age: timedelta) -> list[CachedPoint]:
+        """
+        Get all points for a user in a guild above a certain age.
+        """
+
+        return [
+            point
+            for point in cls.all_points[user_id][guild_id]
+            if point.timestamp > dt.utcnow() - age
+        ]
