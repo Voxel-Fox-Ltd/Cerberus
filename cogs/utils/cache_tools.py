@@ -41,7 +41,7 @@ class CachedPoint:
 
         async def _delete():
             while self.timestamp > dt.utcnow() - timedelta(days=31):
-                await asyncio.sleep(60)
+                await asyncio.sleep(0)
             container.remove(self)
         return asyncio.create_task(_delete())
 
