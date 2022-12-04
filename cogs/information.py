@@ -201,10 +201,10 @@ class Information(vbu.Cog[vbu.Bot]):
         #         GROUP BY source""",
         #         ctx.guild.id, user.id, days,
         #     )
-        user_point_objects = utils.cache.PointHolder.get_points_above_age(
+        user_point_objects = await utils.cache.PointHolder.get_points_above_age(
             user.id,
             ctx.guild.id,
-            timedelta(days=days),
+            days=days,
         )
 
         # Get our counts
@@ -213,7 +213,7 @@ class Information(vbu.Cog[vbu.Bot]):
             "voice": 0,
             "minecraft": 0,
         }
-        for up in user_point_objects:
+        async for up in utils.alist(user_point_objects):
             user_points[up.source.name] += 1
 
         # And format into a list

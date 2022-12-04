@@ -46,6 +46,8 @@ class CacheHandler(vbu.Cog[vbu.Bot]):
             )
         self.logger.info("Added all points to cache")
 
+        # And done
+        return True
 
 
 def setup(bot: vbu.Bot):

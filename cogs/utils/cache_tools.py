@@ -4,8 +4,8 @@ from dataclasses import dataclass
 import collections
 import functools
 from typing import ClassVar, Optional
-from typing_extensions import Self
-import asyncio
+
+from . import alist
 
 
 __all__ = (
@@ -81,17 +81,17 @@ class PointHolder:
         return cls.all_points[user_id][guild_id]
 
     @classmethod
-    def get_points_above_age(
+    async def get_points_above_age(
             cls,
             user_id: int,
             guild_id: int,
-            age: timedelta) -> list[CachedPoint]:
+            **age) -> list[CachedPoint]:
         """
         Get all points for a user in a guild above a certain age.
         """
 
         return [
             point
-            for point in cls.all_points[user_id][guild_id]
-            if point.timestamp > dt.utcnow() - age
+            async for point in alist(cls.all_points[user_id][guild_id])
+            if point.timestamp > dt.utcnow() - timedelta(**age)
         ]
