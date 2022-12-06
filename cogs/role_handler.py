@@ -11,7 +11,7 @@ class RoleHandler(vbu.Cog[utils.types.Bot]):
 
     def __init__(self, bot: utils.types.Bot):
         super().__init__(bot)
-        self.user_role_looper.start()
+        # self.user_role_looper.start()
 
     def cog_unload(self):
         self.user_role_looper.cancel()

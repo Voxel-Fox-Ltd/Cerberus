@@ -337,16 +337,16 @@ class Information(vbu.Cog[utils.types.Bot]):
             hour_range = window_days * 24
             async for hour in utils.alist(range(hour_range)):
                 older = await utils.cache.PointHolder.get_points_above_age(
-                    ctx.guild.id,
                     user_id,
+                    ctx.guild.id,
                     hours=(
                         (window_days * 24)
                         - hour
                     ),
                 )
                 newer = await utils.cache.PointHolder.get_points_above_age(
-                    ctx.guild.id,
                     user_id,
+                    ctx.guild.id,
                     hours=(
                         (window_days * 24)
                         - (guild_day_range * 24)
