@@ -350,10 +350,20 @@ class Information(vbu.Cog[utils.types.Bot]):
                         + (guild_day_range * 24)
                     )),
                 )
+                start = dt.utcnow() - timedelta(hours=(
+                    hour_range
+                    - hour
+                ))
+                end = dt.utcnow() - timedelta(hours=(
+                    hour_range
+                    - hour
+                    + (guild_day_range * 24)
+                ))
                 user_points = 0.0
                 async for point in all_point_generator:
                     point = cast(utils.cache.CachedPoint, point)
                     user_points += utils.get_points(1, point.source.name)
+                self.logger.info(start, end, user_points)
                 points_per_week[user_id][hour] += user_points
 
         # Don't bother uploading if they've not got any data
