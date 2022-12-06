@@ -323,47 +323,39 @@ class Information(vbu.Cog[utils.types.Bot]):
                 "days as I haven't been in the guild that long"
             )
 
-        # Make sure there's actually a day
-        # window_interval = ('days', 1,)
-        # if window_days <= 2:
-        #     window_days = 2
-        #     window_interval = ('hours', 24,)
+        # Say how much time we're looking through
+        time_interval = ('days', 1,)
+        time_interval = ('hours', 24,)
 
         # Go through each day and work out how many points it has
         guild_day_range = self.bot.guild_settings[ctx.guild.id]['activity_window_days']
-        points_per_week_base = [0.0 for _ in range(window_days * 24)]  # A list of the amount of points the user have in each given day (index)
+        points_per_week_base = [0.0 for _ in range(window_days * time_interval[1])]  # A list of the amount of points the user have in each given day (index)
         points_per_week: collections.defaultdict[int, list[float]]
         points_per_week = collections.defaultdict(points_per_week_base.copy)
         async for user_id in utils.alist(users):
-            hour_range = window_days * 24
+            hour_range = window_days * time_interval[1]
             async for hour in utils.alist(range(hour_range)):
                 all_point_generator = utils.cache.PointHolder.get_points_between_datetime(
                     user_id,
                     ctx.guild.id,
-                    after=dt.utcnow() - timedelta(hours=(
-                        hour_range
-                        - hour
-                        + (guild_day_range * 24)
-                    )),
-                    before=dt.utcnow() - timedelta(hours=(
-                        hour_range
-                        - hour
-                    )),
+                    after=dt.utcnow() - timedelta(**{
+                        time_interval[0]: (
+                            hour_range
+                            - hour
+                            + (guild_day_range * time_interval[1])
+                        )
+                    }),
+                    before=dt.utcnow() - timedelta(**{
+                            time_interval[0]: (
+                            hour_range
+                            - hour
+                        )
+                    }),
                 )
-                after = dt.utcnow() - timedelta(hours=(
-                    hour_range
-                    - hour
-                    + (guild_day_range * 24)
-                ))
-                before = dt.utcnow() - timedelta(hours=(
-                    hour_range
-                    - hour
-                ))
                 user_points = 0.0
                 async for point in all_point_generator:
                     point = cast(utils.cache.CachedPoint, point)
                     user_points += utils.get_points(1, point.source.name)
-                self.logger.info(f"{after} | {before} | {user_points}")
                 points_per_week[user_id][hour] += user_points
 
         # Don't bother uploading if they've not got any data
