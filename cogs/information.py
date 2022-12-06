@@ -355,6 +355,7 @@ class Information(vbu.Cog[utils.types.Bot]):
                 )
                 older_points = 0.0
                 newer_points = 0.0
+                self.logger.info(f"newer {len(newer)} older {len(older)}")
                 async for point in utils.alist(older):
                     point = cast(utils.cache.CachedPoint, point)
                     older_points += utils.get_points(1, point.source.name)

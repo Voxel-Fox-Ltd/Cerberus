@@ -30,7 +30,7 @@ class CacheHandler(vbu.Cog[vbu.Bot]):
             -- WHERE timestamp > NOW() - INTERVAL '31 days'
             """,
         )
-        self.logger.info(f"Got {len(rows)} points from database regarding the last 31 days")
+        self.logger.info(f"Got {len(rows)} points from database")
 
         # Add them to the cache
         self.logger.info("Adding points to cache")
