@@ -343,27 +343,27 @@ class Information(vbu.Cog[utils.types.Bot]):
                     after=dt.utcnow() - timedelta(hours=(
                         hour_range
                         - hour
+                        + (guild_day_range * 24)
                     )),
                     before=dt.utcnow() - timedelta(hours=(
                         hour_range
                         - hour
-                        + (guild_day_range * 24)
                     )),
                 )
-                start = timedelta(hours=(
-                    hour_range
-                    - hour
-                ))
-                end = timedelta(hours=(
+                after = dt.utcnow() - timedelta(hours=(
                     hour_range
                     - hour
                     + (guild_day_range * 24)
+                ))
+                before = dt.utcnow() - timedelta(hours=(
+                    hour_range
+                    - hour
                 ))
                 user_points = 0.0
                 async for point in all_point_generator:
                     point = cast(utils.cache.CachedPoint, point)
                     user_points += utils.get_points(1, point.source.name)
-                self.logger.info(f"{start}, {end}, {user_points}")
+                self.logger.info(f"{after} | {before} | {user_points}")
                 points_per_week[user_id][hour] += user_points
 
         # Don't bother uploading if they've not got any data
