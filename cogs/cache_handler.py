@@ -27,7 +27,7 @@ class CacheHandler(vbu.Cog[vbu.Bot]):
                 *
             FROM
                 user_points
-            WHERE timestamp > NOW() - INTERVAL '65 days'
+            -- WHERE timestamp > NOW() - INTERVAL '65 days'
             """,
         )
         self.logger.info(f"Got {len(rows)} points from database")
