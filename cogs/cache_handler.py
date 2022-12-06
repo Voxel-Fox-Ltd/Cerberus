@@ -20,13 +20,14 @@ class CacheHandler(vbu.Cog[vbu.Bot]):
         """
 
         # Get the last 31 days of points
-        self.logger.info("Getting last 31 days of points from database")
+        self.logger.info("Getting all points from database")
         rows = await db.call(
             """
             SELECT
                 *
             FROM
                 user_points
+            -- WHERE timestamp > NOW() - INTERVAL '31 days'
             """,
         )
         self.logger.info(f"Got {len(rows)} points from database regarding the last 31 days")

@@ -334,12 +334,15 @@ class Information(vbu.Cog[utils.types.Bot]):
         points_per_week: collections.defaultdict[int, list[float]]
         points_per_week = collections.defaultdict(points_per_week_base.copy)
         async for user_id in utils.alist(users):
-            hour_range = (window_days * 24) - (guild_day_range * 24)
+            hour_range = window_days * 24
             async for hour in utils.alist(range(hour_range)):
                 older = await utils.cache.PointHolder.get_points_above_age(
                     ctx.guild.id,
                     user_id,
-                    hours=(window_days * 24) - hour,
+                    hours=(
+                        (window_days * 24)
+                        - hour
+                    ),
                 )
                 newer = await utils.cache.PointHolder.get_points_above_age(
                     ctx.guild.id,
