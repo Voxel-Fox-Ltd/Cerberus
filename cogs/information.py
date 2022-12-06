@@ -1,8 +1,7 @@
 import math
-import typing
+from typing import Optional, cast
 import collections
 import random
-from datetime import timedelta
 
 import discord
 from discord.ext import commands, vbu
@@ -11,7 +10,7 @@ from matplotlib import pyplot as plt
 from cogs import utils
 
 
-class Information(vbu.Cog[vbu.Bot]):
+class Information(vbu.Cog[utils.types.Bot]):
 
     @commands.command(
         cooldown_after_parsing=True,
@@ -38,11 +37,12 @@ class Information(vbu.Cog[vbu.Bot]):
     @commands.bot_has_permissions(send_messages=True, embed_links=True)
     @commands.cooldown(1, 60, commands.BucketType.user)
     @commands.guild_only()
+    @vbu.checks.bot_is_ready()
     async def graph(
             self,
             ctx: vbu.Context,
-            user: typing.Optional[discord.Member] = None,
-            window_days: typing.Optional[int] = None):
+            user: Optional[discord.Member] = None,
+            window_days: Optional[int] = None):
         """
         Graphs your points over a given time.
         """
@@ -70,7 +70,8 @@ class Information(vbu.Cog[vbu.Bot]):
     @commands.defer()
     @commands.bot_has_permissions(send_messages=True, embed_links=True)
     @commands.guild_only()
-    async def leaderboard(self, ctx: vbu.Context, days: typing.Optional[int] = None):
+    @vbu.checks.bot_is_ready()
+    async def leaderboard(self, ctx: vbu.Context, days: Optional[int] = None):
         """
         Gives you the leaderboard users for the server.
         """
@@ -173,11 +174,12 @@ class Information(vbu.Cog[vbu.Bot]):
     @commands.defer()
     @commands.bot_has_permissions(send_messages=True)
     @commands.guild_only()
+    @vbu.checks.bot_is_ready()
     async def points(
             self,
             ctx: vbu.Context,
-            user: typing.Optional[discord.Member] = None,
-            days: typing.Optional[int] = None):
+            user: Optional[discord.Member] = None,
+            days: Optional[int] = None):
         """
         Shows you how many points you've achieved over a period of time.
         """
@@ -193,14 +195,6 @@ class Information(vbu.Cog[vbu.Bot]):
         assert user
 
         # And now get the points
-        # async with self.bot.database() as db:
-        #     points_rows = await db(
-        #         """SELECT source, COUNT(timestamp) FROM user_points
-        #         WHERE guild_id=$1 AND user_id=$2
-        #         AND timestamp > TIMEZONE('UTC', NOW()) - MAKE_INTERVAL(days => $3 * 1)
-        #         GROUP BY source""",
-        #         ctx.guild.id, user.id, days,
-        #     )
         user_point_objects = await utils.cache.PointHolder.get_points_above_age(
             user.id,
             ctx.guild.id,
@@ -287,11 +281,11 @@ class Information(vbu.Cog[vbu.Bot]):
     async def make_graph(
             self,
             ctx,
-            users: typing.List[int],
+            users: list[int],
             window_days: int,
             *,
-            colours: typing.Optional[dict] = None,
-            segments: typing.Optional[int] = None):
+            colours: Optional[dict] = None,
+            segments: Optional[int] = None):
         """
         Makes the actual graph for the thing innit mate.
         """
@@ -329,60 +323,42 @@ class Information(vbu.Cog[vbu.Bot]):
             )
 
         # Make sure there's actually a day
-        window_interval = ('days', 1,)
-        if window_days <= 2:
-            window_days = 2
-            window_interval = ('hours', 24,)
+        # window_interval = ('days', 1,)
+        # if window_days <= 2:
+        #     window_days = 2
+        #     window_interval = ('hours', 24,)
 
         # Go through each day and work out how many points it has
-        points_per_week_base = [0 for _ in range(window_days * window_interval[1])]  # A list of the amount of points the user have in each given day (index)
+        guild_day_range = self.bot.guild_settings[ctx.guild.id]['activity_window_days']
+        points_per_week_base = [0.0 for _ in range(window_days * 24)]  # A list of the amount of points the user have in each given day (index)
+        points_per_week: collections.defaultdict[int, list[float]]
         points_per_week = collections.defaultdict(points_per_week_base.copy)
-        async with self.bot.database() as db:
-            for user_id in users:
-                point_rows = await db(
-                    """
-                    SELECT
-                        source, COUNT(timestamp) AS count, generate_series
-                    FROM
-                        user_points, generate_series(1, $3)
-                    WHERE
-                        user_id=$1
-                    AND
-                        guild_id=$2
-                    AND
-                        timestamp > (
-                            TIMEZONE('UTC', NOW()) -
-                            MAKE_INTERVAL({interval} => $3) +
-                            (
-                                MAKE_INTERVAL({interval} => 1) *
-                                generate_series
-                            ) -
-                            MAKE_INTERVAL(days => $4)
-                        )
-                    AND
-                        timestamp <= (
-                            TIMEZONE('UTC', NOW()) -
-                            MAKE_INTERVAL({interval} => $3) +
-                            (
-                                MAKE_INTERVAL({interval} => 1) *
-                                generate_series
-                            )
-                        )
-                    GROUP BY
-                        source,
-                        generate_series
-                    ORDER BY
-                        generate_series
-                    ASC
-                    """.format(interval=window_interval[0]),
-                    user_id,
+        async for user_id in utils.alist(users):
+            hour_range = (window_days * 24) - (guild_day_range * 24)
+            async for hour in utils.alist(range(hour_range)):
+                older = await utils.cache.PointHolder.get_points_above_age(
                     ctx.guild.id,
-                    window_days * window_interval[1],
-                    self.bot.guild_settings[ctx.guild.id]['activity_window_days'],
+                    user_id,
+                    hours=(window_days * 24) - hour,
                 )
-                for row in point_rows:
-                    val = utils.get_points(row['count'], row['source'])
-                    points_per_week[user_id][row['generate_series'] - 1] += val
+                newer = await utils.cache.PointHolder.get_points_above_age(
+                    ctx.guild.id,
+                    user_id,
+                    hours=(
+                        (window_days * 24)
+                        - (guild_day_range * 24)
+                        - hour
+                    ),
+                )
+                older_points = 0.0
+                newer_points = 0.0
+                async for point in utils.alist(older):
+                    point = cast(utils.cache.CachedPoint, point)
+                    older_points += utils.get_points(1, point.source.name)
+                async for point in utils.alist(newer):
+                    point = cast(utils.cache.CachedPoint, point)
+                    newer_points += utils.get_points(1, point.source.name)
+                points_per_week[user_id][hour] += older_points - newer_points
 
         # Don't bother uploading if they've not got any data
         if sum([sum(user_points) for user_points in points_per_week.values()]) == 0:
@@ -414,7 +390,7 @@ class Information(vbu.Cog[vbu.Bot]):
                 colour = format(hex(random.randint(0, 0xffffff))[2:], "0>6")
             rgb_colour = tuple(int(colour[x:x + 2], 16) / 255 for x in (0, 2, 4))
             ax.plot(
-                list(range(window_days * window_interval[1])),
+                list(range(window_days * 24)),
                 points,
                 'k-',
                 label=str(self.bot.get_user(user)) or user,
@@ -450,7 +426,7 @@ class Information(vbu.Cog[vbu.Bot]):
         # Set axies
         ax.axis([
             0,
-            window_days * window_interval[1],
+            window_days * 24,
             0,
             graph_height,
         ])
@@ -508,6 +484,6 @@ class Information(vbu.Cog[vbu.Bot]):
             )
 
 
-def setup(bot: vbu.Bot):
+def setup(bot: utils.types.Bot):
     x = Information(bot)
     bot.add_cog(x)

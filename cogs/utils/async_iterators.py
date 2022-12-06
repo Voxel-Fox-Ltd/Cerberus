@@ -1,3 +1,4 @@
+from typing import AsyncGenerator, TypeVar, Generic
 import asyncio
 
 
@@ -7,13 +8,16 @@ __all__ = (
 )
 
 
-class alist(list):
+T = TypeVar("T")
+
+
+class alist(list, Generic[T]):
 
     def __init__(self, current, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.extend(current)
 
-    async def __aiter__(self):
+    async def __aiter__(self) -> AsyncGenerator[T, None]:
         for i in self:
             await asyncio.sleep(0)
             yield i

@@ -27,8 +27,6 @@ class CacheHandler(vbu.Cog[vbu.Bot]):
                 *
             FROM
                 user_points
-            WHERE
-                timestamp > (TIMEZONE('UTC', NOW()) - INTERVAL '31 days')
             """,
         )
         self.logger.info(f"Got {len(rows)} points from database regarding the last 31 days")
@@ -36,7 +34,7 @@ class CacheHandler(vbu.Cog[vbu.Bot]):
         # Add them to the cache
         self.logger.info("Adding points to cache")
         async for index, row in aiterator(enumerate(rows)):
-            if index % 5_000 == 0:
+            if index % 10_000 == 0:
                 self.logger.info(f"Added {index:,}/{len(rows):,} ({index / len(rows) * 100:.2f}%) points to cache")
             utils.cache.PointHolder.add_point(
                 row["user_id"],
