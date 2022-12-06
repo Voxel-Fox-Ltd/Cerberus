@@ -3,7 +3,8 @@ from enum import Enum, auto
 from dataclasses import dataclass
 import collections
 import functools
-from typing import ClassVar, Optional
+import asyncio
+from typing import AsyncGenerator, ClassVar, Optional
 
 from .async_iterators import alist
 
@@ -79,6 +80,23 @@ class PointHolder:
         """
 
         return cls.all_points[user_id][guild_id]
+
+    @classmethod
+    async def get_points_between_datetime(
+            cls,
+            user_id: int,
+            guild_id: int,
+            *,
+            after: dt,
+            before: dt) -> AsyncGenerator[CachedPoint, None]:
+        """
+        Get all points for a user in a guild between two ages.
+        """
+
+        for point in cls.all_points[user_id][guild_id]:
+            if after <= point.timestamp <= before:
+                await asyncio.sleep(0)
+                yield point
 
     @classmethod
     async def get_points_above_age(

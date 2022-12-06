@@ -1,3 +1,4 @@
+from datetime import datetime as dt, timedelta
 import math
 from typing import Optional, cast
 import collections
@@ -336,33 +337,24 @@ class Information(vbu.Cog[utils.types.Bot]):
         async for user_id in utils.alist(users):
             hour_range = window_days * 24
             async for hour in utils.alist(range(hour_range)):
-                older = await utils.cache.PointHolder.get_points_above_age(
+                all_point_generator = utils.cache.PointHolder.get_points_between_datetime(
                     user_id,
                     ctx.guild.id,
-                    hours=(
-                        (window_days * 24)
+                    after=dt.utcnow() - timedelta(hours=(
+                        hour_range
                         - hour
-                    ),
-                )
-                newer = await utils.cache.PointHolder.get_points_above_age(
-                    user_id,
-                    ctx.guild.id,
-                    hours=(
-                        (window_days * 24)
-                        - (guild_day_range * 24)
+                    )),
+                    before=dt.utcnow() - timedelta(hours=(
+                        hour_range
                         - hour
-                    ),
+                        + (guild_day_range * 24)
+                    )),
                 )
-                older_points = 0.0
-                newer_points = 0.0
-                self.logger.info(f"newer {len(newer)} older {len(older)}")
-                async for point in utils.alist(older):
+                user_points = 0.0
+                async for point in all_point_generator:
                     point = cast(utils.cache.CachedPoint, point)
-                    older_points += utils.get_points(1, point.source.name)
-                async for point in utils.alist(newer):
-                    point = cast(utils.cache.CachedPoint, point)
-                    newer_points += utils.get_points(1, point.source.name)
-                points_per_week[user_id][hour] += older_points - newer_points
+                    user_points += utils.get_points(1, point.source.name)
+                points_per_week[user_id][hour] += user_points
 
         # Don't bother uploading if they've not got any data
         if sum([sum(user_points) for user_points in points_per_week.values()]) == 0:
