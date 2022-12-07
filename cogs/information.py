@@ -389,7 +389,7 @@ class Information(vbu.Cog[utils.types.Bot]):
                 colour = format(hex(random.randint(0, 0xffffff))[2:], "0>6")
             rgb_colour = tuple(int(colour[x:x + 2], 16) / 255 for x in (0, 2, 4))
             ax.plot(
-                list(range(window_days * 24)),
+                list(range(window_days * time_interval[1])),
                 points,
                 'k-',
                 label=str(self.bot.get_user(user)) or user,
@@ -425,7 +425,7 @@ class Information(vbu.Cog[utils.types.Bot]):
         # Set axies
         ax.axis([
             0,
-            window_days * 24,
+            window_days * time_interval[1],
             0,
             graph_height,
         ])
