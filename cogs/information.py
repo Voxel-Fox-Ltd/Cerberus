@@ -320,8 +320,8 @@ class Information(vbu.Cog[utils.types.Bot]):
             )
 
         # Say how much time we're looking through
-        # time_interval = ('days', 1,)
-        time_interval = ('hours', 24,)
+        time_interval = ('days', 1,)
+        # time_interval = ('hours', 24,)
         # time_interval = ('hours', 6,)
 
         # Go through each day and work out how many points it has
