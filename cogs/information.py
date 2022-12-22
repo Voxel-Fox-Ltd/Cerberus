@@ -84,7 +84,8 @@ class Information(vbu.Cog[utils.types.Bot]):
             days = 7
         elif days > 365:
             days = 365
-        assert isinstance(days, int)
+        else:
+            raise Exception("Days must be an int")
 
         # Type hint properly
         assert ctx.guild
@@ -94,7 +95,7 @@ class Information(vbu.Cog[utils.types.Bot]):
 
             point_generator = utils.cache.PointHolder.get_guild_points_above_age(
                 ctx.guild.id,
-                days=self.bot.guild_settings[ctx.guild.id]['activity_window_days'],
+                days=days,
             )
 
             # Sort that into more formattable data
