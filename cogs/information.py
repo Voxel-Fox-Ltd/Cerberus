@@ -351,7 +351,6 @@ class Information(vbu.Cog[utils.types.Bot]):
                 )
                 user_points = 0.0
                 async for point in all_point_generator:
-                    point = cast(utils.cache.CachedPoint, point)
                     user_points += utils.get_points(1, point.source.name)
                 points_per_week[user_id][hour] += user_points
 
