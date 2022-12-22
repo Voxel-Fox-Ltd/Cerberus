@@ -92,14 +92,10 @@ class Information(vbu.Cog[utils.types.Bot]):
         # This takes a while
         async with ctx.typing():
 
-            # Get all their valid user IDs
-            async with self.bot.database() as db:
-                point_rows = await db(
-                    """SELECT user_id, source, COUNT(timestamp) FROM user_points WHERE guild_id=$1 AND
-                    timestamp > TIMEZONE('UTC', NOW()) - MAKE_INTERVAL(days => $2) GROUP BY user_id, source
-                    ORDER BY COUNT(timestamp) DESC;""",
-                    ctx.guild.id, days,
-                )
+            point_generator = utils.cache.PointHolder.get_guild_points_above_age(
+                ctx.guild.id,
+                days=self.bot.guild_settings[ctx.guild.id]['activity_window_days'],
+            )
 
             # Sort that into more formattable data
             user_data_dict = collections.defaultdict({
@@ -107,8 +103,8 @@ class Information(vbu.Cog[utils.types.Bot]):
                 'voice': 0,
                 'minecraft': 0
             }.copy)
-            for row in point_rows:
-                user_data_dict[row['user_id']][row['source']] += row['count']
+            async for point in point_generator:
+                user_data_dict[point.user_id][point.source.name] += 1
 
             # Get all data in a list format, ready to be sorted
             valid_guild_user_data = [

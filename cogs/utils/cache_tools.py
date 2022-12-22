@@ -4,7 +4,7 @@ from dataclasses import dataclass
 import collections
 import functools
 import asyncio
-from typing import AsyncGenerator, ClassVar, Optional
+from typing import AsyncGenerator, ClassVar, Iterable, Optional
 
 from .async_iterators import alist
 
@@ -34,6 +34,8 @@ class CachedPoint:
 
     source: PointSource
     timestamp: dt
+    user_id: Optional[int] = None
+    guild_id: Optional[int] = None
 
     @property
     def is_old(self) -> bool:
@@ -53,8 +55,7 @@ class PointHolder:
     all_points: ClassVar[dict[int, dict[int, list[CachedPoint]]]]
     all_points = collections.defaultdict(
         functools.partial(collections.defaultdict, list),
-    )
-    # _point_removal_tasks: set[asyncio.Task] = set()
+    )  # {user_id: {guild_id: [points]}}
 
     @classmethod
     def add_point(
@@ -67,14 +68,19 @@ class PointHolder:
         Add a point to the cache.
         """
 
-        point = CachedPoint(source, timestamp or dt.utcnow())
+        point = CachedPoint(
+            source=source,
+            timestamp=timestamp or dt.utcnow(),
+            user_id=user_id,
+            guild_id=guild_id,
+        )
         cls.all_points[user_id][guild_id].append(point)
 
     @classmethod
     def get_points(
             cls,
             user_id: int,
-            guild_id: int) -> list[CachedPoint]:
+            guild_id: int) -> Iterable[CachedPoint]:
         """
         Get all points for a user in a guild.
         """
@@ -103,7 +109,7 @@ class PointHolder:
             cls,
             user_id: int,
             guild_id: int,
-            **age) -> list[CachedPoint]:
+            **age) -> Iterable[CachedPoint]:
         """
         Get all points for a user in a guild above a certain age.
         """
@@ -113,3 +119,20 @@ class PointHolder:
             async for point in alist(cls.all_points[user_id][guild_id])
             if point.timestamp > dt.utcnow() - timedelta(**age)
         ]
+
+    @classmethod
+    async def get_guild_points_above_age(
+            cls,
+            guild_id: int,
+            **age) -> AsyncGenerator[CachedPoint, None]:
+        """
+        Get all points for a user in a guild above a certain age.
+        """
+
+        for _, guild_dict in cls.all_points.items():
+            for guild, points in guild_dict.items():
+                if guild == guild_id:
+                    async for point in alist(points):
+                        if point.timestamp > dt.utcnow() - timedelta(**age):
+                            await asyncio.sleep(0)
+                            yield point
