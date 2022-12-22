@@ -84,6 +84,8 @@ class Information(vbu.Cog[utils.types.Bot]):
             days = 7
         elif days > 365:
             days = 365
+        elif isinstance(days, int):
+            pass
         else:
             raise Exception("Days must be an int")
 
