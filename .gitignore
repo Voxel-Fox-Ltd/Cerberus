@@ -1,0 +1,7 @@
+*.toml
+!*.example*
+_*
+!__*
+*.code-*
+.vscode
+__pycache__
