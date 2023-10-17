@@ -5,3 +5,4 @@ Due to speed constraints of python. We've decided to re-write cerberus on golang
 # Used packages
 Following packages are currently being used:
 - discordgo
+- go-echarts
