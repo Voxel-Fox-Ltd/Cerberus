@@ -1,4 +1,4 @@
-package Handler
+package Cogs
 
 import (
 	"Cerberus/Logging"

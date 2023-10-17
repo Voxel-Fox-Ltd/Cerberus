@@ -7,18 +7,18 @@ package main
 
 	- CASES -
 	when to use:
-	camelCase  = if a variable is inside a function, arguments, 
+	camelCase  = if a variable is inside a function, arguments,
 	PascalCase = Function Names, Structs, Types, Folders, .go Files, Package Names,
 	snake_case = never :) (lmk if you can find a use for it)
 */
 
-
 import (
 	// Local packages
+	"Cerberus/Cogs"
 	"Cerberus/Handler"
 	"Cerberus/Logging"
 
-	// System packages 
+	// System packages
 	"os"
 	"os/signal"
 	"syscall"
@@ -32,7 +32,7 @@ func OnDiscord(discord *discordgo.Session){
 	discord.Identify.Intents = discordgo.IntentsGuildMessages;
 
 	// Handlers
-	discord.AddHandler(Handler.OnMessageCreate)
+	discord.AddHandler(Cogs.OnMessageCreate)
 }
 
 // If something needs to run before discord connection
