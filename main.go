@@ -14,12 +14,16 @@ package main
 
 
 import (
+	// Local packages
 	"Cerberus/Handler"
 	"Cerberus/Logging"
+
+	// System packages 
 	"os"
 	"os/signal"
 	"syscall"
 
+	// 3rd party packages
 	"github.com/bwmarrin/discordgo"
 )
 
