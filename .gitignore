@@ -22,3 +22,5 @@ go.work
 
 Logs
 config/DiscordKey
+
+test.*
