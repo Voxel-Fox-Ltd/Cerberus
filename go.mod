@@ -5,6 +5,7 @@ go 1.21.6
 require (
 	github.com/FedorLap2006/disgolf v0.0.0-20221004200601-99cfc3d9a0e1 // indirect
 	github.com/bwmarrin/discordgo v0.27.1 // indirect
+	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/joho/godotenv v1.5.1 // indirect
 	github.com/lib/pq v1.10.9 // indirect
