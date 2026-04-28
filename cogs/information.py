@@ -311,18 +311,17 @@ class Information(vbu.Cog[utils.types.Bot]):
 
         guild_day_range = self.bot.guild_settings[ctx.guild.id]['activity_window_days']
 
-        # We are plotting daily points.
-        # Each point is the rolling total over the guild's activity window.
         today = dt.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
         graph_start = today - timedelta(days=window_days - 1)
 
         points_per_week: dict[int, list[float]] = {}
 
-        bucket_type = "day"
         if window_days <= 15:
             bucket_type = "hour"
         elif window_days > 365:
             bucket_type = "month"
+        else:
+            bucket_type = "day"
 
         for user_id in users:
             bucketed_points = utils.cache.PointHolder.get_bucketed_points(
@@ -331,16 +330,42 @@ class Information(vbu.Cog[utils.types.Bot]):
                 bucket=bucket_type,
             )
 
-            # Build a flat daily list first.
-            # Include the previous activity-window days so the first visible point
-            # has enough history for an accurate rolling total.
-            history_start = graph_start - timedelta(days=guild_day_range)
+            if bucket_type == "month":
+                current_month = graph_start.replace(day=1)
+                end_month = today.replace(day=1)
 
+                monthly_points: list[float] = []
+                bucket = current_month
+
+                while bucket <= end_month:
+                    source_counter = bucketed_points.get(bucket)
+                    monthly_points.append(
+                        utils.cache.PointHolder.total_points(source_counter)
+                        if source_counter is not None
+                        else 0.0
+                    )
+
+                    if bucket.month == 12:
+                        bucket = bucket.replace(year=bucket.year + 1, month=1)
+                    else:
+                        bucket = bucket.replace(month=bucket.month + 1)
+
+                points_per_week[user_id] = monthly_points
+                continue
+
+            # Existing daily/hourly-ish path
+            history_start = graph_start - timedelta(days=guild_day_range)
             total_days = window_days + guild_day_range
             daily_points: list[float] = []
 
             for day_offset in range(total_days):
                 bucket = history_start + timedelta(days=day_offset)
+
+                if bucket_type == "hour":
+                    bucket = bucket.replace(minute=0, second=0, microsecond=0)
+                else:
+                    bucket = bucket.replace(hour=0, minute=0, second=0, microsecond=0)
+
                 source_counter = bucketed_points.get(bucket)
 
                 if source_counter is None:
@@ -349,7 +374,6 @@ class Information(vbu.Cog[utils.types.Bot]):
 
                 daily_points.append(utils.cache.PointHolder.total_points(source_counter))
 
-            # Convert daily points into rolling activity-window points.
             rolling_points: list[float] = []
             rolling_total = 0.0
 
@@ -359,7 +383,6 @@ class Information(vbu.Cog[utils.types.Bot]):
                 if index >= guild_day_range:
                     rolling_total -= daily_points[index - guild_day_range]
 
-                # Only keep the visible graph section, not the warmup history.
                 if index >= guild_day_range:
                     rolling_points.append(rolling_total)
 
@@ -396,10 +419,12 @@ class Information(vbu.Cog[utils.types.Bot]):
                 for x in (0, 2, 4)
             )
 
+            x_values = list(range(len(points)))
+
             ax.plot(
-                list(range(window_days)),
+                x_values,
                 points,
-                "k-",
+                'k-',
                 label=str(self.bot.get_user(user)) or user,
                 color=rgb_colour,
             )
@@ -428,9 +453,11 @@ class Information(vbu.Cog[utils.types.Bot]):
                 * MINOR_AXIS_STOP
             )
 
+        max_x = max(len(points) for points in points_per_week.values())
+
         ax.axis([
             0,
-            window_days,
+            max_x,
             0,
             graph_height,
         ])
