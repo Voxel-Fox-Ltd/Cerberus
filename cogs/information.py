@@ -125,7 +125,7 @@ class Information(vbu.Cog[utils.types.Bot]):
                     "(**{message:,}** text, **{voice}** VC)"
                 )
                 ordered_guild_user_strings.append(text.format(
-                    id=d["id"], message=d["points"].get(utils.cache.PointSource.message, 0),
+                    id=d["id"], message=int(d["points"].get(utils.cache.PointSource.message, 0)),
                     total_points=total_points, voice=vc_time,
                 ))
 
