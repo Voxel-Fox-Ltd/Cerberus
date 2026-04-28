@@ -34,9 +34,10 @@ class CacheHandler(vbu.Cog[vbu.Bot]):
 
         # Add them to the cache
         self.logger.info("Adding points to cache")
-        async for index, row in aiterator(enumerate(rows)):
+        for index, row in enumerate(rows):
             if index % 10_000 == 0:
                 self.logger.info(f"Added {index:,}/{len(rows):,} ({index / len(rows) * 100:.2f}%) points to cache")
+                await asyncio.sleep(0)
             utils.cache.PointHolder.add_point(
                 row["user_id"],
                 row["guild_id"],

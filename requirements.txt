@@ -1,3 +1,3 @@
-novus[vbu,speed]>=0.2.2
+novus[vbu,speed]>=0.2.2,<1.0.0
 asyncpg
 matplotlib

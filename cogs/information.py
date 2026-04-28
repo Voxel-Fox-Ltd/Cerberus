@@ -52,7 +52,7 @@ class Information(vbu.Cog[utils.types.Bot]):
         assert user
         window_days = window_days or self.bot.guild_settings[ctx.guild.id]['activity_window_days']
         assert window_days
-        return await self.make_graph(ctx, [user.id], window_days, colours={user.id: "000000"}, segments=None)
+        return await self.make_graph(ctx, [user.id], window_days, colours={user.id: "000000"})
 
     @commands.command(
         aliases=['lb'],
@@ -184,33 +184,44 @@ class Information(vbu.Cog[utils.types.Bot]):
         Shows you how many points you've achieved over a period of time.
         """
 
-        # Work out what our vars are
         default_days: int = self.bot.guild_settings[ctx.guild.id]['activity_window_days']
         days = days or default_days
         days = days if days > 0 else default_days
         user = user or ctx.author  # type: ignore
 
-        # Typehint
         assert isinstance(days, int)
         assert user
 
-        # And now get the points
-        user_point_objects = await utils.cache.PointHolder.get_points_above_age(
+        after = dt.utcnow() - timedelta(days=days)
+
+        user_points = {
+            "message": 0.0,
+            "voice": 0.0,
+            "minecraft": 0.0,
+        }
+
+        # Use daily buckets for longer ranges, hourly buckets for short ranges.
+        bucket_type = "hour" if days <= 14 else "day"
+
+        bucketed_points = utils.cache.PointHolder.get_bucketed_points(
             user.id,
             ctx.guild.id,
-            days=days,
+            bucket=bucket_type,
         )
 
-        # Get our counts
-        user_points = {
-            "message": 0,
-            "voice": 0,
-            "minecraft": 0,
-        }
-        async for up in utils.alist(user_point_objects):
-            user_points[up.source.name] += 1
+        for bucket_timestamp, source_counter in bucketed_points.items():
+            if bucket_timestamp < after:
+                continue
 
-        # And format into a list
+            for source, points in source_counter.items():
+                user_points[source.name] += points
+
+        # If these should be displayed as whole numbers
+        user_points = {
+            source: int(points)
+            for source, points in user_points.items()
+        }
+
         if self.bot.guild_settings[ctx.guild.id]['minecraft_srv_authorization']:
             total_points = utils.get_all_points(user_points)
             text = (
@@ -228,7 +239,11 @@ class Information(vbu.Cog[utils.types.Bot]):
                 f"**{vbu.TimeValue(user_points['voice'] * 60).clean or '0m'}**, giving them "
                 f"a total of **{total_points:,}** points."
             )
-        await ctx.send(text, allowed_mentions=discord.AllowedMentions(users=[ctx.author]))
+
+        await ctx.send(
+            text,
+            allowed_mentions=discord.AllowedMentions(users=[ctx.author]),
+        )
 
     @commands.command(
         application_command_meta=commands.ApplicationCommandMeta(),
@@ -284,88 +299,105 @@ class Information(vbu.Cog[utils.types.Bot]):
             users: list[int],
             window_days: int,
             *,
-            colours: Optional[dict] = None,
-            segments: Optional[int] = None):
+            colours: Optional[dict] = None):
         """
         Makes the actual graph for the thing innit mate.
         """
 
-        # Make sure there's people
         if not users:
             return await ctx.send("You can't make a graph of 0 users.")
+
         if len(users) > 10:
             return await ctx.send((
                 "There's more than 10 people in that graph - "
                 "it would take too long for me to generate."
             ))
 
-        # Pick up colours
-        if colours is None:
-            colours = {}
+        colours = colours or {}
 
-        # This takes a lil bit so let's gooooooo
         await ctx.trigger_typing()
 
-        # Set up our most used vars
         original = window_days
         truncation = None
-        if window_days > 365:
-            window_days = 365
-            truncation = (
-                f"shortened from your original request of {original} "
-                "days for going over the 365 day max"
-            )
-        if window_days > (discord.utils.utcnow() - ctx.guild.me.joined_at).days:
-            window_days = (discord.utils.utcnow() - ctx.guild.me.joined_at).days
+
+        # if window_days > 365:
+        #     window_days = 365
+        #     truncation = (
+        #         f"shortened from your original request of {original} "
+        #         "days for going over the 365 day max"
+        #     )
+
+        joined_days = (discord.utils.utcnow() - ctx.guild.me.joined_at).days
+        if window_days > joined_days:
+            window_days = joined_days
             truncation = (
                 f"shortened from your original request of {original} "
                 "days as I haven't been in the guild that long"
             )
 
-        # Say how much time we're looking through
-        time_interval = ('days', 1,)
-        # time_interval = ('hours', 24,)
-        # time_interval = ('hours', 6,)
-
-        # Go through each day and work out how many points it has
         guild_day_range = self.bot.guild_settings[ctx.guild.id]['activity_window_days']
-        points_per_week_base = [0.0 for _ in range(window_days * time_interval[1])]  # A list of the amount of points the user have in each given day (index)
-        points_per_week: collections.defaultdict[int, list[float]]
-        points_per_week = collections.defaultdict(points_per_week_base.copy)
-        async for user_id in utils.alist(users):
-            hour_range = window_days * time_interval[1]
-            async for hour in utils.alist(range(hour_range)):
-                all_point_generator = utils.cache.PointHolder.get_points_between_datetime(
-                    user_id,
-                    ctx.guild.id,
-                    after=dt.utcnow() - timedelta(**{
-                        time_interval[0]: (
-                            hour_range
-                            - hour
-                            + (guild_day_range * time_interval[1])
-                        )
-                    }),
-                    before=dt.utcnow() - timedelta(**{
-                            time_interval[0]: (
-                            hour_range
-                            - hour
-                        )
-                    }),
-                )
-                user_points = 0.0
-                async for point in all_point_generator:
-                    user_points += utils.get_points(1, point.source.name)
-                points_per_week[user_id][hour] += user_points
 
-        # Don't bother uploading if they've not got any data
-        if sum([sum(user_points) for user_points in points_per_week.values()]) == 0:
+        # We are plotting daily points.
+        # Each point is the rolling total over the guild's activity window.
+        today = dt.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+        graph_start = today - timedelta(days=window_days - 1)
+
+        points_per_week: dict[int, list[float]] = {}
+
+        for user_id in users:
+            bucketed_points = utils.cache.PointHolder.get_bucketed_points(
+                user_id,
+                ctx.guild.id,
+                bucket="day",
+            )
+
+            # Build a flat daily list first.
+            # Include the previous activity-window days so the first visible point
+            # has enough history for an accurate rolling total.
+            history_start = graph_start - timedelta(days=guild_day_range)
+
+            total_days = window_days + guild_day_range
+            daily_points: list[float] = []
+
+            for day_offset in range(total_days):
+                bucket = history_start + timedelta(days=day_offset)
+                source_counter = bucketed_points.get(bucket)
+
+                if source_counter is None:
+                    daily_points.append(0.0)
+                    continue
+
+                daily_points.append(
+                    sum(
+                        utils.get_points(points, source.name)
+                        for source, points in source_counter.items()
+                    )
+                )
+
+            # Convert daily points into rolling activity-window points.
+            rolling_points: list[float] = []
+            rolling_total = 0.0
+
+            for index, points in enumerate(daily_points):
+                rolling_total += points
+
+                if index >= guild_day_range:
+                    rolling_total -= daily_points[index - guild_day_range]
+
+                # Only keep the visible graph section, not the warmup history.
+                if index >= guild_day_range:
+                    rolling_points.append(rolling_total)
+
+            points_per_week[user_id] = rolling_points[:window_days]
+
+        if sum(sum(user_points) for user_points in points_per_week.values()) == 0:
             return await ctx.send("They've not sent any messages that I can graph.")
 
-        # Get roles
         role_data: dict = (
             self.bot.guild_settings[ctx.guild.id]
             .get('role_gain', dict())
         )  # type: ignore
+
         role_object_data = sorted(
             [
                 (threshold, ctx.guild.get_role(role_id))
@@ -375,85 +407,90 @@ class Information(vbu.Cog[utils.types.Bot]):
             key=lambda x: x[0],
         )
 
-        # Build our output graph
         fig: plt.Figure = plt.figure()
         ax: plt.Axes = fig.subplots()
 
-        # Plot data
         for user, points in points_per_week.items():
             if user in colours:
                 colour = colours[user]
             else:
                 colour = format(hex(random.randint(0, 0xffffff))[2:], "0>6")
-            rgb_colour = tuple(int(colour[x:x + 2], 16) / 255 for x in (0, 2, 4))
+
+            rgb_colour = tuple(
+                int(colour[x:x + 2], 16) / 255
+                for x in (0, 2, 4)
+            )
+
             ax.plot(
-                list(range(window_days * time_interval[1])),
+                list(range(window_days)),
                 points,
                 'k-',
                 label=str(self.bot.get_user(user)) or user,
                 color=rgb_colour,
             )
+
         if len(points_per_week) > 1:
             fig.legend(loc="upper left")
 
-        # Set size
         MINOR_AXIS_STOP = 50
+
+        max_points = max(
+            max(points)
+            for points in points_per_week.values()
+            if points
+        )
+
         if role_object_data:
             graph_height = max(
                 [
                     role_object_data[-1][0] + MINOR_AXIS_STOP,
-                    math.ceil(
-                        (
-                            max(
-                                [max(i) for i in points_per_week.values()]
-                            ) + 1
-                        ) / MINOR_AXIS_STOP
-                    ) * MINOR_AXIS_STOP,
+                    math.ceil((max_points + 1) / MINOR_AXIS_STOP) * MINOR_AXIS_STOP,
                 ]
             )
         else:
-            graph_height = math.ceil(
-                (
-                    max(
-                        [max(i) for i in points_per_week.values()]
-                    ) + 1
-                ) / MINOR_AXIS_STOP
-            ) * MINOR_AXIS_STOP
+            graph_height = (
+                math.ceil((max_points + 1) / MINOR_AXIS_STOP)
+                * MINOR_AXIS_STOP
+            )
 
-        # Set axies
         ax.axis([
             0,
-            window_days * time_interval[1],
+            window_days,
             0,
             graph_height,
         ])
 
-        # Fix axies
         ax.axis('off')
         ax.grid(True)
 
-        # Add background colour
-        for zorder, tier in zip(range(-100, -100 + (len(role_object_data) * 2), 2), role_object_data):
+        for zorder, tier in zip(
+                range(-100, -100 + (len(role_object_data) * 2), 2),
+                role_object_data):
             plt.axhspan(
                 tier[0],
                 graph_height,
                 facecolor=f"#{tier[1].colour.value or 0xffffff:0>6X}",
                 zorder=zorder,
-            )  # Add colour
+            )
             plt.axhspan(
                 tier[0],
                 tier[0] + 1,
                 facecolor="#000000",
                 zorder=zorder + 1,
-            )  # Add single black line
+            )
 
-        # Tighten border
         fig.tight_layout()
 
-        # Output to user baybeeee
-        fig.savefig('activity.png', bbox_inches='tight', pad_inches=0, format='png')
+        fig.savefig(
+            'activity.png',
+            bbox_inches='tight',
+            pad_inches=0,
+            format='png',
+        )
+
         embed = vbu.Embed().set_image(url="attachment://activity.png")
         self.bot.set_footer_from_config(embed)
+
         if len(points_per_week) > 1:
             await ctx.send(
                 (
