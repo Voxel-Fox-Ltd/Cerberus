@@ -26,6 +26,7 @@ class CacheHandler(vbu.Cog[vbu.Bot]):
                 points
             FROM
                 user_point_hourly_counts
+            WHERE hour >= NOW() - INTERVAL '90 days';
             """,
         )
         self.logger.info(f"Got {len(hourly_rows):,} hourly buckets from database")
@@ -60,6 +61,7 @@ class CacheHandler(vbu.Cog[vbu.Bot]):
                 points
             FROM
                 user_point_daily_counts
+            WHERE day >= CURRENT_DATE - INTERVAL '720 days';
             """,
         )
         self.logger.info(f"Got {len(daily_rows):,} daily buckets from database")

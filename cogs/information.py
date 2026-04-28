@@ -180,7 +180,11 @@ class Information(vbu.Cog[utils.types.Bot]):
         user_points: dict[utils.cache.PointSource, float] = collections.defaultdict(float)
 
         # Use daily buckets for longer ranges, hourly buckets for short ranges.
-        bucket_type = "hour" if days <= 14 else "day"
+        bucket_type = "day"
+        if days <= 15:
+            bucket_type = "hour"
+        elif days > 365:
+            bucket_type = "month"
 
         bucketed_points = utils.cache.PointHolder.get_bucketed_points(
             user.id,
@@ -314,11 +318,17 @@ class Information(vbu.Cog[utils.types.Bot]):
 
         points_per_week: dict[int, list[float]] = {}
 
+        bucket_type = "day"
+        if window_days <= 15:
+            bucket_type = "hour"
+        elif window_days > 365:
+            bucket_type = "month"
+
         for user_id in users:
             bucketed_points = utils.cache.PointHolder.get_bucketed_points(
                 user_id,
                 ctx.guild.id,
-                bucket="day",
+                bucket=bucket_type,
             )
 
             # Build a flat daily list first.
