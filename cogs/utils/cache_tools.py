@@ -175,7 +175,7 @@ class PointHolder:
     async def get_guild_points_above_age(
             cls,
             guild_id: int,
-            **age) -> dict[int, dict[str, float]]:
+            **age) -> dict[int, dict[PointSource, float]]:
         """
         Get raw points in a guild above a certain age.
         """

@@ -119,13 +119,13 @@ class Information(vbu.Cog[utils.types.Bot]):
             ordered_guild_user_strings = []
             for d in ordered_guild_user_data:
                 total_points = utils.cache.PointHolder.total_points(d["points"])
-                vc_time = vbu.TimeValue(d.get(utils.cache.PointSource.voice, 0) * 60).clean_spaced or '0m'
+                vc_time = vbu.TimeValue(d["points"].get(utils.cache.PointSource.voice, 0) * 60).clean_spaced or '0m'
                 text = (
                     "**<@{id}>** - **{total_points:,}** "
                     "(**{message:,}** text, **{voice}** VC)"
                 )
                 ordered_guild_user_strings.append(text.format(
-                    id=d['id'], message=d.get(utils.cache.PointSource.message, 0),
+                    id=d["id"], message=d["points"].get(utils.cache.PointSource.message, 0),
                     total_points=total_points, voice=vc_time,
                 ))
 
