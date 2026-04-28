@@ -318,7 +318,7 @@ class Information(vbu.Cog[utils.types.Bot]):
 
         if window_days <= 15:
             bucket_type = "hour"
-        elif window_days > 365:
+        elif window_days > 365 * 2:
             bucket_type = "month"
         else:
             bucket_type = "day"
