@@ -119,13 +119,13 @@ class Information(vbu.Cog[utils.types.Bot]):
             ordered_guild_user_strings = []
             for d in ordered_guild_user_data:
                 total_points = utils.cache.PointHolder.total_points(d["points"])
-                vc_time = vbu.TimeValue(d['voice'] * 60).clean_spaced or '0m'
+                vc_time = vbu.TimeValue(d.get(utils.cache.PointSource.voice, 0) * 60).clean_spaced or '0m'
                 text = (
                     "**<@{id}>** - **{total_points:,}** "
                     "(**{message:,}** text, **{voice}** VC)"
                 )
                 ordered_guild_user_strings.append(text.format(
-                    id=d['id'], message=d['message'], minecraft=d['minecraft'],
+                    id=d['id'], message=d.get(utils.cache.PointSource.message, 0),
                     total_points=total_points, voice=vc_time,
                 ))
 
@@ -201,8 +201,8 @@ class Information(vbu.Cog[utils.types.Bot]):
             for source, points in user_points.items()
         }
         total_points = utils.cache.PointHolder.total_points(user_points)
-        message_points = user_points[utils.cache.PointSource.message]
-        vc_points = user_points[utils.cache.PointSource.voice]
+        message_points = user_points.get(utils.cache.PointSource.message, 0.0)
+        vc_points = user_points.get(utils.cache.PointSource.voice, 0.0)
         text = (
             f"Over the past {days} days, {user.mention} has gained **{message_points:,}** "
             f"tracked messages and been in VC for "
