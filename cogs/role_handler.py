@@ -186,21 +186,11 @@ class RoleHandler(vbu.Cog[utils.types.Bot]):
         )
 
         # Get the user's points
-        point_rows = await utils.cache.PointHolder.get_points_above_age(
+        points_in_week = utils.cache.PointHolder.get_point_total_above_age(
             user.id,
             user.guild.id,
             days=self.bot.guild_settings[user.guild.id]['activity_window_days'],
         )
-
-        # Work out the user point values
-        user_points = {
-            "message": 0,
-            "voice": 0,
-            "minecraft": 0,
-        }
-        async for row in utils.alist(point_rows):
-            user_points[row.source.name] += 1
-        points_in_week = utils.get_all_points(user_points)
 
         # Run for each role
         added_top_role = False

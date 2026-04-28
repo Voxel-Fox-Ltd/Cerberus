@@ -4,7 +4,7 @@ from datetime import datetime as dt, timedelta
 from enum import Enum, auto
 from dataclasses import dataclass
 import collections
-from typing import AsyncGenerator, ClassVar, Iterable, Optional
+from typing import AsyncGenerator, ClassVar, Iterable, Optional, Union, cast
 
 
 __all__ = (
@@ -175,21 +175,47 @@ class PointHolder:
     async def get_guild_points_above_age(
             cls,
             guild_id: int,
-            **age) -> AsyncGenerator[CachedPoint, None]:
+            **age) -> dict[int, dict[str, float]]:
         """
         Get raw points in a guild above a certain age.
         """
 
         cutoff = dt.utcnow() - timedelta(**age)
 
-        for _, guild_dict in cls.all_points.items():
-            points = guild_dict.get(guild_id)
-            if not points:
+        people_dict = collections.defaultdict(dict)
+        for user_id, user_dict in cls.hourly_points[guild_id].items():
+            for timestamp, source_counter in user_dict.items():
+                if timestamp < cutoff:
+                    continue
+                people_dict[user_id] = dict(source_counter)
+
+        return people_dict
+
+    @classmethod
+    def get_point_total_above_age(
+            cls,
+            user_id: int,
+            guild_id: int,
+            **age) -> float:
+
+        cutoff = dt.utcnow() - timedelta(**age)
+
+        totals = {
+            PointSource.message: 0.0,
+            PointSource.voice: 0.0,
+            PointSource.minecraft: 0.0,
+        }
+
+        bucketed_points = cls.hourly_points[guild_id][user_id]
+
+        for bucket_timestamp, source_counter in bucketed_points.items():
+            if bucket_timestamp < cutoff:
                 continue
 
-            for point in points:
-                if point.timestamp > cutoff:
-                    yield point
+            for source, points in source_counter.items():
+                totals[source] += points
+
+        return sum([cls._point_value(source) * count for source, count in totals.items()])
 
     @classmethod
     def get_bucketed_points(
@@ -246,3 +272,27 @@ class PointHolder:
                 raise ValueError(f"Unknown bucket type: {bucket!r}")
 
         return sum(buckets[key].values())
+
+    @classmethod
+    def total_points(
+            cls,
+            data: Union[
+                dict[PointSource, float],
+                dict[dt, dict[PointSource, float]],
+                collections.Counter[PointSource]]) -> float:
+        """
+        Total points for a dict of PointSource to count.
+        """
+
+        if isinstance(data, collections.Counter):
+            return sum(cls._point_value(source) * count for source, count in data.items())
+        elif isinstance(data, dict):
+            if all(isinstance(value, dict) for value in data.values()):
+                data = cast(dict[dt, dict[PointSource, float]], data)
+                return sum(
+                    cls.total_points(source_counter)
+                    for source_counter in data.values()
+                )
+            else:
+                data = cast(dict[PointSource, float], data)
+                return sum(cls._point_value(source) * count for source, count in data.items())

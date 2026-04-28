@@ -1,6 +1,6 @@
 from datetime import datetime as dt, timedelta
 import math
-from typing import Optional, cast
+from typing import Optional
 import collections
 import random
 
@@ -86,8 +86,6 @@ class Information(vbu.Cog[utils.types.Bot]):
             days = 365
         elif isinstance(days, int):
             pass
-        else:
-            raise Exception("Days must be an int")
 
         # Type hint properly
         assert ctx.guild
@@ -95,52 +93,37 @@ class Information(vbu.Cog[utils.types.Bot]):
         # This takes a while
         async with ctx.typing():
 
-            point_generator = utils.cache.PointHolder.get_guild_points_above_age(
+            user_points = await utils.cache.PointHolder.get_guild_points_above_age(
                 ctx.guild.id,
                 days=days,
             )
 
-            # Sort that into more formattable data
-            user_data_dict = collections.defaultdict({
-                'message': 0,
-                'voice': 0,
-                'minecraft': 0
-            }.copy)
-            async for point in point_generator:
-                user_data_dict[point.user_id][point.source.name] += 1
-
             # Get all data in a list format, ready to be sorted
             valid_guild_user_data = [
                 {
-                    'id': uid,
-                    **d,
+                    "id": uid,
+                    "points": d,
                 }
-                for uid, d in user_data_dict.items()
+                for uid, d in user_points.items()
                 if ctx.guild.get_member(uid)
             ]
 
             # Sort said list
             ordered_guild_user_data = sorted(
                 valid_guild_user_data,
-                key=lambda k: k['message'] + (k['voice'] // 5) + (k['minecraft'] // 5),
+                key=lambda d: utils.cache.PointHolder.total_points(d["points"]),
                 reverse=True,
             )
 
             # And now make it into strings
             ordered_guild_user_strings = []
             for d in ordered_guild_user_data:
-                total_points = utils.get_all_points(d)
+                total_points = utils.cache.PointHolder.total_points(d["points"])
                 vc_time = vbu.TimeValue(d['voice'] * 60).clean_spaced or '0m'
-                if self.bot.guild_settings[ctx.guild.id]['minecraft_srv_authorization']:
-                    text = (
-                        "**<@{id}>** - **{total_points:,}** "
-                        "(**{message:,}** text, **{voice}** VC, **{minecraft:,}** Minecraft)"
-                    )
-                else:
-                    text = (
-                        "**<@{id}>** - **{total_points:,}** "
-                        "(**{message:,}** text, **{voice}** VC)"
-                    )
+                text = (
+                    "**<@{id}>** - **{total_points:,}** "
+                    "(**{message:,}** text, **{voice}** VC)"
+                )
                 ordered_guild_user_strings.append(text.format(
                     id=d['id'], message=d['message'], minecraft=d['minecraft'],
                     total_points=total_points, voice=vc_time,
@@ -194,11 +177,7 @@ class Information(vbu.Cog[utils.types.Bot]):
 
         after = dt.utcnow() - timedelta(days=days)
 
-        user_points = {
-            "message": 0.0,
-            "voice": 0.0,
-            "minecraft": 0.0,
-        }
+        user_points: dict[utils.cache.PointSource, float] = collections.defaultdict(float)
 
         # Use daily buckets for longer ranges, hourly buckets for short ranges.
         bucket_type = "hour" if days <= 14 else "day"
@@ -214,31 +193,22 @@ class Information(vbu.Cog[utils.types.Bot]):
                 continue
 
             for source, points in source_counter.items():
-                user_points[source.name] += points
+                user_points[source] += points
 
         # If these should be displayed as whole numbers
         user_points = {
             source: int(points)
             for source, points in user_points.items()
         }
-
-        if self.bot.guild_settings[ctx.guild.id]['minecraft_srv_authorization']:
-            total_points = utils.get_all_points(user_points)
-            text = (
-                f"Over the past {days} days, {user.mention} has gained **{user_points['message']:,}** "
-                f"tracked messages, has been in VC for "
-                f"**{vbu.TimeValue(user_points['voice'] * 60).clean or '0m'}**, and has been "
-                f"on the Minecraft server for **{vbu.TimeValue(user_points['minecraft'] * 60).clean or '0m'}**, "
-                f"giving them a total of **{total_points:,}** points."
-            )
-        else:
-            total_points = user_points['message'] + (user_points['voice'] // 5)
-            text = (
-                f"Over the past {days} days, {user.mention} has gained **{user_points['message']:,}** "
-                f"tracked messages and been in VC for "
-                f"**{vbu.TimeValue(user_points['voice'] * 60).clean or '0m'}**, giving them "
-                f"a total of **{total_points:,}** points."
-            )
+        total_points = utils.cache.PointHolder.total_points(user_points)
+        message_points = user_points[utils.cache.PointSource.message]
+        vc_points = user_points[utils.cache.PointSource.voice]
+        text = (
+            f"Over the past {days} days, {user.mention} has gained **{message_points:,}** "
+            f"tracked messages and been in VC for "
+            f"**{vbu.TimeValue(vc_points * 60).clean or '0m'}**, giving them "
+            f"a total of **{total_points:,}** points."
+        )
 
         await ctx.send(
             text,
@@ -367,12 +337,7 @@ class Information(vbu.Cog[utils.types.Bot]):
                     daily_points.append(0.0)
                     continue
 
-                daily_points.append(
-                    sum(
-                        utils.get_points(points, source.name)
-                        for source, points in source_counter.items()
-                    )
-                )
+                daily_points.append(utils.cache.PointHolder.total_points(source_counter))
 
             # Convert daily points into rolling activity-window points.
             rolling_points: list[float] = []
@@ -395,7 +360,7 @@ class Information(vbu.Cog[utils.types.Bot]):
 
         role_data: dict = (
             self.bot.guild_settings[ctx.guild.id]
-            .get('role_gain', dict())
+            .get("role_gain", dict())
         )  # type: ignore
 
         role_object_data = sorted(
@@ -424,7 +389,7 @@ class Information(vbu.Cog[utils.types.Bot]):
             ax.plot(
                 list(range(window_days)),
                 points,
-                'k-',
+                "k-",
                 label=str(self.bot.get_user(user)) or user,
                 color=rgb_colour,
             )
