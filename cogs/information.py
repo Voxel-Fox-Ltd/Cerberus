@@ -353,13 +353,37 @@ class Information(vbu.Cog[utils.types.Bot]):
                 points_per_week[user_id] = monthly_points
                 continue
 
-            # Existing daily/hourly-ish path
-            history_start = graph_start - timedelta(days=guild_day_range)
-            total_days = window_days + guild_day_range
-            daily_points: list[float] = []
+            if bucket_type == "hour":
+                step_count = window_days * 24
+                rolling_window_size = guild_day_range * 24
 
-            for day_offset in range(total_days):
-                bucket = history_start + timedelta(days=day_offset)
+                graph_start_bucket = (
+                    dt.utcnow()
+                    .replace(minute=0, second=0, microsecond=0)
+                    - timedelta(hours=step_count - 1)
+                )
+
+                history_start = graph_start_bucket - timedelta(hours=rolling_window_size)
+                step_delta = timedelta(hours=1)
+
+            else:
+                step_count = window_days
+                rolling_window_size = guild_day_range
+
+                graph_start_bucket = graph_start.replace(
+                    hour=0,
+                    minute=0,
+                    second=0,
+                    microsecond=0,
+                )
+
+                history_start = graph_start_bucket - timedelta(days=rolling_window_size)
+                step_delta = timedelta(days=1)
+
+            raw_points: list[float] = []
+
+            for offset in range(step_count + rolling_window_size):
+                bucket = history_start + (step_delta * offset)
 
                 if bucket_type == "hour":
                     bucket = bucket.replace(minute=0, second=0, microsecond=0)
@@ -368,25 +392,25 @@ class Information(vbu.Cog[utils.types.Bot]):
 
                 source_counter = bucketed_points.get(bucket)
 
-                if source_counter is None:
-                    daily_points.append(0.0)
-                    continue
-
-                daily_points.append(utils.cache.PointHolder.total_points(source_counter))
+                raw_points.append(
+                    utils.cache.PointHolder.total_points(source_counter)
+                    if source_counter is not None
+                    else 0.0
+                )
 
             rolling_points: list[float] = []
             rolling_total = 0.0
 
-            for index, points in enumerate(daily_points):
+            for index, points in enumerate(raw_points):
                 rolling_total += points
 
-                if index >= guild_day_range:
-                    rolling_total -= daily_points[index - guild_day_range]
+                if index >= rolling_window_size:
+                    rolling_total -= raw_points[index - rolling_window_size]
 
-                if index >= guild_day_range:
+                if index >= rolling_window_size:
                     rolling_points.append(rolling_total)
 
-            points_per_week[user_id] = rolling_points[:window_days]
+            points_per_week[user_id] = rolling_points[:step_count]
 
         if sum(sum(user_points) for user_points in points_per_week.values()) == 0:
             return await ctx.send("They've not sent any messages that I can graph.")
