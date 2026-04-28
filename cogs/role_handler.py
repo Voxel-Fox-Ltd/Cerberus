@@ -27,7 +27,7 @@ class RoleHandler(vbu.Cog[utils.types.Bot]):
             "role_list",
             "RoleGain",
         )
-        async for row in utils.alist(data):
+        for row in data:
             guild_id: int = row['guild_id']
             role_id: int = int(row['role_id'])
             value: int = int(row['value'])
@@ -42,7 +42,7 @@ class RoleHandler(vbu.Cog[utils.types.Bot]):
             "channel_list",
             "BlacklistedChannel",
         )
-        async for row in utils.alist(data):
+        for row in data:
             guild_id: int = row['guild_id']
             channel_id: int = int(row['channel_id'])
             (
@@ -57,7 +57,7 @@ class RoleHandler(vbu.Cog[utils.types.Bot]):
             "role_list",
             "BlacklistedRoles",
         )
-        async for row in utils.alist(data):
+        for row in data:
             guild_id: int = row['guild_id']
             role_id: int = int(row['role_id'])
             (
@@ -72,7 +72,7 @@ class RoleHandler(vbu.Cog[utils.types.Bot]):
             "role_list",
             "BlacklistedVCRoles",
         )
-        async for row in utils.alist(data):
+        for row in data:
             guild_id: int = row['guild_id']
             role_id: int = int(row['role_id'])
             (
