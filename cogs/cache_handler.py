@@ -1,4 +1,5 @@
 import asyncio
+from datetime import datetime as dt
 
 from discord.ext import vbu
 
@@ -9,10 +10,9 @@ class CacheHandler(vbu.Cog[vbu.Bot]):
 
     async def cache_setup(self, db: vbu.Database):
         """
-        Load aggregated point buckets into memory.
+        Load pre-aggregated point buckets into memory.
 
-        Loads ALL historical data, but only as buckets (not raw rows),
-        so memory usage stays reasonable.
+        Reads from rollup tables instead of rebuilding buckets from user_points.
         """
 
         self.logger.info("Getting hourly point buckets from database")
@@ -21,16 +21,11 @@ class CacheHandler(vbu.Cog[vbu.Bot]):
             SELECT
                 guild_id,
                 user_id,
-                date_trunc('hour', timestamp) AS bucket,
+                hour AS bucket,
                 source,
-                COUNT(*) AS points
+                points
             FROM
-                user_points
-            GROUP BY
-                guild_id,
-                user_id,
-                date_trunc('hour', timestamp),
-                source
+                user_point_hourly_counts
             """,
         )
         self.logger.info(f"Got {len(hourly_rows):,} hourly buckets from database")
@@ -60,16 +55,11 @@ class CacheHandler(vbu.Cog[vbu.Bot]):
             SELECT
                 guild_id,
                 user_id,
-                date_trunc('day', timestamp) AS bucket,
+                day AS bucket,
                 source,
-                COUNT(*) AS points
+                points
             FROM
-                user_points
-            GROUP BY
-                guild_id,
-                user_id,
-                date_trunc('day', timestamp),
-                source
+                user_point_daily_counts
             """,
         )
         self.logger.info(f"Got {len(daily_rows):,} daily buckets from database")
@@ -83,12 +73,16 @@ class CacheHandler(vbu.Cog[vbu.Bot]):
                 )
                 await asyncio.sleep(0)
 
+            bucket = row["bucket"]
+            if not isinstance(bucket, dt):
+                bucket = dt.combine(bucket, dt.min.time())
+
             utils.cache.PointHolder.daily_points[
                 row["guild_id"]
             ][
                 row["user_id"]
             ][
-                row["bucket"].replace(hour=0, minute=0, second=0, microsecond=0)
+                bucket.replace(hour=0, minute=0, second=0, microsecond=0)
             ][
                 utils.cache.PointSource[row["source"]]
             ] += row["points"]
@@ -99,16 +93,11 @@ class CacheHandler(vbu.Cog[vbu.Bot]):
             SELECT
                 guild_id,
                 user_id,
-                date_trunc('month', timestamp) AS bucket,
+                month AS bucket,
                 source,
-                COUNT(*) AS points
+                points
             FROM
-                user_points
-            GROUP BY
-                guild_id,
-                user_id,
-                date_trunc('month', timestamp),
-                source
+                user_point_monthly_counts
             """,
         )
         self.logger.info(f"Got {len(monthly_rows):,} monthly buckets from database")
@@ -122,12 +111,16 @@ class CacheHandler(vbu.Cog[vbu.Bot]):
                 )
                 await asyncio.sleep(0)
 
+            bucket = row["bucket"]
+            if not isinstance(bucket, dt):
+                bucket = dt.combine(bucket, dt.min.time())
+
             utils.cache.PointHolder.monthly_points[
                 row["guild_id"]
             ][
                 row["user_id"]
             ][
-                row["bucket"].replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+                bucket.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
             ][
                 utils.cache.PointSource[row["source"]]
             ] += row["points"]

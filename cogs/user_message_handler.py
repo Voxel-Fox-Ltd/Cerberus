@@ -32,20 +32,17 @@ class UserMessageHandler(vbu.Cog):
         Saves all messages stored in self.cached_for_saving to db.
         """
 
-        # Only save messages if there _were_ any
         if len(self.cached_for_saving) == 0:
             self.logger.info("Storing 0 cached messages in database")
             return
 
-        # Get the messages we want to save
-        currently_saving = self.cached_for_saving.copy()  # Make a copy to fend off the race conditions
+        currently_saving = self.cached_for_saving.copy()
         for m in currently_saving:
             try:
                 self.cached_for_saving.remove(m)
             except ValueError:
                 pass
 
-        # Sort them into a nice easy tuple
         records = [
             (
                 discord.utils.naive_dt(i.created_at),
@@ -58,8 +55,26 @@ class UserMessageHandler(vbu.Cog):
             if i.author.bot is False and i.guild is not None
         ]
 
-        # Copy the records into the db
         self.logger.info(f"Storing {len(records)} cached messages in database")
+
+        if not records:
+            return
+
+        hourly_counts = collections.Counter()
+        daily_counts = collections.Counter()
+        monthly_counts = collections.Counter()
+
+        for timestamp, user_id, guild_id, channel_id, source in records:
+            hour = timestamp.replace(minute=0, second=0, microsecond=0)
+            day = timestamp.date()
+            month = timestamp.replace(day=1, hour=0, minute=0, second=0, microsecond=0).date()
+
+            key = (guild_id, user_id, source)
+
+            hourly_counts[(*key, hour)] += 1
+            daily_counts[(*key, day)] += 1
+            monthly_counts[(*key, month)] += 1
+
         async with self.bot.database() as db:
             await db.conn.copy_records_to_table(
                 'user_points',
@@ -70,10 +85,69 @@ class UserMessageHandler(vbu.Cog):
                     'channel_id',
                     'source',
                 ),
-                records=records
+                records=records,
             )
 
-        # Store the points in the cache
+            await db.conn.executemany(
+                """
+                INSERT INTO user_point_hourly_counts (
+                    guild_id,
+                    user_id,
+                    source,
+                    hour,
+                    points
+                )
+                VALUES ($1, $2, $3::point_source, $4, $5)
+                ON CONFLICT (guild_id, user_id, hour, source)
+                DO UPDATE SET points = user_point_hourly_counts.points + EXCLUDED.points
+                """,
+                [
+                    (guild_id, user_id, source, hour, points)
+                    for (guild_id, user_id, source, hour), points
+                    in hourly_counts.items()
+                ],
+            )
+
+            await db.conn.executemany(
+                """
+                INSERT INTO user_point_daily_counts (
+                    guild_id,
+                    user_id,
+                    source,
+                    day,
+                    points
+                )
+                VALUES ($1, $2, $3::point_source, $4, $5)
+                ON CONFLICT (guild_id, user_id, day, source)
+                DO UPDATE SET points = user_point_daily_counts.points + EXCLUDED.points
+                """,
+                [
+                    (guild_id, user_id, source, day, points)
+                    for (guild_id, user_id, source, day), points
+                    in daily_counts.items()
+                ],
+            )
+
+            await db.conn.executemany(
+                """
+                INSERT INTO user_point_monthly_counts (
+                    guild_id,
+                    user_id,
+                    source,
+                    month,
+                    points
+                )
+                VALUES ($1, $2, $3::point_source, $4, $5)
+                ON CONFLICT (guild_id, user_id, month, source)
+                DO UPDATE SET points = user_point_monthly_counts.points + EXCLUDED.points
+                """,
+                [
+                    (guild_id, user_id, source, month, points)
+                    for (guild_id, user_id, source, month), points
+                    in monthly_counts.items()
+                ],
+            )
+
         for record in records:
             utils.cache.PointHolder.add_point(
                 record[1],

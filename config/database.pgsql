@@ -23,27 +23,34 @@ CREATE TABLE IF NOT EXISTS user_points(
 );
 
 
--- CREATE TABLE IF NOT EXISTS user_messages(
---     timestamp TIMESTAMP,
---     user_id BIGINT,
---     guild_id BIGINT,
---     channel_id BIGINT
--- );
+CREATE TABLE IF NOT EXISTS user_point_hourly_counts (
+    guild_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    hour TIMESTAMP NOT NULL,
+    source point_source NOT NULL,
+    points DOUBLE PRECISION NOT NULL DEFAULT 0,
+    PRIMARY KEY (guild_id, user_id, hour, source)
+);
 
 
--- CREATE TABLE IF NOT EXISTS user_vc_activity(
---     user_id BIGINT,
---     guild_id BIGINT,
---     timestamp TIMESTAMP,
---     channel_id BIGINT
--- );
+CREATE TABLE IF NOT EXISTS user_point_daily_counts (
+    guild_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    day DATE NOT NULL,
+    source point_source NOT NULL,
+    points DOUBLE PRECISION NOT NULL DEFAULT 0,
+    PRIMARY KEY (guild_id, user_id, day, source)
+);
 
 
--- CREATE TABLE IF NOT EXISTS minecraft_server_activity(
---     user_id BIGINT,
---     guild_id BIGINT,
---     timestamp TIMESTAMP
--- );
+CREATE TABLE IF NOT EXISTS user_point_monthly_counts (
+    guild_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    month DATE NOT NULL,
+    source point_source NOT NULL,
+    points DOUBLE PRECISION NOT NULL DEFAULT 0,
+    PRIMARY KEY (guild_id, user_id, month, source)
+);
 
 
 CREATE TABLE IF NOT EXISTS user_settings(
