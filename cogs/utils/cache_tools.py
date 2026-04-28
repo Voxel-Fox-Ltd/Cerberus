@@ -182,12 +182,19 @@ class PointHolder:
 
         cutoff = dt.utcnow() - timedelta(**age)
 
-        people_dict = collections.defaultdict(dict)
+        people_dict = collections.defaultdict({
+            PointSource.message: 0.0,
+            PointSource.voice: 0.0,
+            PointSource.minecraft: 0.0,
+        }.copy)
         for user_id, user_dict in cls.hourly_points[guild_id].items():
             for timestamp, source_counter in user_dict.items():
                 if timestamp < cutoff:
                     continue
-                people_dict[user_id] = dict(source_counter)
+                current = people_dict[user_id]
+                for source, points in source_counter.items():
+                    current[source] += points
+                people_dict[user_id] = current
 
         return people_dict
 
