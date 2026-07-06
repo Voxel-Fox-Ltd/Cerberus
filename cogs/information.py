@@ -130,8 +130,8 @@ class Information(vbu.Cog[utils.types.Bot]):
                     or '0m'
                 )
                 text = (
-                    "**<@{id}>** - **{total_points:,}** "
-                    "(**{message:,}** text, **{voice}** VC)"
+                    "**<@{id}>** - **{total_points:,.0f}** "
+                    "(**{message:,.0f}** text, **{voice}** VC)"
                 )
                 ordered_guild_user_strings.append(text.format(
                     id=d["id"], message=int(d["points"].get(utils.cache.PointSource.message, 0)),
@@ -223,7 +223,7 @@ class Information(vbu.Cog[utils.types.Bot]):
             f"Over the past {days} days, {user.mention} has gained **{message_points:,}** "
             f"tracked messages and been in VC for "
             f"**{vbu.TimeValue(vc_points * 60).clean or '0m'}**, giving them "
-            f"a total of **{total_points:,}** points."
+            f"a total of **{total_points:,.0f}** points."
         )
 
         await ctx.send(
