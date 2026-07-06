@@ -41,7 +41,12 @@ class UserVCHandler(vbu.Cog):
         for i in self.bot.guilds:
             voice_channels.extend(i.voice_channels)
 
-        voice_members: typing.List[typing.Tuple[int, int, int]] = []
+        voice_members: typing.List[typing.Tuple[
+            discord.Member,
+            discord.VoiceState,
+            discord.Guild,
+            discord.Voicechannel
+        ]] = []
 
         for vc in voice_channels:
             try:
@@ -52,40 +57,27 @@ class UserVCHandler(vbu.Cog):
 
             try:
                 non_bot_users = [
-                    (user_id, state)
-                    for user_id, state in vc.voice_states.items()
-                    if (
-                        self.bot.get_user(user_id)
-                        and self.bot.get_user(user_id).bot is False
-                    )
+                    (i, i.state) for i in vc.members
+                    if i.bot is False
                 ]
             except Exception:
                 non_bot_users = []
 
             if len(non_bot_users) > 1:
                 voice_members.extend([
-                    (user_id, vc.guild.id, vc.id)
-                    for user_id, state in non_bot_users
+                    (user, state, user.guild, vc)
+                    for user, state in non_bot_users
                     if self.valid_voice_state(state)
                 ])
 
-        for user_id, guild_id, channel_id in voice_members.copy():
+        for user, state, guild, channel in voice_members.copy():
             blacklisted_roles: typing.List[int] = (
-                self.bot.guild_settings[guild_id]
+                self.bot.guild_settings[guild.id]
                 .setdefault('blacklisted_vc_roles', list())
             )
 
-            guild = self.bot.get_guild(guild_id)
-
-            try:
-                member = guild.get_member(user_id) or await guild.fetch_member(user_id)
-                assert member is not None
-            except (AssertionError, discord.HTTPException):
-                voice_members.remove((user_id, guild_id, channel_id))
-                continue
-
-            if set(member._roles).intersection(blacklisted_roles):
-                voice_members.remove((user_id, guild_id, channel_id))
+            if set(user._roles).intersection(blacklisted_roles):
+                voice_members.remove((user, state, guild, channel))
 
         now = discord.utils.naive_dt(discord.utils.utcnow())
 
@@ -94,13 +86,13 @@ class UserVCHandler(vbu.Cog):
         ]
         records = [
             (
-                user_id,
-                guild_id,
+                user.id,
+                guild.id,
                 now,
-                channel_id,
+                channel.id,
                 "voice",
             )
-            for user_id, guild_id, channel_id in voice_members
+            for user, _, guild, channel in voice_members
         ]
 
         if len(records) == 0:
@@ -203,13 +195,16 @@ class UserVCHandler(vbu.Cog):
                 ],
             )
 
-        for user_id, guild_id, timestamp, channel_id, source in records:
+        for user_id, guild_id, timestamp, _, source in records:
             utils.cache.PointHolder.add_point(
                 user_id,
                 guild_id,
                 utils.cache.PointSource["voice"],
                 timestamp,
             )
+
+        for user, *_ in voice_members:
+            self.bot.dispatch("user_points_receive", user)
 
 
 def setup(bot: vbu.Bot):
