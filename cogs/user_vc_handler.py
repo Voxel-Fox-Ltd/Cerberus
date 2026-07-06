@@ -48,6 +48,8 @@ class UserVCHandler(vbu.Cog):
             discord.Voicechannel
         ]] = []
 
+        self.logger.info("All VCs I'm going to look at %s", voice_channels)
+
         for vc in voice_channels:
             try:
                 _ = vc.id
@@ -60,8 +62,8 @@ class UserVCHandler(vbu.Cog):
                 (i, i.state) for i in vc.members
                 if i.bot is False
             ]
-            self.log.info("All VC users %s", all_users)
-            self.log.info("Non bot VC users %s", non_bot_users)
+            self.logger.info("All VC users in channel %s: %s", vc, all_users)
+            self.logger.info("Non bot VC users in channel %s: %s", vc, non_bot_users)
 
             if len(non_bot_users) > 1:
                 voice_members.extend([
