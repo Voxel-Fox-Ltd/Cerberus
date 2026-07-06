@@ -64,7 +64,7 @@ class UserMessageHandler(vbu.Cog):
         daily_counts = collections.Counter()
         monthly_counts = collections.Counter()
 
-        for timestamp, user_id, guild_id, channel_id, source in records:
+        for timestamp, user_id, guild_id, _, source in records:
             hour = timestamp.replace(minute=0, second=0, microsecond=0)
             day = timestamp.date()
             month = timestamp.replace(day=1, hour=0, minute=0, second=0, microsecond=0).date()
