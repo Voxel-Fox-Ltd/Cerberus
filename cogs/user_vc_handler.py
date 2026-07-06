@@ -57,9 +57,9 @@ class UserVCHandler(vbu.Cog):
             except AttributeError:
                 continue
 
-            all_users = [(i, i.state) for i in vc.members]
+            all_users = [(i, i.voice) for i in vc.members]
             non_bot_users = [
-                (i, i.state) for i in vc.members
+                (i, i.voice) for i in vc.members
                 if i.bot is False
             ]
             self.logger.info("All VC users in channel %s: %s", vc, all_users)
