@@ -48,7 +48,7 @@ class UserVCHandler(vbu.Cog):
             discord.Voicechannel
         ]] = []
 
-        self.logger.info("All VCs I'm going to look at %s", voice_channels)
+        # self.logger.info("All VCs I'm going to look at %s", voice_channels)
 
         for vc in voice_channels:
             try:
@@ -57,13 +57,13 @@ class UserVCHandler(vbu.Cog):
             except AttributeError:
                 continue
 
-            all_users = [(i, i.voice) for i in vc.members]
+            # all_users = [(i, i.voice) for i in vc.members]
             non_bot_users = [
                 (i, i.voice) for i in vc.members
                 if i.bot is False
             ]
-            self.logger.info("All VC users in channel %s: %s", vc, all_users)
-            self.logger.info("Non bot VC users in channel %s: %s", vc, non_bot_users)
+            # self.logger.info("All VC users in channel %s: %s", vc, all_users)
+            # self.logger.info("Non bot VC users in channel %s: %s", vc, non_bot_users)
 
             if len(non_bot_users) > 1:
                 voice_members.extend([
