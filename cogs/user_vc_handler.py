@@ -55,13 +55,13 @@ class UserVCHandler(vbu.Cog):
             except AttributeError:
                 continue
 
-            try:
-                non_bot_users = [
-                    (i, i.state) for i in vc.members
-                    if i.bot is False
-                ]
-            except Exception:
-                non_bot_users = []
+            all_users = [(i, i.state) for i in vc.members]
+            non_bot_users = [
+                (i, i.state) for i in vc.members
+                if i.bot is False
+            ]
+            self.log.info("All VC users %s", all_users)
+            self.log.info("Non bot VC users %s", non_bot_users)
 
             if len(non_bot_users) > 1:
                 voice_members.extend([
