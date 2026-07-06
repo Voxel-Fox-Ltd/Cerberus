@@ -1,4 +1,5 @@
 import asyncio
+import collections
 from typing import Optional, Tuple, cast
 
 import discord
@@ -11,7 +12,7 @@ class RoleHandler(vbu.Cog[utils.types.Bot]):
 
     def __init__(self, bot: utils.types.Bot):
         super().__init__(bot)
-        # self.user_role_looper.start()
+        self.user_role_looper.start()
 
     def cog_unload(self):
         self.user_role_looper.cancel()
@@ -96,19 +97,21 @@ class RoleHandler(vbu.Cog[utils.types.Bot]):
         # Open a connection we can use this whole time
         db = await self.bot.database.get_connection()
 
+        # Ignore the cache for roles; let's take straight from the database
+        rows = await db.call("SELECT * FROM role_list WHERE key='RoleGain'")
+        roles_by_guild: dict[int, dict[int, int]] = collections.defaultdict(dict)
+        for r in rows:
+            roles_by_guild[r["guild_id"]][r["role_id"]] = r["value"]
+
         # Get all users with an activity role for each of the guilds
         for guild in self.bot.guilds:
 
             # Get the settings for the guild
-            role_data_dict: dict[int, int]  # roleId: threshold
-            role_data_dict = (
-                self.bot.guild_settings[guild.id]
-                .setdefault('role_gain', dict())
-            )
+            role_thresholds = roles_by_guild[guild.id]
             all_users_with_level_roles: set[discord.Member] = set()
 
             # Get each level role, add all of its members
-            for role_id in role_data_dict.keys():
+            for role_id in role_thresholds.keys():
                 role: Optional[discord.Role] = guild.get_role(role_id)
                 if role is None:
                     continue
@@ -124,7 +127,8 @@ class RoleHandler(vbu.Cog[utils.types.Bot]):
 
     @user_role_looper.before_loop
     async def before_user_role_looper(self):
-        await asyncio.sleep(60 * len(self.bot.shard_ids or [0]))
+        await self.bot.wait_until_ready()
+        await asyncio.sleep(60 * 60)
 
     @vbu.Cog.listener("on_user_points_receive")
     async def user_role_handler(
