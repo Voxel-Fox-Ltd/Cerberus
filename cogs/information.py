@@ -214,15 +214,19 @@ class Information(vbu.Cog[utils.types.Bot]):
             for source, points in user_points.items()
         }
         total_points = utils.cache.PointHolder.total_points(user_points)
-        message_points = user_points.get(utils.cache.PointSource.message, 0.0)
-        vc_points_raw = user_points.get(utils.cache.PointSource.voice, 0.0)
-        vc_points = (
-            vc_points_raw / utils.cache.PointHolder._point_value(utils.cache.PointSource.voice)
-        )  # Corrected back to 1 point per minute
+        message_points = (
+            user_points.get(utils.cache.PointSource.message, 0.0)
+            * utils.cache.PointHolder._point_value(utils.cache.PointSource.message)
+        )
+        vc_points_raw = (
+            user_points.get(utils.cache.PointSource.voice, 0.0)
+            * utils.cache.PointHolder._point_value(utils.cache.PointSource.voice)
+        )
+        vc_minutes = user_points.get(utils.cache.PointSource.voice, 0.0)
         text = (
             f"Over the past {days} days, {user.mention} has gained **{message_points:,}** "
             f"tracked messages and been in VC for "
-            f"**{vbu.TimeValue(vc_points * 60).clean_spaced or '0m'}** ({vc_points_raw:,.2f} points), giving them "
+            f"**{vbu.TimeValue(vc_minutes * 60).clean_spaced or '0m'}** ({vc_points_raw:,.2f} points), giving them "
             f"a total of **{total_points:,.0f}** points."
         )
 
